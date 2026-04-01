@@ -1,4 +1,4 @@
-# modulo
+# modulo App
 A companion platform for students to manage academic tasks and timetable
 
 ## Team
