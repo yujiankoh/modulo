@@ -4,11 +4,16 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -17,6 +22,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -33,11 +39,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    GreetingText(
-                        message = "Happy Birthday",
-                        from = "From Me",
-                        modifier = Modifier.padding(8.dp)
-                    )
+
                 }
             }
         }
@@ -45,30 +47,23 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun GreetingText(message: String, from: String, modifier: Modifier = Modifier) {
+fun SignInImageAndButtons(modifier: Modifier = Modifier) {
     Column(
-        verticalArrangement = Arrangement.Center,
-        modifier = modifier
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(
-            text = message,
-            fontSize = 100.sp,
-            lineHeight = 116.sp,
-            textAlign = TextAlign.Center
+        Image(
+            painter = painterResource(R.drawable.logo),
+            contentDescription = "logo"
         )
-        Text(
-            text = from,
-            fontSize = 36.sp,
-            modifier = Modifier
-                .padding(16.dp)
-                .align(alignment = Alignment.End)
-        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Button(onClick = {}) {
+            Text("Sync with Google Drive")
+        }
+        Button(onClick = {}) {
+            Text("Continue with Local Save")
+        }
     }
-}
-
-@Composable
-fun GreetingImage(message: String, from: String, modifier: Modifier = Modifier) {
-
 }
 
 @Preview(
@@ -76,8 +71,10 @@ fun GreetingImage(message: String, from: String, modifier: Modifier = Modifier) 
     showSystemUi = false
 )
 @Composable
-fun GreetingPreview() {
-    ModuloTheme {
-        GreetingText("Happy Birthday Max", "from Emma")
-    }
+fun SignInPage() {
+    SignInImageAndButtons(
+        modifier = Modifier
+            .fillMaxSize()
+            .wrapContentSize(Alignment.Center)
+    )
 }
