@@ -174,6 +174,7 @@ object AuthenticationHelper {
             return
         }
 
+        Log.d(TAG, "SUCCESS! Google Drive AppData access token granted.")
         // TODO: do something with access token
     }
 
