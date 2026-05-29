@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    kotlin("plugin.serialization") version "2.0.21"
 }
 
 android {
@@ -48,6 +49,21 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
+
+    implementation("androidx.credentials:credentials:1.7.0-alpha02")
+    implementation("androidx.credentials:credentials-play-services-auth:1.7.0-alpha02")
+    implementation("com.google.android.libraries.identity.googleid:googleid:1.2.0")
+    implementation("com.google.android.gms:play-services-auth:21.6.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.10.0")
+
+    val nav_version = "2.9.8"
+    implementation("androidx.navigation:navigation-compose:$nav_version")
+    implementation("androidx.navigation:navigation-fragment:$nav_version")
+    implementation("androidx.navigation:navigation-ui:$nav_version")
+    implementation("androidx.navigation:navigation-dynamic-features-fragment:$nav_version")
+    androidTestImplementation("androidx.navigation:navigation-testing:$nav_version")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
+
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
