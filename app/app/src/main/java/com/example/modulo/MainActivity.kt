@@ -1,40 +1,27 @@
 package com.example.modulo
 
+import android.app.Activity
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import androidx.credentials.CredentialManager
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.compose.rememberNavController
 import com.example.modulo.ui.theme.ModuloTheme
+import kotlin.contracts.contract
 
 class MainActivity : ComponentActivity() {
     private lateinit var credentialManager: CredentialManager
-    private var driveAuthorizationLauncher = registerForActivityResult(
-        ActivityResultContracts.StartIntentSenderForResult(),
-    ) {
-        result -> AuthenticationHelper.onDrivePermission(this, result);
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -44,65 +31,45 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             ModuloTheme {
+
+                val navController = rememberNavController()
+                val scope = rememberCoroutineScope()
+
+                // Action for when drive authorization is successful
+                val navigateToHomeAfterSync = {
+                    navController.navigate(Home(true)) {
+                        popUpTo(SignIn) { inclusive = true }
+                    }
+                }
+
+                // Waits for user reply on authorization and passes result
+                val driveAuthorizationLauncher = rememberLauncherForActivityResult(
+                    contract = ActivityResultContracts.StartIntentSenderForResult()
+                ) { result ->
+                    AuthenticationHelper.onDrivePermission(this, result, navigateToHomeAfterSync)
+                }
+
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    AuthenticatePage(
-                        onSyncWithDriveClick = {
+                    AppNavigation(
+                        navController = navController,
+                        onAuthentication = {
                             AuthenticationHelper.authenticateThenAuthorize(
                                 activity = this@MainActivity,
-                                scope = lifecycleScope,
+                                scope = scope,
                                 credentialManager = credentialManager,
                                 onLaunchIntent = { intentRequest ->
                                     driveAuthorizationLauncher.launch(intentRequest)
-                                }
+                                },
+                                onSuccess = navigateToHomeAfterSync
                             )
                         }
                     )
                 }
             }
         }
-    }
-}
-
-@Composable
-fun SignInImageAndButtons(modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Image(
-            painter = painterResource(R.drawable.logo),
-            contentDescription = "logo"
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Button(onClick = {}) {
-            Text("Sync with Google Drive")
-        }
-        Button(onClick = {}) {
-            Text("Continue with Local Save")
-        }
-    }
-}
-
-@Composable
-fun SignInPage() {
-    SignInImageAndButtons(
-        modifier = Modifier
-            .fillMaxSize()
-            .wrapContentSize(Alignment.Center)
-    )
-}
-
-@Composable
-fun HomePage() {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .wrapContentSize(Alignment.Center)
-    ) {
-        Text("HomePage")
     }
 }
 
@@ -113,6 +80,10 @@ fun HomePage() {
 @Composable
 fun LayoutPreview() {
     ModuloTheme {
-        HomePage()
+        HomePage(
+            false,
+            { newCount ->
+                println("Preview Action: Counter increased to $newCount (Sync Offline)") }
+        )
     }
 }
