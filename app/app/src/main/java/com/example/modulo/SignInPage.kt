@@ -1,4 +1,4 @@
-package com.example.modulo.ui.theme
+package com.example.modulo
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
@@ -13,12 +13,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import com.example.modulo.R
 
 @Composable
-fun SignInImageAndButtons(modifier: Modifier = Modifier) {
+fun SignInPage(
+    onSyncWithDriveClick: () -> Unit,
+    onLocalSaveClick:() -> Unit
+) {
     Column(
-        modifier = modifier,
+        modifier = Modifier
+            .fillMaxSize()
+            .wrapContentSize(Alignment.Center),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Image(
@@ -26,20 +30,11 @@ fun SignInImageAndButtons(modifier: Modifier = Modifier) {
             contentDescription = "logo"
         )
         Spacer(modifier = Modifier.height(16.dp))
-        Button(onClick = {}) {
+        Button(onClick = onSyncWithDriveClick) {
             Text("Sync with Google Drive")
         }
-        Button(onClick = {}) {
+        Button(onClick = onLocalSaveClick) {
             Text("Continue with Local Save")
         }
     }
-}
-
-@Composable
-fun SignInPage() {
-    SignInImageAndButtons(
-        modifier = Modifier
-            .fillMaxSize()
-            .wrapContentSize(Alignment.Center)
-    )
 }
