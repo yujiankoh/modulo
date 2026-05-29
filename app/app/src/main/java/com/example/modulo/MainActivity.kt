@@ -26,6 +26,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.credentials.CredentialManager
 import androidx.lifecycle.lifecycleScope
+import com.example.modulo.ui.theme.HomePage
 import com.example.modulo.ui.theme.ModuloTheme
 
 class MainActivity : ComponentActivity() {
@@ -63,46 +64,6 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
-    }
-}
-
-@Composable
-fun SignInImageAndButtons(modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Image(
-            painter = painterResource(R.drawable.logo),
-            contentDescription = "logo"
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Button(onClick = {}) {
-            Text("Sync with Google Drive")
-        }
-        Button(onClick = {}) {
-            Text("Continue with Local Save")
-        }
-    }
-}
-
-@Composable
-fun SignInPage() {
-    SignInImageAndButtons(
-        modifier = Modifier
-            .fillMaxSize()
-            .wrapContentSize(Alignment.Center)
-    )
-}
-
-@Composable
-fun HomePage() {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .wrapContentSize(Alignment.Center)
-    ) {
-        Text("HomePage")
     }
 }
 
