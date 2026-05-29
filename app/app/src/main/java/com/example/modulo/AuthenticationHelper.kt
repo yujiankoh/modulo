@@ -34,7 +34,8 @@ object AuthenticationHelper {
         activity: Activity,
         scope: CoroutineScope,
         credentialManager: CredentialManager,
-        onLaunchIntent: (IntentSenderRequest) -> Unit
+        onLaunchIntent: (IntentSenderRequest) -> Unit,
+        onSuccess: () -> Unit
     ) {
         scope.launch {
             try {
@@ -46,7 +47,7 @@ object AuthenticationHelper {
                 }
 
                 Log.d(TAG, "Signed in: ${googleUser.email}")
-                requestDriveAuthorization(activity, onLaunchIntent)
+                requestDriveAuthorization(activity, onLaunchIntent, onSuccess)
 
             } catch (e: GoogleIdTokenParsingException) {
                 Log.e(TAG, "Invalid Google ID token", e)
@@ -57,43 +58,34 @@ object AuthenticationHelper {
     }
 
     /**
-     * Processes the result after user closes the Authorization popup
+     * Request Google Drive Authorization
      */
-    fun onDrivePermission(activity: Activity, result: ActivityResult) {
-        // If user denies Google Drive Authorization
-        if (result.resultCode != Activity.RESULT_OK) {
-            Toast.makeText(
-                activity,
-                "Google Drive permission denied",
-                Toast.LENGTH_SHORT
-            ).show()
-            return
-        }
+    fun requestDriveAuthorization(
+        activity: Activity,
+        onLaunchIntent: (IntentSenderRequest) -> Unit,
+        onSuccess: () -> Unit
+    ) {
+        val requestedScopes: List<Scope> = listOf(Scope(DRIVE_SCOPE))
+        val authorizationRequest = AuthorizationRequest.builder()
+            .setRequestedScopes(requestedScopes)
+            .build()
 
-        val data = result.data
-        if (data == null) {
-            Toast.makeText(
-                activity,
-                "Missing Google Drive authorization",
-                Toast.LENGTH_SHORT
-            ).show()
-            return
-        }
+        Identity.getAuthorizationClient(activity)
+            .authorize(authorizationRequest)
+            .addOnSuccessListener { authorizationResult ->
+                if (authorizationResult.hasResolution()) {
+                    val pendingIntent = authorizationResult.pendingIntent
 
-        try {
-            val authorizationResult = Identity
-                .getAuthorizationClient(activity)
-                .getAuthorizationResultFromIntent(data)
-
-            handleDriveAuthorization(activity, authorizationResult)
-        } catch (e: ApiException) {
-            Log.e(TAG, "Google Drive authorization failed", e)
-            Toast.makeText(
-                activity,
-                "Google Drive authorization failed",
-                Toast.LENGTH_SHORT
-            ).show()
-        }
+                    // Pass intent back to MainActivity to ask user for access
+                    if (pendingIntent != null) {
+                        onLaunchIntent(IntentSenderRequest.Builder(pendingIntent.intentSender).build())
+                    }
+                } else {
+                    // Access was previously granted
+                    handleDriveAuthorization(activity, authorizationResult, onSuccess)
+                }
+            }
+            .addOnFailureListener { e -> Log.e(TAG, "Failed to authorize Drive", e) }
     }
 
     /**
@@ -127,41 +119,12 @@ object AuthenticationHelper {
     }
 
     /**
-     * Request Google Drive Authorization
-     */
-    fun requestDriveAuthorization(
-        activity: Activity,
-        onLaunchIntent: (IntentSenderRequest) -> Unit
-    ) {
-        val requestedScopes: List<Scope> = listOf(Scope(DRIVE_SCOPE))
-        val authorizationRequest = AuthorizationRequest.builder()
-            .setRequestedScopes(requestedScopes)
-            .build()
-
-        Identity.getAuthorizationClient(activity)
-            .authorize(authorizationRequest)
-            .addOnSuccessListener { authorizationResult ->
-                if (authorizationResult.hasResolution()) {
-                    val pendingIntent = authorizationResult.pendingIntent
-
-                    // Pass intent back to MainActivity to ask user for access
-                    if (pendingIntent != null) {
-                        onLaunchIntent(IntentSenderRequest.Builder(pendingIntent.intentSender).build())
-                    }
-                } else {
-                    // Access was previously granted
-                    handleDriveAuthorization(activity, authorizationResult)
-                }
-            }
-            .addOnFailureListener { e -> Log.e(TAG, "Failed to authorize Drive", e) }
-    }
-
-    /**
      * Verifies the final token
      */
     fun handleDriveAuthorization(
         activity: Activity,
-        authorizationResult: AuthorizationResult
+        authorizationResult: AuthorizationResult,
+        onSuccess: () -> Unit
     ) {
         val grantedScopes = authorizationResult.grantedScopes
 
@@ -175,6 +138,7 @@ object AuthenticationHelper {
         }
 
         Log.d(TAG, "SUCCESS! Google Drive AppData access token granted.")
+        onSuccess()
         // TODO: do something with access token
     }
 
@@ -185,5 +149,49 @@ object AuthenticationHelper {
         val randomBytes = ByteArray(byteLength)
         SecureRandom().nextBytes(randomBytes)
         return Base64.encodeToString(randomBytes, Base64.NO_WRAP or Base64.URL_SAFE or Base64.NO_PADDING)
+    }
+
+    /**
+     * Processes the result after user replies the Authorization popup
+     */
+    fun onDrivePermission(
+        activity: Activity,
+        result: ActivityResult,
+        onSuccess: () -> Unit
+    ) {
+        // If user denies Google Drive Authorization
+        if (result.resultCode != Activity.RESULT_OK) {
+            Toast.makeText(
+                activity,
+                "Google Drive permission denied",
+                Toast.LENGTH_SHORT
+            ).show()
+            return
+        }
+
+        val data = result.data
+        if (data == null) {
+            Toast.makeText(
+                activity,
+                "Missing Google Drive authorization",
+                Toast.LENGTH_SHORT
+            ).show()
+            return
+        }
+
+        try {
+            val authorizationResult = Identity
+                .getAuthorizationClient(activity)
+                .getAuthorizationResultFromIntent(data)
+
+            handleDriveAuthorization(activity, authorizationResult, onSuccess)
+        } catch (e: ApiException) {
+            Log.e(TAG, "Google Drive authorization failed", e)
+            Toast.makeText(
+                activity,
+                "Google Drive authorization failed",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
     }
 }
