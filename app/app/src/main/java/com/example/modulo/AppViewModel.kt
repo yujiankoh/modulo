@@ -1,7 +1,9 @@
 package com.example.modulo
 
+import androidx.annotation.RestrictTo
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,14 +27,23 @@ data class AppSyncData(
 )
 
 class AppViewModel : ViewModel() {
+    var isDriveSyncEnabled = false
+        private set
+
+    fun setDriveSync(isEnabled: Boolean) {
+        isDriveSyncEnabled = isEnabled
+    }
+
     private val _syncData = MutableStateFlow(AppSyncData())
     val syncData = _syncData.asStateFlow()
 
-    private val _syncState = MutableStateFlow(SyncState.IDLE)
+    private val _syncState = MutableStateFlow(SyncState.SYNCED)
     val syncState = _syncState.asStateFlow()
 
     // Only sync after a moment of inactivity
     private var delaySync: Job? = null
+
+    // TODO: load data based on local save / sync save based on time
 
     // Temporary tester
     fun incrementCounter() {
@@ -44,14 +55,16 @@ class AppViewModel : ViewModel() {
     private fun updateData(updateFunction: (AppSyncData) -> AppSyncData) {
         _syncData.value = updateFunction(_syncData.value)
 
-        // Reset state to UNSYNCED while user is interacting
-        _syncState.value = SyncState.UNSYNCED
+        if (isDriveSyncEnabled) {
+            // Reset state to UNSYNCED while user is interacting
+            _syncState.value = SyncState.UNSYNCED
 
-        // Cancel previous delay and start a new one
-        delaySync?.cancel()
-        delaySync = viewModelScope.launch {
-            delay(1000L) // Wait for 1s of inactivity
-            triggerDriveSync()
+            // Cancel previous delay and start a new one
+            delaySync?.cancel()
+            delaySync = viewModelScope.launch {
+                delay(1000L) // Wait for 1s of inactivity
+                triggerDriveSync()
+            }
         }
     }
 

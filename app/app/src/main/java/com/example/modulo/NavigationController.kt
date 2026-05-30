@@ -48,9 +48,6 @@ fun AppNavigation(
 
             HomePage(
                 isDriveSyncEnabled = homeArgs.isDriveSyncEnabled,
-                onCounterIncrease = { newCount ->
-                    println("Counter is now $newCount. Sync Enabled: ${homeArgs.isDriveSyncEnabled}")
-                }
             )
         }
     }
