@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MODULO</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- Google Identity Services: the library that runs the sign-in popup -->
+  <script src="https://accounts.google.com/gsi/client" async></script>
+</head>
+<body>
+  <h1>MODULO</h1>
+  <button id="connectBtn">Connect Google Drive</button>
+  <p id="status">Not connected</p>
+  
+  <hr />
+  <textarea id="dataInput" rows="3" cols="40" placeholder="Type anything to save to Drive..."></textarea>
+  <br />
+  <button id="saveBtn">Save to Drive</button>
+  <button id="loadBtn">Load from Drive</button>
+  <pre id="output"></pre>
+
+  <script src="app.js"></script>
+</body>
+</html>
