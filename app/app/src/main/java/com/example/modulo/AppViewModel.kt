@@ -18,9 +18,9 @@ enum class SyncState{
 }
 
 /**
- * This data class encapsulates all the information that needs to be synced
+ * This data class encapsulates all the information that needs to be saved
  */
-data class AppSyncData(
+data class AppData(
     val counter: Int = 0,
     // val tasks: List<String> = emptyList(),
     // val settings...
@@ -34,8 +34,8 @@ class AppViewModel : ViewModel() {
         isDriveSyncEnabled = isEnabled
     }
 
-    private val _syncData = MutableStateFlow(AppSyncData())
-    val syncData = _syncData.asStateFlow()
+    private val _appData = MutableStateFlow(AppData())
+    val appData = _appData.asStateFlow()
 
     private val _syncState = MutableStateFlow(SyncState.SYNCED)
     val syncState = _syncState.asStateFlow()
@@ -52,8 +52,10 @@ class AppViewModel : ViewModel() {
 
     // TODO: other functions to change appdata
 
-    private fun updateData(updateFunction: (AppSyncData) -> AppSyncData) {
-        _syncData.value = updateFunction(_syncData.value)
+    private fun updateData(updateFunction: (AppData) -> AppData) {
+        _appData.value = updateFunction(_appData.value)
+
+        // TODO: update local save
 
         if (isDriveSyncEnabled) {
             // Reset state to UNSYNCED while user is interacting

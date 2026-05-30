@@ -24,7 +24,7 @@ fun HomePage(
     isDriveSyncEnabled: Boolean,
     viewModel: AppViewModel = viewModel()
 ) {
-    val syncData by viewModel.syncData.collectAsState()
+    val appData by viewModel.appData.collectAsState()
     val syncState by viewModel.syncState.collectAsState()
 
     val statusText = when (syncState) {
@@ -51,7 +51,7 @@ fun HomePage(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Text(text = "Count: ${syncData.counter}")
+        Text(text = "Count: ${appData.counter}")
 
         Spacer(modifier = Modifier.height(16.dp))
 
