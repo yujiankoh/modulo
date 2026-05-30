@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MODULO</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- Google Identity Services: the library that runs the sign-in popup -->
+  <script src="https://accounts.google.com/gsi/client" async></script>
+</head>
+<body>
+  <h1>MODULO</h1>
+  <button id="connectBtn">Connect Google Drive</button>
+  <p id="status">Not connected</p>
+
+  <hr />
+  <h2>Tasks</h2>
+  <input id="taskTitle" type="text" placeholder="Task title (e.g. CS1101S tutorial)" />
+  <input id="taskDue" type="date" />
+  <select id="taskType">
+    <option value="assignment">Assignment</option>
+    <option value="tutorial">Tutorial</option>
+    <option value="quiz">Quiz</option>
+    <option value="exam">Exam</option>
+  </select>
+  <button id="addBtn">Add Task</button>
+  <button id="reloadBtn">Reload from Drive</button>
+
+  <ul id="taskList"></ul>
+  <script src="app.js"></script>
+</body>
+</html>
