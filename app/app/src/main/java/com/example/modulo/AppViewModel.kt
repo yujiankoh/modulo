@@ -4,6 +4,7 @@ import androidx.annotation.RestrictTo
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import io.grpc.Deadline
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,10 +19,20 @@ enum class SyncState{
 }
 
 /**
+ * This data class encapsulates the information of a task
+ */
+data class Task(
+    val title: String,
+    val type: String,
+    val deadline: String,
+    val isCompleted: Boolean
+)
+
+/**
  * This data class encapsulates all the information that needs to be saved
  */
 data class AppData(
-    // val tasks: List<String> = emptyList(),
+    val tasks: List<Task> = emptyList(),
     // val settings...
 )
 
@@ -45,6 +56,13 @@ class AppViewModel : ViewModel() {
     // TODO: load data based on local save / sync save based on time
 
     // TODO: other functions to change appdata
+    fun addTask(title: String, type: String, deadline: String, isCompleted: Boolean) {
+        val newTask = Task(title, type, deadline, isCompleted)
+
+        updateData { currentData ->
+            currentData.copy(tasks = currentData.tasks + newTask)
+        }
+    }
 
     private fun updateData(updateFunction: (AppData) -> AppData) {
         _appData.value = updateFunction(_appData.value)

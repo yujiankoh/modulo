@@ -2,15 +2,22 @@ package com.example.modulo
 
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenuItem
@@ -47,6 +54,10 @@ fun HomePage(
     val appData by viewModel.appData.collectAsState()
     val syncState by viewModel.syncState.collectAsState()
 
+    val inputTitle = rememberTextFieldState()
+    var selectedTaskType by remember { mutableStateOf("Assignment") }
+    var selectedDeadline by remember { mutableStateOf("") }
+
     val statusText = when (syncState) {
         SyncState.UNSYNCED -> "Unsynced changes..."
         SyncState.SYNCING -> "Syncing to Drive..."
@@ -63,30 +74,69 @@ fun HomePage(
             .wrapContentSize(Alignment.Center),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        Spacer(modifier = Modifier.height(24.dp))
         Text("HomePage")
-
-        Spacer(modifier = Modifier.height(16.dp))
-
+        Spacer(modifier = Modifier.height(8.dp))
         Text(text = "Drive Sync is ${if (isDriveSyncEnabled) "ON" else "OFF"}")
-
         Spacer(modifier = Modifier.height(16.dp))
 
         OutlinedTextField(
-            state = rememberTextFieldState(),
+            state = inputTitle,
             label = { Text("Title") }
         )
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         Row(
             modifier = Modifier,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            TaskTypeDropDownMenu()
+            TaskTypeDropDownMenu(
+                selectedType = selectedTaskType,
+                onTypeSelected = {selectedType -> selectedTaskType = selectedType}
+            )
 
             Spacer(modifier = Modifier.width(12.dp))
 
-            DeadlinePicker()
+            DeadlinePicker(
+                selectedDate = selectedDeadline,
+                onDateSelected = {selectedDate -> selectedDeadline = selectedDate}
+            )
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Button(
+            onClick = {
+                if (inputTitle.text.isNotBlank() && selectedDeadline.isNotBlank()) {
+                    viewModel.addTask(
+                        inputTitle.text.toString(),
+                        selectedTaskType,
+                        selectedDeadline,
+                        false
+                    )
+
+                    // Clear input fields
+                    inputTitle.edit { replace(0, length, "") }
+                    selectedDeadline = ""
+                }
+            }
+        ) {
+            Text("Add Task")
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+        Text("My Tasks:")
+        Spacer(modifier = Modifier.height(8.dp))
+
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+        ) {
+            items(appData.tasks) { task ->
+                TaskCard(task)
+            }
         }
 
         if (isDriveSyncEnabled) {
@@ -98,17 +148,19 @@ fun HomePage(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TaskTypeDropDownMenu() {
+fun TaskTypeDropDownMenu(
+    selectedType: String,
+    onTypeSelected: (String) -> Unit
+) {
     var isExpanded by remember { mutableStateOf(false) }
     val taskTypes = arrayOf("Assignment", "Tutorial", "Quiz", "Exam")
-    var selectedText by remember { mutableStateOf(taskTypes[0]) }
 
     ExposedDropdownMenuBox(
         expanded = isExpanded,
         onExpandedChange = { isExpanded = !isExpanded }
     ) {
         OutlinedTextField(
-            value = selectedText,
+            value = selectedType,
             onValueChange = {},
             readOnly = true,
             label = { Text("Task Type") },
@@ -126,7 +178,7 @@ fun TaskTypeDropDownMenu() {
                 DropdownMenuItem(
                     text = { Text(text = item) },
                     onClick = {
-                        selectedText = item
+                        onTypeSelected(item)
                         isExpanded = false
                     }
                 )
@@ -136,10 +188,11 @@ fun TaskTypeDropDownMenu() {
 }
 
 @Composable
-fun DeadlinePicker(modifier: Modifier = Modifier) {
+fun DeadlinePicker(
+    selectedDate: String,
+    onDateSelected: (String) -> Unit,
+) {
     var showCalendar by remember { mutableStateOf(false) }
-    var selectedDateText by remember { mutableStateOf("") }
-
     val datePickerState = rememberDatePickerState()
 
     val interactionSource = remember { MutableInteractionSource() }
@@ -152,13 +205,13 @@ fun DeadlinePicker(modifier: Modifier = Modifier) {
     }
 
     OutlinedTextField(
-        value = selectedDateText,
+        value = selectedDate,
         onValueChange = { }, // Read-only, so this stays completely empty
         label = { Text("Deadline") },
         placeholder = { Text("MM/DD/YYYY") },
         readOnly = true,
         interactionSource = interactionSource, // Attach the click listener here
-        modifier = modifier.width(100.dp)
+        modifier = Modifier.width(100.dp)
     )
 
     if (showCalendar) {
@@ -170,7 +223,7 @@ fun DeadlinePicker(modifier: Modifier = Modifier) {
                         showCalendar = false
                         datePickerState.selectedDateMillis?.let { millis ->
                             val formatter = SimpleDateFormat("MM/dd/yyyy", Locale.getDefault())
-                            selectedDateText = formatter.format(Date(millis))
+                            onDateSelected(formatter.format(Date(millis)))
                         }
                     }
                 ) {
@@ -186,6 +239,38 @@ fun DeadlinePicker(modifier: Modifier = Modifier) {
             }
         ) {
             DatePicker(state = datePickerState)
+        }
+    }
+}
+
+@Composable
+fun TaskCard(task: Task) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp, horizontal = 8.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Text(
+                text = task.title,
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = task.type,
+                )
+                Text(
+                    text = "Due: ${task.deadline}",
+                )
+            }
         }
     }
 }
