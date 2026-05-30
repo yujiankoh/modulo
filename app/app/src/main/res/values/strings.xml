@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">modulo</string>
+    <string name="jetpack_compose_tutorial">Jetpack Compose tutorial</string>
+</resources>
