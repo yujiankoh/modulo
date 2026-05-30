@@ -24,6 +24,7 @@ window.onload = () => {
       accessToken = response.access_token;
       statusEl.textContent = "Connected! Token: " + accessToken.slice(0, 12) + "...";
       console.log("Full access token:", accessToken);
+      loadInitialData();
     },
   });
 };
@@ -92,21 +93,95 @@ async function loadData() {
   return await res.json();
 }
 
-// --- wire up the buttons ---
-const dataInput = document.getElementById("dataInput");
-const outputEl = document.getElementById("output");
+// ===== MODULO app state: the single source of truth, held in memory =====
+let appState = {
+  tasks: [],        // a list of task objects
+  timetable: null,  // filled later by the AI timetable parser
+  updatedAt: null,  // when the state was last saved
+};
 
-document.getElementById("saveBtn").addEventListener("click", async () => {
-  if (!accessToken) { outputEl.textContent = "Connect Google Drive first."; return; }
-  const payload = { text: dataInput.value, savedAt: new Date().toISOString() };
-  await saveData(payload);
-  outputEl.textContent = "Saved to Drive:\n" + JSON.stringify(payload, null, 2);
+// Save the WHOLE current state to Drive (stamping the time first).
+async function persist() {
+  appState.updatedAt = new Date().toISOString();
+  await saveData(appState);
+}
+
+// Load the saved state from Drive into memory, then draw it.
+async function loadInitialData() {
+  const saved = await loadData();
+  if (saved) {
+    appState = saved;
+    if (!appState.tasks) appState.tasks = []; // safety if the file is old/empty
+  }
+  render();
+}
+
+// --- actions: each one changes memory, saves, then re-draws ---
+async function addTask(title, due, type) {
+  appState.tasks.push({
+    id: Date.now(),   // simple unique id: milliseconds since 1970
+    title,
+    due,
+    type,
+    done: false,
+  });
+  await persist();
+  render();
+}
+
+async function toggleTask(id) {
+  const task = appState.tasks.find((t) => t.id === id);
+  if (task) task.done = !task.done; // flip true<->false
+  await persist();
+  render();
+}
+
+async function deleteTask(id) {
+  appState.tasks = appState.tasks.filter((t) => t.id !== id); // keep all EXCEPT this id
+  await persist();
+  render();
+}
+
+// --- draw the current state onto the page ---
+function render() {
+  const list = document.getElementById("taskList");
+  list.innerHTML = ""; // wipe the list, then rebuild it from appState
+
+  if (appState.tasks.length === 0) {
+    list.innerHTML = "<li>No tasks yet.</li>";
+    return;
+  }
+
+  appState.tasks.forEach((task) => {
+    const li = document.createElement("li");
+    li.textContent = `${task.title} — ${task.type} — due ${task.due || "no date"} `;
+    if (task.done) li.style.textDecoration = "line-through";
+
+    const toggleBtn = document.createElement("button");
+    toggleBtn.textContent = task.done ? "Undo" : "Done";
+    toggleBtn.addEventListener("click", () => toggleTask(task.id));
+
+    const delBtn = document.createElement("button");
+    delBtn.textContent = "Delete";
+    delBtn.addEventListener("click", () => deleteTask(task.id));
+
+    li.append(" ", toggleBtn, " ", delBtn);
+    list.append(li);
+  });
+}
+
+// --- wire up the buttons ---
+document.getElementById("addBtn").addEventListener("click", () => {
+  if (!accessToken) { alert("Connect Google Drive first."); return; }
+  const title = document.getElementById("taskTitle").value.trim();
+  const due = document.getElementById("taskDue").value;
+  const type = document.getElementById("taskType").value;
+  if (!title) { alert("Enter a task title."); return; }
+  addTask(title, due, type);
+  document.getElementById("taskTitle").value = ""; // clear the input
 });
 
-document.getElementById("loadBtn").addEventListener("click", async () => {
-  if (!accessToken) { outputEl.textContent = "Connect Google Drive first."; return; }
-  const data = await loadData();
-  outputEl.textContent = data
-    ? "Loaded from Drive:\n" + JSON.stringify(data, null, 2)
-    : "No data found in Drive yet.";
+document.getElementById("reloadBtn").addEventListener("click", () => {
+  if (!accessToken) { alert("Connect Google Drive first."); return; }
+  loadInitialData();
 });

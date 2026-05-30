@@ -12,14 +12,21 @@
   <h1>MODULO</h1>
   <button id="connectBtn">Connect Google Drive</button>
   <p id="status">Not connected</p>
-  
-  <hr />
-  <textarea id="dataInput" rows="3" cols="40" placeholder="Type anything to save to Drive..."></textarea>
-  <br />
-  <button id="saveBtn">Save to Drive</button>
-  <button id="loadBtn">Load from Drive</button>
-  <pre id="output"></pre>
 
+  <hr />
+  <h2>Tasks</h2>
+  <input id="taskTitle" type="text" placeholder="Task title (e.g. CS1101S tutorial)" />
+  <input id="taskDue" type="date" />
+  <select id="taskType">
+    <option value="assignment">Assignment</option>
+    <option value="tutorial">Tutorial</option>
+    <option value="quiz">Quiz</option>
+    <option value="exam">Exam</option>
+  </select>
+  <button id="addBtn">Add Task</button>
+  <button id="reloadBtn">Reload from Drive</button>
+
+  <ul id="taskList"></ul>
   <script src="app.js"></script>
 </body>
 </html>
