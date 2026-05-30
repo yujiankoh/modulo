@@ -53,9 +53,11 @@ fun HomePage(
     isDriveSyncEnabled: Boolean,
     viewModel: AppViewModel = viewModel()
 ) {
+    // Collect info from the model
     val appData by viewModel.appData.collectAsState()
     val syncState by viewModel.syncState.collectAsState()
 
+    // States from the create-task fields
     val inputTitle = rememberTextFieldState()
     var selectedTaskType by remember { mutableStateOf("Assignment") }
     var selectedDeadline by remember { mutableStateOf("") }
@@ -66,6 +68,7 @@ fun HomePage(
         SyncState.SYNCED -> "All changes synced"
     }
 
+    // Relays information to model is user turns on/off Drive Syncing
     LaunchedEffect(isDriveSyncEnabled) {
         viewModel.setDriveSync(isDriveSyncEnabled);
     }
@@ -213,11 +216,11 @@ fun DeadlinePicker(
 
     OutlinedTextField(
         value = selectedDate,
-        onValueChange = { }, // Read-only, so this stays completely empty
+        onValueChange = { },
         label = { Text("Deadline") },
         placeholder = { Text("MM/DD/YYYY") },
         readOnly = true,
-        interactionSource = interactionSource, // Attach the click listener here
+        interactionSource = interactionSource,
         modifier = Modifier.width(100.dp)
     )
 
@@ -259,7 +262,7 @@ fun TaskCard(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp, horizontal = 8.dp),
-        //elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -294,20 +297,6 @@ fun TaskCard(
                     Text(text = "Due: ${task.deadline}",)
                 }
             }
-
-
         }
-    }
-}
-
-
-@Preview(
-    showBackground = true,
-    showSystemUi = true
-)
-@Composable
-fun LayoutPreview() {
-    ModuloTheme {
-        HomePage(isDriveSyncEnabled = false)
     }
 }
