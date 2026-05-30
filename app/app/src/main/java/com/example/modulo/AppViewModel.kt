@@ -21,7 +21,6 @@ enum class SyncState{
  * This data class encapsulates all the information that needs to be saved
  */
 data class AppData(
-    val counter: Int = 0,
     // val tasks: List<String> = emptyList(),
     // val settings...
 )
@@ -44,11 +43,6 @@ class AppViewModel : ViewModel() {
     private var delaySync: Job? = null
 
     // TODO: load data based on local save / sync save based on time
-
-    // Temporary tester
-    fun incrementCounter() {
-        updateData { appData -> appData.copy(counter = appData.counter + 1) }
-    }
 
     // TODO: other functions to change appdata
 
