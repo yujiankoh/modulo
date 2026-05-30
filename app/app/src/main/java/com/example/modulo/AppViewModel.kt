@@ -64,6 +64,20 @@ class AppViewModel : ViewModel() {
         }
     }
 
+    fun toggleTaskCompletion(toggledTask: Task) {
+        updateData { currentData ->
+            val updatedTasks = currentData.tasks.map { task ->
+                if (task == toggledTask) {
+                    task.copy(isCompleted = !task.isCompleted)
+                } else {
+                    task
+                }
+            }
+
+            currentData.copy(tasks = updatedTasks)
+        }
+    }
+
     private fun updateData(updateFunction: (AppData) -> AppData) {
         _appData.value = updateFunction(_appData.value)
 
