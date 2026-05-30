@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
@@ -15,13 +17,25 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 @Composable
 fun HomePage(
     isDriveSyncEnabled: Boolean,
-    onCounterIncrease: (Int) -> Unit
+    viewModel: AppViewModel = viewModel()
 ) {
-    var counter by remember { mutableIntStateOf(0) }
+    val appData by viewModel.appData.collectAsState()
+    val syncState by viewModel.syncState.collectAsState()
+
+    val statusText = when (syncState) {
+        SyncState.UNSYNCED -> "Unsynced changes..."
+        SyncState.SYNCING -> "Syncing to Drive..."
+        SyncState.SYNCED -> "All changes synced"
+    }
+
+    LaunchedEffect(isDriveSyncEnabled) {
+        viewModel.setDriveSync(isDriveSyncEnabled);
+    }
 
     Column(
         modifier = Modifier
@@ -37,17 +51,23 @@ fun HomePage(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Text(text = "Count: $counter")
+        Text(text = "Count: ${appData.counter}")
 
         Spacer(modifier = Modifier.height(16.dp))
 
         Button(
             onClick = {
-                counter++
-                onCounterIncrease(counter)
+                viewModel.incrementCounter()
             }
         ) {
             Text("Increase Counter")
         }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        if (isDriveSyncEnabled) {
+            Text(text = statusText)
+        }
+
     }
 }

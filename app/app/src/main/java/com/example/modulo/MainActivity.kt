@@ -72,18 +72,3 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
-
-@Preview(
-    showBackground = true,
-    showSystemUi = false
-)
-@Composable
-fun LayoutPreview() {
-    ModuloTheme {
-        HomePage(
-            false,
-            { newCount ->
-                println("Preview Action: Counter increased to $newCount (Sync Offline)") }
-        )
-    }
-}
