@@ -5,6 +5,7 @@ const CLIENT_ID = "332114614658-87cqh1e2u8luh9b5q15sf22sb30i3nda.apps.googleuser
 const SCOPES = "https://www.googleapis.com/auth/drive.appdata";
 
 let accessToken = null;   // we'll store the token here once we get it
+let tokenExpiry = 0;      // timestamp (ms) when the current token goes stale
 let tokenClient;          // Google's helper object, set up once the library loads
 
 const statusEl = document.getElementById("status");
