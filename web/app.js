@@ -4,9 +4,13 @@ const CLIENT_ID = "332114614658-87cqh1e2u8luh9b5q15sf22sb30i3nda.apps.googleuser
 // The permission we're requesting: access ONLY to our app's private Drive folder.
 const SCOPES = "https://www.googleapis.com/auth/drive.appdata";
 
-let accessToken = null;   // we'll store the token here once we get it
-let tokenExpiry = 0;      // timestamp (ms) when the current token goes stale
-let tokenClient;          // Google's helper object, set up once the library loads
+const LOCAL_KEY = "modulo-data";   // where local data is stored
+const MODE_KEY = "modulo-mode";    // remembers the user's choice
+let storageMode = null;            // "drive" | "local" | null (not chosen yet)
+let accessToken = null;
+let tokenExpiry = 0;       // timestamp (ms) when the current token goes stale
+let tokenClient;
+let resolveToken = null;   // used to "wait" for a token (explained below)
 
 const statusEl = document.getElementById("status");
 const connectBtn = document.getElementById("connectBtn");
@@ -17,22 +21,60 @@ window.onload = () => {
     client_id: CLIENT_ID,
     scope: SCOPES,
     callback: (response) => {
-      // This fires once the user finishes the Google popup
       if (response.error) {
-        statusEl.textContent = "Error: " + response.error;
+        statusEl.textContent = "Sign-in error: " + response.error;
+        if (resolveToken) { resolveToken(false); resolveToken = null; }
         return;
       }
       accessToken = response.access_token;
-      statusEl.textContent = "Connected! Token: " + accessToken.slice(0, 12) + "...";
-      console.log("Full access token:", accessToken);
-      loadInitialData();
+      tokenExpiry = Date.now() + (response.expires_in - 60) * 1000;
+      statusEl.textContent = "Connected to Google Drive.";
+      if (resolveToken) { resolveToken(true); resolveToken = null; }
     },
   });
+
+  // --- NEW: restore the user's saved mode on reload ---
+  const savedMode = localStorage.getItem(MODE_KEY);
+  if (savedMode === "local") {
+    storageMode = "local";
+    statusEl.textContent = "Local mode (this device only).";
+    loadInitialData();
+  } else if (savedMode === "drive") {
+    statusEl.textContent = "Click Connect Google Drive to resume sync.";
+    // (Drive needs a fresh token, so we wait for the user to click Connect.)
+  }
 };
 
+// Ask Google for a token, wrapped so we can `await` it.
+function getToken() {
+  return new Promise((resolve) => {
+    resolveToken = resolve;             // remember how to finish this promise
+    tokenClient.requestAccessToken();   // triggers Google; the callback finishes it
+  });
+}
+
+// Guarantee a valid, unexpired token before any Drive call.
+async function ensureToken() {
+  if (accessToken && Date.now() < tokenExpiry) return true; // still good
+  return await getToken();                                  // stale/missing → ask again
+}
+
 // Clicking the button opens Google's account chooser + consent popup
-connectBtn.addEventListener("click", () => {
-  tokenClient.requestAccessToken();
+connectBtn.addEventListener("click", async () => {
+  const ok = await getToken();
+  if (ok) {
+    storageMode = "drive";
+    localStorage.setItem(MODE_KEY, "drive");
+    loadInitialData();
+  }
+});
+
+const localBtn = document.getElementById("localBtn");
+localBtn.addEventListener("click", () => {
+  storageMode = "local";
+  localStorage.setItem(MODE_KEY, "local");
+  statusEl.textContent = "Local mode (this device only).";
+  loadInitialData();
 });
 
 // The single file we'll store MODULO's data in, inside the hidden app folder.
@@ -105,15 +147,27 @@ let appState = {
 // Save the WHOLE current state to Drive (stamping the time first).
 async function persist() {
   appState.updatedAt = new Date().toISOString();
-  await saveData(appState);
+  if (storageMode === "drive") {
+    if (!(await ensureToken())) { statusEl.textContent = "Please reconnect Google Drive."; return; }
+    await saveData(appState);                              // → Google Drive
+  } else if (storageMode === "local") {
+    localStorage.setItem(LOCAL_KEY, JSON.stringify(appState)); // → this device
+  }
 }
 
 // Load the saved state from Drive into memory, then draw it.
 async function loadInitialData() {
-  const saved = await loadData();
+  let saved = null;
+  if (storageMode === "drive") {
+    if (!(await ensureToken())) { statusEl.textContent = "Please reconnect Google Drive."; return; }
+    saved = await loadData();                              // ← Google Drive
+  } else if (storageMode === "local") {
+    const raw = localStorage.getItem(LOCAL_KEY);
+    saved = raw ? JSON.parse(raw) : null;                 // ← this device
+  }
   if (saved) {
     appState = saved;
-    if (!appState.tasks) appState.tasks = []; // safety if the file is old/empty
+    if (!appState.tasks) appState.tasks = [];
   }
   render();
 }
@@ -180,7 +234,7 @@ function render() {
 
 // --- wire up the buttons ---
 document.getElementById("addBtn").addEventListener("click", () => {
-  if (!accessToken) { alert("Connect Google Drive first."); return; }
+  if (!storageMode) { alert("Choose Google Drive or local mode first."); return; }
   const title = document.getElementById("taskTitle").value.trim();
   const due = document.getElementById("taskDue").value;
   const type = document.getElementById("taskType").value;
@@ -190,6 +244,6 @@ document.getElementById("addBtn").addEventListener("click", () => {
 });
 
 document.getElementById("reloadBtn").addEventListener("click", () => {
-  if (!accessToken) { alert("Connect Google Drive first."); return; }
+  if (!storageMode) { alert("Choose Google Drive or local mode first."); return; }
   loadInitialData();
 });
