@@ -4,6 +4,7 @@ import androidx.annotation.RestrictTo
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import io.grpc.Deadline
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,11 +19,20 @@ enum class SyncState{
 }
 
 /**
+ * This data class encapsulates the information of a task
+ */
+data class Task(
+    val title: String,
+    val type: String,
+    val deadline: String,
+    val isCompleted: Boolean
+)
+
+/**
  * This data class encapsulates all the information that needs to be saved
  */
 data class AppData(
-    val counter: Int = 0,
-    // val tasks: List<String> = emptyList(),
+    val tasks: List<Task> = emptyList(),
     // val settings...
 )
 
@@ -45,12 +55,28 @@ class AppViewModel : ViewModel() {
 
     // TODO: load data based on local save / sync save based on time
 
-    // Temporary tester
-    fun incrementCounter() {
-        updateData { appData -> appData.copy(counter = appData.counter + 1) }
+    // TODO: other functions to change appdata
+    fun addTask(title: String, type: String, deadline: String, isCompleted: Boolean) {
+        val newTask = Task(title, type, deadline, isCompleted)
+
+        updateData { currentData ->
+            currentData.copy(tasks = currentData.tasks + newTask)
+        }
     }
 
-    // TODO: other functions to change appdata
+    fun toggleTaskCompletion(toggledTask: Task) {
+        updateData { currentData ->
+            val updatedTasks = currentData.tasks.map { task ->
+                if (task == toggledTask) {
+                    task.copy(isCompleted = !task.isCompleted)
+                } else {
+                    task
+                }
+            }
+
+            currentData.copy(tasks = updatedTasks)
+        }
+    }
 
     private fun updateData(updateFunction: (AppData) -> AppData) {
         _appData.value = updateFunction(_appData.value)

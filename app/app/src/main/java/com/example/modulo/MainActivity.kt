@@ -1,6 +1,5 @@
 package com.example.modulo
 
-import android.app.Activity
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -15,10 +14,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.credentials.CredentialManager
-import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.rememberNavController
 import com.example.modulo.ui.theme.ModuloTheme
-import kotlin.contracts.contract
 
 class MainActivity : ComponentActivity() {
     private lateinit var credentialManager: CredentialManager
