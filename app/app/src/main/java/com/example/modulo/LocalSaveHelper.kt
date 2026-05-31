@@ -6,7 +6,7 @@ import kotlinx.serialization.encodeToString
 import java.io.File
 
 class LocalSaveHelper(private val context: Context) {
-    private val TAG = "Local Save"
+    private val TAG = "LocalSave"
     private val FILENAME = "modulo-data.json"
 
     fun saveData(appData: AppData) {

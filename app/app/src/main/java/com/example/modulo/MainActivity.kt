@@ -50,7 +50,11 @@ class MainActivity : ComponentActivity() {
                 val driveAuthorizationLauncher = rememberLauncherForActivityResult(
                     contract = ActivityResultContracts.StartIntentSenderForResult()
                 ) { result ->
-                    AuthenticationHelper.onDrivePermission(this, result, navigateToHomeAfterSync)
+                    AuthenticationHelper.onDrivePermission(
+                        this,
+                        result,
+                        appViewModel.getUserEmail(),
+                        navigateToHomeAfterSync)
                 }
 
                 Surface(
@@ -65,7 +69,8 @@ class MainActivity : ComponentActivity() {
                                 activity = this@MainActivity,
                                 scope = scope,
                                 credentialManager = credentialManager,
-                                onLaunchIntent = { intentRequest ->
+                                onLaunchIntent = { intentRequest, userEmail ->
+                                    appViewModel.setUserEmail(userEmail)
                                     driveAuthorizationLauncher.launch(intentRequest)
                                 },
                                 onSuccess = navigateToHomeAfterSync

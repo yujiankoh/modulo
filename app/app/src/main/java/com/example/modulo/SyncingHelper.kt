@@ -1,5 +1,6 @@
 package com.example.modulo
 
+import android.accounts.Account
 import android.content.Context
 import android.util.Log
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential
@@ -19,11 +20,13 @@ class SyncingHelper(private val driveService: Drive) {
 
     companion object {
         fun getSyncService(context: Context, userEmail: String) : SyncingHelper {
+            
             val credential = GoogleAccountCredential.usingOAuth2(
                 context,
                 listOf(DriveScopes.DRIVE_APPDATA)
-            )
-            credential.selectedAccountName = userEmail
+            ).apply {
+                selectedAccount = Account(userEmail, "com.google")
+            }
 
             val drive = Drive.Builder(
                 NetHttpTransport(),
@@ -49,8 +52,8 @@ class SyncingHelper(private val driveService: Drive) {
 
             if (fileList.files.isNotEmpty()) {
                 // If file exist on the drive
-                val existingFileId = fileList.files[0].id
-                driveService.files().update(existingFileId, null, content).execute()
+                val fileId = fileList.files[0].id
+                driveService.files().update(fileId, null, content).execute()
                 Log.d(TAG, "Successfully updated existing $FILENAME")
             } else {
                 val fileMetadata = File().apply {
@@ -71,7 +74,32 @@ class SyncingHelper(private val driveService: Drive) {
     }
 
     suspend fun downloadAppData() : String? = withContext(Dispatchers.IO) {
-        return@withContext null
-    }
+        try {
+            val fileList = driveService.files().list()
+                .setSpaces("appDataFolder")
+                .setQ("name='$FILENAME'")
+                .setFields("files(id, name)")
+                .execute()
 
+            val files = fileList.files
+
+            if (files.isNullOrEmpty()) {
+                Log.d(TAG, "No saved data found in Google Drive.")
+                return@withContext null
+            }
+
+            val fileId = files[0].id
+
+            val outputStream = java.io.ByteArrayOutputStream()
+            driveService.files().get(fileId).executeMediaAndDownloadTo(outputStream)
+
+            val jsonString = outputStream.toString("UTF-8")
+            Log.d(TAG, "Successfully downloaded JSON string from Drive")
+
+            return@withContext jsonString
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to read from Google Drive", e)
+            return@withContext null
+        }
+    }
 }

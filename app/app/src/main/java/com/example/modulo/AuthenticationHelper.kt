@@ -23,11 +23,9 @@ import kotlinx.coroutines.launch
 import java.security.SecureRandom
 
 object AuthenticationHelper {
-    private const val TAG = "GoogleDriveAuthorization"
+    private const val TAG = "DriveAuthorization"
     private const val WEB_CLIENT_ID = "332114614658-87cqh1e2u8luh9b5q15sf22sb30i3nda.apps.googleusercontent.com"
     private const val DRIVE_SCOPE = "https://www.googleapis.com/auth/drive.appdata"
-
-    private var pendingUserEmail: String? = null
 
     /**
      * Main function to start the authentication of user and authorization of permission
@@ -36,7 +34,7 @@ object AuthenticationHelper {
         activity: Activity,
         scope: CoroutineScope,
         credentialManager: CredentialManager,
-        onLaunchIntent: (IntentSenderRequest) -> Unit,
+        onLaunchIntent: (IntentSenderRequest, String) -> Unit,
         onSuccess: (String) -> Unit
     ) {
         scope.launch {
@@ -66,7 +64,7 @@ object AuthenticationHelper {
     fun requestDriveAuthorization(
         activity: Activity,
         email: String,
-        onLaunchIntent: (IntentSenderRequest) -> Unit,
+        onLaunchIntent: (IntentSenderRequest, String) -> Unit,
         onSuccess: (String) -> Unit
     ) {
         val requestedScopes: List<Scope> = listOf(Scope(DRIVE_SCOPE))
@@ -82,8 +80,10 @@ object AuthenticationHelper {
 
                     // Pass intent back to MainActivity to ask user for access
                     if (pendingIntent != null) {
-                        pendingUserEmail = email
-                        onLaunchIntent(IntentSenderRequest.Builder(pendingIntent.intentSender).build())
+                        onLaunchIntent(
+                            IntentSenderRequest.Builder(pendingIntent.intentSender).build(),
+                            email
+                        )
                     }
                 } else {
                     // Access was previously granted
@@ -162,6 +162,7 @@ object AuthenticationHelper {
     fun onDrivePermission(
         activity: Activity,
         result: ActivityResult,
+        email: String,
         onSuccess: (String) -> Unit
     ) {
         // If user denies Google Drive Authorization
@@ -189,11 +190,7 @@ object AuthenticationHelper {
                 .getAuthorizationClient(activity)
                 .getAuthorizationResultFromIntent(data)
 
-            val email = pendingUserEmail ?: ""
-
             handleDriveAuthorization(activity, email, authorizationResult, onSuccess)
-
-            pendingUserEmail = null
         } catch (e: ApiException) {
             Log.e(TAG, "Google Drive authorization failed", e)
             Toast.makeText(
