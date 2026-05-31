@@ -1,5 +1,7 @@
 package com.example.modulo
 
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
@@ -9,7 +11,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 
-class AppViewModel : ViewModel() {
+class AppViewModel(application: Application) : AndroidViewModel(application) {
     var isDriveSyncEnabled = false
         private set
 
@@ -17,7 +19,9 @@ class AppViewModel : ViewModel() {
         isDriveSyncEnabled = isEnabled
     }
 
-    private val _appData = MutableStateFlow(AppData())
+    private val localSaveHelper = LocalSaveHelper(application)
+
+    private val _appData = MutableStateFlow(localSaveHelper.loadData())
     val appData = _appData.asStateFlow()
 
     private val _syncState = MutableStateFlow(SyncState.SYNCED)
@@ -27,8 +31,6 @@ class AppViewModel : ViewModel() {
     private var delaySync: Job? = null
 
     var syncingHelper : SyncingHelper? = null
-
-    // TODO: load data based on local save / sync save based on time
 
     // TODO: other functions to change appdata
     fun addTask(title: String, type: String, deadline: String, isCompleted: Boolean) {
@@ -61,7 +63,7 @@ class AppViewModel : ViewModel() {
     private fun updateData(updateFunction: (AppData) -> AppData) {
         _appData.value = updateFunction(_appData.value)
 
-        // TODO: update local save
+        localSaveHelper.saveData(_appData.value)
 
         if (isDriveSyncEnabled) {
             // Reset state to UNSYNCED while user is interacting
@@ -79,7 +81,6 @@ class AppViewModel : ViewModel() {
     private suspend fun triggerDriveSync() {
         _syncState.value = SyncState.SYNCING
 
-        // TODO: send JSON to Drive
         val jsonPayload = syncJsonParser.encodeToString(_appData.value)
 
         val success = syncingHelper?.uploadAppData(jsonPayload) == true

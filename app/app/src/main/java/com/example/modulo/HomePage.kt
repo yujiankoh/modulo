@@ -108,25 +108,30 @@ fun HomePage(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        Button(
-            onClick = {
-                if (inputTitle.text.isNotBlank() && selectedDeadline.isNotBlank()) {
-                    viewModel.addTask(
-                        inputTitle.text.toString(),
-                        selectedTaskType,
-                        selectedDeadline,
-                        false
-                    )
-
-                    // Clear input fields
-                    inputTitle.edit { replace(0, length, "") }
-                    selectedDeadline = ""
-                }
-            }
+        Row(
+            modifier = Modifier,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("Add Task")
-        }
+            Button(
+                onClick = {
+                    if (inputTitle.text.isNotBlank() && selectedDeadline.isNotBlank()) {
+                        viewModel.addTask(
+                            inputTitle.text.toString(),
+                            selectedTaskType,
+                            selectedDeadline,
+                            false
+                        )
 
+                        // Clear input fields
+                        inputTitle.edit { replace(0, length, "") }
+                        selectedDeadline = ""
+                    }
+                }
+            ) {
+                Text("Add Task")
+            }
+        }
+        
         Spacer(modifier = Modifier.height(24.dp))
         Text("My Tasks:")
         Spacer(modifier = Modifier.height(8.dp))

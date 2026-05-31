@@ -14,7 +14,8 @@ import kotlinx.coroutines.withContext
 import kotlin.apply
 
 class SyncingHelper(private val driveService: Drive) {
-    val TAG = "DriveSync"
+    private val TAG = "DriveSync"
+    private val FILENAME = "modulo-data.json"
 
     companion object {
         fun getSyncService(context: Context, userEmail: String) : SyncingHelper {
@@ -41,7 +42,7 @@ class SyncingHelper(private val driveService: Drive) {
             // Search for the JSON file
             val fileList = driveService.files().list()
                 .setSpaces("appDataFolder")
-                .setQ("name='modulo-data.json'")
+                .setQ("name='$FILENAME'")
                 .execute()
 
             val  content = ByteArrayContent.fromString("application/json", jsonString)
@@ -50,15 +51,15 @@ class SyncingHelper(private val driveService: Drive) {
                 // If file exist on the drive
                 val existingFileId = fileList.files[0].id
                 driveService.files().update(existingFileId, null, content).execute()
-                Log.d(TAG, "Successfully updated existing modulo-data.json")
+                Log.d(TAG, "Successfully updated existing $FILENAME")
             } else {
                 val fileMetadata = File().apply {
-                    name = "modulo-data.json"
+                    name = FILENAME
                     parents = listOf("appDataFolder")
                 }
 
                 driveService.files().create(fileMetadata, content).execute()
-                Log.d(TAG, "Successfully created new modulo-data.json")
+                Log.d(TAG, "Successfully created new $FILENAME")
             }
 
             return@withContext true
