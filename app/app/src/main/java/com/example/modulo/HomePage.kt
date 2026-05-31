@@ -59,7 +59,7 @@ fun HomePage(
 
     // States from the create-task fields
     val inputTitle = rememberTextFieldState()
-    var selectedTaskType by remember { mutableStateOf("Assignment") }
+    var selectedTaskType by remember { mutableStateOf("assignment") }
     var selectedDeadline by remember { mutableStateOf("") }
 
     val statusText = when (syncState) {
@@ -163,7 +163,7 @@ fun TaskTypeDropDownMenu(
     onTypeSelected: (String) -> Unit
 ) {
     var isExpanded by remember { mutableStateOf(false) }
-    val taskTypes = arrayOf("Assignment", "Tutorial", "Quiz", "Exam")
+    val taskTypes = arrayOf("assignment", "tutorial", "quiz", "exam")
 
     ExposedDropdownMenuBox(
         expanded = isExpanded,
@@ -278,11 +278,11 @@ fun TaskCard(
                 ) {
                     Text(
                         text = task.title,
-                        textDecoration = if (task.isCompleted) TextDecoration.LineThrough else TextDecoration.None
+                        textDecoration = if (task.done) TextDecoration.LineThrough else TextDecoration.None
                     )
 
                     Checkbox(
-                        checked = task.isCompleted,
+                        checked = task.done,
                         onCheckedChange = { onToggle(task) },
                     )
                 }
@@ -294,7 +294,7 @@ fun TaskCard(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(text = task.type,)
-                    Text(text = "Due: ${task.deadline}",)
+                    Text(text = "Due: ${task.due}",)
                 }
             }
         }

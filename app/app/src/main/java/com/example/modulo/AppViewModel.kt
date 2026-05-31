@@ -11,31 +11,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-/**
- * This enum class encapsulates the states of syncing
- */
-enum class SyncState{
-    UNSYNCED, SYNCING, SYNCED
-}
-
-/**
- * This data class encapsulates the information of a task
- */
-data class Task(
-    val title: String,
-    val type: String,
-    val deadline: String,
-    val isCompleted: Boolean
-)
-
-/**
- * This data class encapsulates all the information that needs to be saved
- */
-data class AppData(
-    val tasks: List<Task> = emptyList(),
-    // val settings...
-)
-
 class AppViewModel : ViewModel() {
     var isDriveSyncEnabled = false
         private set
@@ -57,7 +32,12 @@ class AppViewModel : ViewModel() {
 
     // TODO: other functions to change appdata
     fun addTask(title: String, type: String, deadline: String, isCompleted: Boolean) {
-        val newTask = Task(title, type, deadline, isCompleted)
+        val newTask = Task(
+            id = System.currentTimeMillis(),
+            title = title,
+            due = deadline,
+            type = type,
+            done = isCompleted)
 
         updateData { currentData ->
             currentData.copy(tasks = currentData.tasks + newTask)
@@ -68,7 +48,7 @@ class AppViewModel : ViewModel() {
         updateData { currentData ->
             val updatedTasks = currentData.tasks.map { task ->
                 if (task == toggledTask) {
-                    task.copy(isCompleted = !task.isCompleted)
+                    task.copy(done = !task.done)
                 } else {
                     task
                 }
