@@ -95,9 +95,10 @@ async function loadData() {
 
 // ===== MODULO app state: the single source of truth, held in memory =====
 let appState = {
-  tasks: [],        // a list of task objects
-  timetable: null,  // filled later by the AI timetable parser
-  updatedAt: null,  // when the state was last saved
+  schemaVersion: 1,
+  tasks: [],
+  timetable: null,
+  updatedAt: null,
 };
 
 // Save the WHOLE current state to Drive (stamping the time first).
@@ -118,12 +119,15 @@ async function loadInitialData() {
 
 // --- actions: each one changes memory, saves, then re-draws ---
 async function addTask(title, due, type) {
+  const now = new Date().toISOString();
   appState.tasks.push({
-    id: Date.now(),   // simple unique id: milliseconds since 1970
+    id: Date.now(),
     title,
     due,
     type,
     done: false,
+    createdAt: now,
+    updatedAt: now,   // same as createdAt at first; updated whenever the task changes
   });
   await persist();
   render();
@@ -131,7 +135,10 @@ async function addTask(title, due, type) {
 
 async function toggleTask(id) {
   const task = appState.tasks.find((t) => t.id === id);
-  if (task) task.done = !task.done; // flip true<->false
+  if (task) {
+    task.done = !task.done;
+    task.updatedAt = new Date().toISOString();   // <-- stamp the change
+  }
   await persist();
   render();
 }
