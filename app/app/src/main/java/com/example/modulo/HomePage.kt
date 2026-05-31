@@ -1,5 +1,6 @@
 package com.example.modulo
 
+import android.util.Log
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -230,10 +231,10 @@ fun DeadlinePicker(
     }
 
     OutlinedTextField(
-        value = selectedDate,
+        value = formatDate(selectedDate),
         onValueChange = { },
         label = { Text("Deadline") },
-        placeholder = { Text("MM/DD/YYYY") },
+        placeholder = { Text("DD/MM/YYYY") },
         readOnly = true,
         interactionSource = interactionSource,
         modifier = Modifier.width(100.dp)
@@ -247,7 +248,7 @@ fun DeadlinePicker(
                     onClick = {
                         showCalendar = false
                         datePickerState.selectedDateMillis?.let { millis ->
-                            val formatter = SimpleDateFormat("MM/dd/yyyy", Locale.getDefault())
+                            val formatter = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
                                 .apply {
                                     timeZone = java.util.TimeZone.getTimeZone("UTC")
                                 }
@@ -312,9 +313,25 @@ fun TaskCard(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(text = task.type,)
-                    Text(text = "Due: ${task.due}",)
+                    Text(text = "Due: ${formatDate(task.due)}",)
                 }
             }
         }
+    }
+}
+
+fun formatDate(dataDate: String): String {
+    if (dataDate.isBlank()) return ""
+
+    return try {
+        val parser = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+
+        val formatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+
+        val date = parser.parse(dataDate)
+
+        if (date != null) formatter.format(date) else dataDate
+    } catch (e: Exception) {
+        dataDate
     }
 }
