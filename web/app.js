@@ -139,6 +139,7 @@ async function loadData() {
 // ===== MODULO app state: the single source of truth, held in memory =====
 let appState = {
   schemaVersion: 1,
+  educationLevel: null,   // "primary" | "secondary" | "jc" | "poly" | "university"
   tasks: [],
   timetable: null,
   updatedAt: null,
@@ -167,6 +168,7 @@ async function loadInitialData() {
   }
   if (saved) {
     appState = saved;
+    if (appState.educationLevel) eduLevelEl.value = appState.educationLevel;
     if (!appState.tasks) appState.tasks = [];
   }
   render();
@@ -246,4 +248,53 @@ document.getElementById("addBtn").addEventListener("click", () => {
 document.getElementById("reloadBtn").addEventListener("click", () => {
   if (!storageMode) { alert("Choose Google Drive or local mode first."); return; }
   loadInitialData();
+});
+
+let selectedImage = null;   // will hold { base64, mimeType } once an image is chosen
+
+// --- education level: save the choice so it syncs and the parser can use it ---
+const eduLevelEl = document.getElementById("eduLevel");
+eduLevelEl.addEventListener("change", () => {
+  appState.educationLevel = eduLevelEl.value || null;
+  persist();   // saves to Drive/local like everything else
+});
+
+// Read an image file into a base64 data URL. Wrapped in a Promise so we can await it.
+function readImageAsDataURL(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);  // "data:image/png;base64,AAAA..."
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
+
+// --- when the user picks an image: preview it and prep it for parsing ---
+const imageInput = document.getElementById("timetableImage");
+const previewEl = document.getElementById("timetablePreview");
+
+imageInput.addEventListener("change", async () => {
+  const file = imageInput.files[0];
+  if (!file) return;
+
+  const dataUrl = await readImageAsDataURL(file);
+  previewEl.src = dataUrl;             // a data URL works directly as an <img> source
+  previewEl.style.display = "block";
+
+  // Gemini wants the mime type and the raw base64 separately, so split the data URL:
+  // "data:image/png;base64,AAAA..."  ->  meta="data:image/png;base64"  data="AAAA..."
+  const [meta, base64] = dataUrl.split(",");
+  const mimeType = meta.match(/data:(.*);base64/)[1];
+  selectedImage = { base64, mimeType };
+
+  document.getElementById("parseOutput").textContent =
+    `Image ready (${mimeType}, ~${Math.round(base64.length / 1024)} KB). Parsing is the next step.`;
+});
+
+// --- parse button: for now, just validate we have what we need ---
+document.getElementById("parseBtn").addEventListener("click", () => {
+  if (!appState.educationLevel) { alert("Choose your education level first."); return; }
+  if (!selectedImage) { alert("Choose a timetable image first."); return; }
+  document.getElementById("parseOutput").textContent =
+    `Ready to parse a "${appState.educationLevel}" timetable. (Sending to Gemini needs the backend — next step.)`;
 });

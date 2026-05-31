@@ -14,6 +14,27 @@
   <button id="localBtn">Use this device only</button>
   <p id="status">Not connected</p>
 
+  
+  <hr />
+  <h2>Timetable</h2>
+  <label for="eduLevel">Education level:</label>
+  <select id="eduLevel">
+    <option value="">— select —</option>
+    <option value="primary">Primary school</option>
+    <option value="secondary">Secondary school</option>
+    <option value="jc">Junior College</option>
+    <option value="poly">Polytechnic</option>
+    <option value="university">University</option>
+  </select>
+  <br />
+  <input id="timetableImage" type="file" accept="image/*" />
+  <br />
+  <img id="timetablePreview" alt="preview" style="max-width: 400px; display: none;" />
+  <br />
+  <button id="parseBtn">Parse timetable</button>
+  <pre id="parseOutput"></pre>
+
+
   <hr />
   <h2>Tasks</h2>
   <input id="taskTitle" type="text" placeholder="Task title (e.g. CS1101S tutorial)" />
@@ -26,7 +47,6 @@
   </select>
   <button id="addBtn">Add Task</button>
   <button id="reloadBtn">Reload from Drive</button>
-
   <ul id="taskList"></ul>
   <script src="app.js"></script>
 </body>
