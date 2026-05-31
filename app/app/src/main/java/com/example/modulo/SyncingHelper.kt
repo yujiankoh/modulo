@@ -20,7 +20,7 @@ class SyncingHelper(private val driveService: Drive) {
 
     companion object {
         fun getSyncService(context: Context, userEmail: String) : SyncingHelper {
-            
+
             val credential = GoogleAccountCredential.usingOAuth2(
                 context,
                 listOf(DriveScopes.DRIVE_APPDATA)

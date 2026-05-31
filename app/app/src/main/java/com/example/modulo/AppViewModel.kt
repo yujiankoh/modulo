@@ -4,7 +4,6 @@ import android.app.Application
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.SavedStateHandle
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -119,7 +118,7 @@ class AppViewModel(
         }
 
         viewModelScope.launch {
-            val jsonString = helper.downloadAppData();
+            val jsonString = helper.downloadAppData()
 
             if (jsonString != null) {
                 try {

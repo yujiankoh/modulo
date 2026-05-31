@@ -40,7 +40,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import java.text.SimpleDateFormat
@@ -69,7 +68,7 @@ fun HomePage(
 
     // Relays information to model is user turns on/off Drive Syncing
     LaunchedEffect(isDriveSyncEnabled) {
-        viewModel.setDriveSync(isDriveSyncEnabled);
+        viewModel.setDriveSync(isDriveSyncEnabled)
     }
 
     Column(
@@ -249,6 +248,9 @@ fun DeadlinePicker(
                         showCalendar = false
                         datePickerState.selectedDateMillis?.let { millis ->
                             val formatter = SimpleDateFormat("MM/dd/yyyy", Locale.getDefault())
+                                .apply {
+                                    timeZone = java.util.TimeZone.getTimeZone("UTC")
+                                }
                             onDateSelected(formatter.format(Date(millis)))
                         }
                     }
