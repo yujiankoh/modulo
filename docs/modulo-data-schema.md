@@ -49,4 +49,38 @@ This schema defines the shape of the data that both the web and app will use to 
 | `updatedAt` | string (ISO 8601) | yes      | When the task was last changed. |
 
 ## Timetable object
-`null` at the moment
+```json
+"timetable": {
+  "modules": [
+    {
+      "code": "CS1101S",
+      "name": "Programming Methodology",
+      "color": "#4F8DFD",
+      "slots": [
+        {
+          "day": "MON",
+          "start": "10:00",
+          "end": "12:00",
+          "location": "COM1-0210",
+          "type": "lecture"
+        }
+      ]
+    }
+  ]
+}
+```
+
+| Field (module) | Type   | Description |
+|----------------|--------|-------------|
+| `code`         | string | Module code, e.g. "CS1101S". |
+| `name`         | string | Full module name. |
+| `color`        | string | Hex colour for the module's colour-coding in the UI. |
+| `slots`        | array  | The recurring class sessions for this module. |
+
+| Field (slot) | Type   | Description |
+|--------------|--------|-------------|
+| `day`        | string | `MON`–`SUN`. |
+| `start`      | string | Start time, `HH:MM` (24h). |
+| `end`        | string | End time, `HH:MM` (24h). |
+| `location`   | string | Room/venue. |
+| `type`       | string | e.g. `lecture`, `tutorial`, `lab`. |
