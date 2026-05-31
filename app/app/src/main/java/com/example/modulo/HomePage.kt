@@ -40,10 +40,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.modulo.ui.theme.ModuloTheme
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -51,7 +48,7 @@ import java.util.Locale
 @Composable
 fun HomePage(
     isDriveSyncEnabled: Boolean,
-    viewModel: AppViewModel = viewModel()
+    viewModel: AppViewModel,
 ) {
     // Collect info from the model
     val appData by viewModel.appData.collectAsState()

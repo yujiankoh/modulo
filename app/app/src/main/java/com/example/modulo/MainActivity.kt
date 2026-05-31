@@ -14,6 +14,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.credentials.CredentialManager
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
 import com.example.modulo.ui.theme.ModuloTheme
 
@@ -32,8 +33,14 @@ class MainActivity : ComponentActivity() {
                 val navController = rememberNavController()
                 val scope = rememberCoroutineScope()
 
+                val appViewModel: AppViewModel = viewModel()
+
                 // Action for when drive authorization is successful
-                val navigateToHomeAfterSync = {
+                val navigateToHomeAfterSync: (String) -> Unit = { email ->
+                    val driveHelper = SyncingHelper.getSyncService(this@MainActivity, email)
+
+                    appViewModel.syncingHelper = driveHelper
+
                     navController.navigate(Home(true)) {
                         popUpTo(SignIn) { inclusive = true }
                     }
@@ -52,6 +59,7 @@ class MainActivity : ComponentActivity() {
                 ) {
                     AppNavigation(
                         navController = navController,
+                        appViewModel = appViewModel,
                         onAuthentication = {
                             AuthenticationHelper.authenticateThenAuthorize(
                                 activity = this@MainActivity,

@@ -1,15 +1,13 @@
 package com.example.modulo
 
-import androidx.annotation.RestrictTo
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.viewModel
-import io.grpc.Deadline
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.serialization.encodeToString
 
 class AppViewModel : ViewModel() {
     var isDriveSyncEnabled = false
@@ -27,6 +25,8 @@ class AppViewModel : ViewModel() {
 
     // Only sync after a moment of inactivity
     private var delaySync: Job? = null
+
+    var syncingHelper : SyncingHelper? = null
 
     // TODO: load data based on local save / sync save based on time
 
@@ -80,7 +80,14 @@ class AppViewModel : ViewModel() {
         _syncState.value = SyncState.SYNCING
 
         // TODO: send JSON to Drive
+        val jsonPayload = syncJsonParser.encodeToString(_appData.value)
 
-        _syncState.value = SyncState.SYNCED
+        val success = syncingHelper?.uploadAppData(jsonPayload) == true
+
+        if (success) {
+            _syncState.value = SyncState.SYNCED
+        } else {
+            _syncState.value = SyncState.UNSYNCED
+        }
     }
 }

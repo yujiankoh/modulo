@@ -1,6 +1,7 @@
 package com.example.modulo
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 
 /**
  * This enum class encapsulates the states of syncing
@@ -64,3 +65,8 @@ data class AppData(
     val tasks: List<Task> = emptyList(),
     val timetable: Timetable? = null
 )
+
+val syncJsonParser = Json {
+    ignoreUnknownKeys = true
+    encodeDefaults = true
+}

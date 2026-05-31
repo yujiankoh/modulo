@@ -1,6 +1,7 @@
 package com.example.modulo
 
 import androidx.compose.runtime.Composable
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -20,6 +21,7 @@ data class Home(val isDriveSyncEnabled: Boolean)
 @Composable
 fun AppNavigation(
     navController: NavHostController,
+    appViewModel: AppViewModel,
     onAuthentication: () -> Unit
 ) {
     NavHost(
@@ -48,6 +50,7 @@ fun AppNavigation(
 
             HomePage(
                 isDriveSyncEnabled = homeArgs.isDriveSyncEnabled,
+                viewModel = appViewModel
             )
         }
     }
