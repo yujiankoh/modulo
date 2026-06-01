@@ -74,5 +74,23 @@ modulo turns a photo of a school timetable into a structured, editable schedule,
 ## User Flow Diagram
 <img width="758" height="569" alt="User Flow Diagram" src="https://github.com/user-attachments/assets/99fe89e7-bfcb-4300-904e-1923029da113" />
 
-
 ## Timeline and Development Plan
+| MS | Task | Description | In-Charge | Date |
+|----|------|-------------|-----------|------|
+| 1 | Conceptualisation and Ideation |Design the structure and worflow of the app and web | Both | 11 - 15 May |
+|  | App UI/UX design | Dashboard, Calendar, Study Session, All Tasks screens for mobile + tablet | Ling Song | May - June 2026 |
+|  | Web UI/UX design | Equivalent Dashboard, Calendar, Study Session, All Tasks pages for web | Yu Jian | May - June 2026 |
+|  | Google Drive sync | Drive linking for multi-device sync; Google sign-in when linking, local save otherwise | Ling Song (app) / Yu Jian (web) | 24 May - 31 May 2026 |
+|  | Task Management | Set up a working structure to keep track of tasks as per specifications | Both | 29 May to 31 May|
+| **Eval MS1** | **Deliverables** | Google Drive sync working, Basic task tracking implemented  | — | **1 Jun 2026** |
+| 2 | Timetable AI parsing | Gemini vision API reads a timetable image and auto-generates modules/subjects (90% accuracy target); manual edit screen for corrections | Both | May 2026 |
+|  | App implementation | Build all designed app screens in Jetpack Compose | Ling Song | 2 – 15 Jun 2026 |
+|  | Web implementation | Build all designed web pages | Yu Jian | 2 – 15 Jun 2026 |
+|  | Task management | Refine task tracking + reminder notifications | Yu Jian (web) / Ling Song (app) | 2 – 10 Jun 2026 |
+|  | Set-up tutorial | Onboarding / setup walkthrough for new users | Both | 10 - 15 Jun 2026 |
+|  | Productivity / mood board | Study session productivity tracking reflected on the calendar | Yu Jian (web) / Ling Song (app) | 15 – 20 Jun 2026 |
+|  | Notes & file sync | Upload notes/docs to MODULO, synced across devices via Drive | Both | 20 – 29 Jun 2026 |
+| **Eval MS2** | **Deliverables** | Full app + web, setup tutorial, task system, productivity board, notes sync | — | **29 Jun 2026** |
+| 3 | Gamified study motivator | City-building add-on that grows as study time accumulates | Yu Jian (web) / Ling Song (app) | 30 Jun – 15 Jul 2026 |
+|  | Grade calculator | GPA calculator per school grading system; suggests grades needed to raise GPA | Both | 15 – 27 Jul 2026 |
+| **Eval MS3** | **Deliverables** | Gamified study motivator, grade calculator | — | **27 Jul 2026** |
