@@ -23,9 +23,9 @@ import kotlinx.coroutines.launch
 import java.security.SecureRandom
 
 object AuthenticationHelper {
-    private val TAG = "GoogleDriveAuthorization"
-    private val WEB_CLIENT_ID = "332114614658-87cqh1e2u8luh9b5q15sf22sb30i3nda.apps.googleusercontent.com"
-    private val DRIVE_SCOPE = "https://www.googleapis.com/auth/drive.appdata"
+    private const val TAG = "DriveAuthorization"
+    private const val WEB_CLIENT_ID = "332114614658-87cqh1e2u8luh9b5q15sf22sb30i3nda.apps.googleusercontent.com"
+    private const val DRIVE_SCOPE = "https://www.googleapis.com/auth/drive.appdata"
 
     /**
      * Main function to start the authentication of user and authorization of permission
@@ -34,8 +34,8 @@ object AuthenticationHelper {
         activity: Activity,
         scope: CoroutineScope,
         credentialManager: CredentialManager,
-        onLaunchIntent: (IntentSenderRequest) -> Unit,
-        onSuccess: () -> Unit
+        onLaunchIntent: (IntentSenderRequest, String) -> Unit,
+        onSuccess: (String) -> Unit
     ) {
         scope.launch {
             try {
@@ -46,8 +46,9 @@ object AuthenticationHelper {
                     signIn(activity, credentialManager, false)
                 }
 
-                Log.d(TAG, "Signed in: ${googleUser.email}")
-                requestDriveAuthorization(activity, onLaunchIntent, onSuccess)
+                val userEmail = googleUser.id
+                Log.d(TAG, "Signed in: $userEmail")
+                requestDriveAuthorization(activity, userEmail, onLaunchIntent, onSuccess)
 
             } catch (e: GoogleIdTokenParsingException) {
                 Log.e(TAG, "Invalid Google ID token", e)
@@ -62,8 +63,9 @@ object AuthenticationHelper {
      */
     fun requestDriveAuthorization(
         activity: Activity,
-        onLaunchIntent: (IntentSenderRequest) -> Unit,
-        onSuccess: () -> Unit
+        email: String,
+        onLaunchIntent: (IntentSenderRequest, String) -> Unit,
+        onSuccess: (String) -> Unit
     ) {
         val requestedScopes: List<Scope> = listOf(Scope(DRIVE_SCOPE))
         val authorizationRequest = AuthorizationRequest.builder()
@@ -78,11 +80,14 @@ object AuthenticationHelper {
 
                     // Pass intent back to MainActivity to ask user for access
                     if (pendingIntent != null) {
-                        onLaunchIntent(IntentSenderRequest.Builder(pendingIntent.intentSender).build())
+                        onLaunchIntent(
+                            IntentSenderRequest.Builder(pendingIntent.intentSender).build(),
+                            email
+                        )
                     }
                 } else {
                     // Access was previously granted
-                    handleDriveAuthorization(activity, authorizationResult, onSuccess)
+                    handleDriveAuthorization(activity, email, authorizationResult, onSuccess)
                 }
             }
             .addOnFailureListener { e -> Log.e(TAG, "Failed to authorize Drive", e) }
@@ -123,8 +128,9 @@ object AuthenticationHelper {
      */
     fun handleDriveAuthorization(
         activity: Activity,
+        email: String,
         authorizationResult: AuthorizationResult,
-        onSuccess: () -> Unit
+        onSuccess: (String) -> Unit
     ) {
         val grantedScopes = authorizationResult.grantedScopes
 
@@ -138,8 +144,7 @@ object AuthenticationHelper {
         }
 
         Log.d(TAG, "SUCCESS! Google Drive AppData access token granted.")
-        onSuccess()
-        // TODO: do something with access token
+        onSuccess(email)
     }
 
     /**
@@ -157,7 +162,8 @@ object AuthenticationHelper {
     fun onDrivePermission(
         activity: Activity,
         result: ActivityResult,
-        onSuccess: () -> Unit
+        email: String,
+        onSuccess: (String) -> Unit
     ) {
         // If user denies Google Drive Authorization
         if (result.resultCode != Activity.RESULT_OK) {
@@ -184,7 +190,7 @@ object AuthenticationHelper {
                 .getAuthorizationClient(activity)
                 .getAuthorizationResultFromIntent(data)
 
-            handleDriveAuthorization(activity, authorizationResult, onSuccess)
+            handleDriveAuthorization(activity, email, authorizationResult, onSuccess)
         } catch (e: ApiException) {
             Log.e(TAG, "Google Drive authorization failed", e)
             Toast.makeText(
