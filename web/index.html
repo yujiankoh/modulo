@@ -9,12 +9,13 @@
   <script src="https://accounts.google.com/gsi/client" async></script>
 </head>
 <body>
+  <!-- Heading + Sign in portion -->
   <h1>MODULO</h1>
   <button id="connectBtn">Connect Google Drive</button>
   <button id="localBtn">Use this device only</button>
   <p id="status">Not connected</p>
 
-  
+  <!-- Timetable parsing portion -->
   <hr />
   <h2>Timetable</h2>
   <label for="eduLevel">Education level:</label>
@@ -34,7 +35,7 @@
   <button id="parseBtn">Parse timetable</button>
   <pre id="parseOutput"></pre>
 
-
+  <!-- Task adding portion -->
   <hr />
   <h2>Tasks</h2>
   <input id="taskTitle" type="text" placeholder="Task title (e.g. CS1101S tutorial)" />

@@ -1,16 +1,16 @@
-// Your app's PUBLIC client ID — the same one the Android app uses. Safe to be here.
+// App's PUBLIC client ID, same as Android app
 const CLIENT_ID = "332114614658-87cqh1e2u8luh9b5q15sf22sb30i3nda.apps.googleusercontent.com";
 
-// The permission we're requesting: access ONLY to our app's private Drive folder.
+// Asking for access to app's private Drive folder.
 const SCOPES = "https://www.googleapis.com/auth/drive.appdata";
 
-const LOCAL_KEY = "modulo-data";   // where local data is stored
-const MODE_KEY = "modulo-mode";    // remembers the user's choice
-let storageMode = null;            // "drive" | "local" | null (not chosen yet)
+const LOCAL_KEY = "modulo-data";   // local data
+const MODE_KEY = "modulo-mode";    // Mode of saving data
+let storageMode = null;            // "drive" | "local" | null
 let accessToken = null;
 let tokenExpiry = 0;       // timestamp (ms) when the current token goes stale
 let tokenClient;
-let resolveToken = null;   // used to "wait" for a token (explained below)
+let resolveToken = null;   // used to "wait" for a token
 
 const statusEl = document.getElementById("status");
 const connectBtn = document.getElementById("connectBtn");
@@ -33,7 +33,7 @@ window.onload = () => {
     },
   });
 
-  // --- NEW: restore the user's saved mode on reload ---
+  // Restore the user's saved mode on reload
   const savedMode = localStorage.getItem(MODE_KEY);
   if (savedMode === "local") {
     storageMode = "local";
@@ -41,21 +41,21 @@ window.onload = () => {
     loadInitialData();
   } else if (savedMode === "drive") {
     statusEl.textContent = "Click Connect Google Drive to resume sync.";
-    // (Drive needs a fresh token, so we wait for the user to click Connect.)
+    // Need to connect first and get a token
   }
 };
 
-// Ask Google for a token, wrapped so we can `await` it.
+// Ask Google for a token
 function getToken() {
   return new Promise((resolve) => {
-    resolveToken = resolve;             // remember how to finish this promise
+    resolveToken = resolve;             // promise is saved here
     tokenClient.requestAccessToken();   // triggers Google; the callback finishes it
   });
 }
 
 // Guarantee a valid, unexpired token before any Drive call.
 async function ensureToken() {
-  if (accessToken && Date.now() < tokenExpiry) return true; // still good
+  if (accessToken && Date.now() < tokenExpiry) return true; 
   return await getToken();                                  // stale/missing → ask again
 }
 
@@ -77,10 +77,10 @@ localBtn.addEventListener("click", () => {
   loadInitialData();
 });
 
-// The single file we'll store MODULO's data in, inside the hidden app folder.
+// The single file we'll store MODULO's data in, the hidden app folder.
 const FILE_NAME = "modulo-data.json";
 
-// Every Drive request needs the token to prove the user authorized us.
+// Ensure the user has a token access
 function authHeaders(extra = {}) {
   return { Authorization: "Bearer " + accessToken, ...extra };
 }
@@ -100,21 +100,21 @@ async function findFileId() {
 async function saveData(obj) {
   let fileId = await findFileId();
 
-  // First time only: create the empty file with the right name + location.
+  // First time only: create the empty file.
   if (!fileId) {
     const createRes = await fetch("https://www.googleapis.com/drive/v3/files", {
       method: "POST",
       headers: authHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({
         name: FILE_NAME,
-        parents: ["appDataFolder"], // <-- this is what puts it in the hidden app folder
+        parents: ["appDataFolder"], // putting data in the hidden app folder
       }),
     });
     const created = await createRes.json();
     fileId = created.id;
   }
 
-  // Write the actual content into the file (this is also how updates work).
+  // Write the actual content into the file (how updates work).
   await fetch(
     "https://www.googleapis.com/upload/drive/v3/files/" + fileId + "?uploadType=media",
     {
@@ -136,7 +136,7 @@ async function loadData() {
   return await res.json();
 }
 
-// ===== MODULO app state: the single source of truth, held in memory =====
+// MODULO app state: what is held in memory
 let appState = {
   schemaVersion: 1,
   educationLevel: null,   // "primary" | "secondary" | "jc" | "poly" | "university"
@@ -150,9 +150,9 @@ async function persist() {
   appState.updatedAt = new Date().toISOString();
   if (storageMode === "drive") {
     if (!(await ensureToken())) { statusEl.textContent = "Please reconnect Google Drive."; return; }
-    await saveData(appState);                              // → Google Drive
+    await saveData(appState);                             
   } else if (storageMode === "local") {
-    localStorage.setItem(LOCAL_KEY, JSON.stringify(appState)); // → this device
+    localStorage.setItem(LOCAL_KEY, JSON.stringify(appState));
   }
 }
 
@@ -161,10 +161,10 @@ async function loadInitialData() {
   let saved = null;
   if (storageMode === "drive") {
     if (!(await ensureToken())) { statusEl.textContent = "Please reconnect Google Drive."; return; }
-    saved = await loadData();                              // ← Google Drive
+    saved = await loadData();                        
   } else if (storageMode === "local") {
     const raw = localStorage.getItem(LOCAL_KEY);
-    saved = raw ? JSON.parse(raw) : null;                 // ← this device
+    saved = raw ? JSON.parse(raw) : null;           
   }
   if (saved) {
     appState = saved;
@@ -174,7 +174,7 @@ async function loadInitialData() {
   render();
 }
 
-// --- actions: each one changes memory, saves, then re-draws ---
+// Function for the different actions, each one changes memory, saves, then re-writes
 async function addTask(title, due, type) {
   const now = new Date().toISOString();
   appState.tasks.push({
@@ -184,17 +184,18 @@ async function addTask(title, due, type) {
     type,
     done: false,
     createdAt: now,
-    updatedAt: now,   // same as createdAt at first; updated whenever the task changes
+    updatedAt: now,   // updated whenever the task changes
   });
-  await persist();
-  render();
+  await persist(); // Saving
+  render();  // Loading
 }
 
+// Toggles between the task's completion status
 async function toggleTask(id) {
   const task = appState.tasks.find((t) => t.id === id);
   if (task) {
     task.done = !task.done;
-    task.updatedAt = new Date().toISOString();   // <-- stamp the change
+    task.updatedAt = new Date().toISOString();   // stamp the change
   }
   await persist();
   render();
@@ -206,7 +207,7 @@ async function deleteTask(id) {
   render();
 }
 
-// --- draw the current state onto the page ---
+// Show the current state onto the page
 function render() {
   const list = document.getElementById("taskList");
   list.innerHTML = ""; // wipe the list, then rebuild it from appState
@@ -234,7 +235,7 @@ function render() {
   });
 }
 
-// --- wire up the buttons ---
+// Connecting up the buttons
 document.getElementById("addBtn").addEventListener("click", () => {
   if (!storageMode) { alert("Choose Google Drive or local mode first."); return; }
   const title = document.getElementById("taskTitle").value.trim();
@@ -250,16 +251,17 @@ document.getElementById("reloadBtn").addEventListener("click", () => {
   loadInitialData();
 });
 
+// Timetable uploading
 let selectedImage = null;   // will hold { base64, mimeType } once an image is chosen
 
-// --- education level: save the choice so it syncs and the parser can use it ---
+// Education level: save the choice so it syncs and the parser can use it (will change such that education level is selected somewhere else)
 const eduLevelEl = document.getElementById("eduLevel");
 eduLevelEl.addEventListener("change", () => {
   appState.educationLevel = eduLevelEl.value || null;
-  persist();   // saves to Drive/local like everything else
+  persist();  
 });
 
-// Read an image file into a base64 data URL. Wrapped in a Promise so we can await it.
+// Read an image file into a base64 data URL (To encode data as palin text). Wrapped in a Promise so we can await it.
 function readImageAsDataURL(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -269,7 +271,7 @@ function readImageAsDataURL(file) {
   });
 }
 
-// --- when the user picks an image: preview it and prep it for parsing ---
+// When the user picks an image: preview it and prep it for parsing
 const imageInput = document.getElementById("timetableImage");
 const previewEl = document.getElementById("timetablePreview");
 
@@ -281,7 +283,7 @@ imageInput.addEventListener("change", async () => {
   previewEl.src = dataUrl;             // a data URL works directly as an <img> source
   previewEl.style.display = "block";
 
-  // Gemini wants the mime type and the raw base64 separately, so split the data URL:
+  // Gemini wants the mime type (png/jpeg/webp) and the raw base64 separately, so split the data URL
   // "data:image/png;base64,AAAA..."  ->  meta="data:image/png;base64"  data="AAAA..."
   const [meta, base64] = dataUrl.split(",");
   const mimeType = meta.match(/data:(.*);base64/)[1];
@@ -291,7 +293,7 @@ imageInput.addEventListener("change", async () => {
     `Image ready (${mimeType}, ~${Math.round(base64.length / 1024)} KB). Parsing is the next step.`;
 });
 
-// --- parse button: for now, just validate we have what we need ---
+// parse button: for now, just validate we have what we need (to be updated)
 document.getElementById("parseBtn").addEventListener("click", () => {
   if (!appState.educationLevel) { alert("Choose your education level first."); return; }
   if (!selectedImage) { alert("Choose a timetable image first."); return; }
