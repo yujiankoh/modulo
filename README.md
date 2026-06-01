@@ -63,6 +63,7 @@ modulo turns a photo of a school timetable into a structured, editable schedule,
 ## Tech Stack
 | Area | Technology |
 |------|-----------|
+| Design | Figma |
 | Mobile app | Kotlin, Jetpack Compose (Material 3) |
 | Website | HTML / CSS / JavaScript |
 | Navigation | Navigation Compose |
@@ -71,5 +72,7 @@ modulo turns a photo of a school timetable into a structured, editable schedule,
 | Build | Gradle (Kotlin DSL), AGP |
 
 ## User Flow Diagram
+<img width="758" height="569" alt="User Flow Diagram" src="https://github.com/user-attachments/assets/99fe89e7-bfcb-4300-904e-1923029da113" />
+
 
 ## Timeline and Development Plan
