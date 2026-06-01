@@ -125,3 +125,7 @@ Use this tester email when choosing to sync with Google Drive
 | 3 | Gamified study motivator | City-building add-on that grows as study time accumulates | Yu Jian (web) / Ling Song (app) | 30 Jun – 15 Jul 2026 |
 |  | Grade calculator | GPA calculator per school grading system; suggests grades needed to raise GPA | Both | 15 – 27 Jul 2026 |
 | **Eval MS3** | **Deliverables** | Gamified study motivator, grade calculator | — | **27 Jul 2026** |
+
+## Proof of Concept
+Our code for the technical proof of concept is also available in the following GitHub repository:
+[Github: modulo](https://github.com/yujiankoh/modulo)
