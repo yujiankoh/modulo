@@ -22,6 +22,33 @@ As students, managing multiple academic responsibilities can be overwhelming, of
 ## Overview
 modulo turns a photo of a school timetable into a structured, editable schedule, then layers task management, a calendar view, and a gamified study experience on top of it. The goal is a single, easy-to-use home for everything academic.
 
+## Build and Run
+### Tester Login Credentials
+Use this tester email when choosing to sync with Google Drive
+* **Email:** `modulotesting123@gmail.com`
+* **Password:** `orbitalmodulo123`
+
+### Running App Version
+* [Android Studio](https://developer.android.com/studio) installed.
+* An Android Virtual Device (AVD) configured via the Android Studio Device Manager
+
+1. Launch Android Studios
+2. Select **Open** and choose `modulo/app`.
+3. Open the **Device Manager** (Tools > Device Manager) and start your configured **Android Virtual Device (AVD) / Emulator**.
+4. Launch the emulator with the green **Run** icon.
+5. Login into Play Store with tester account first before logging into the modulo app. Exit the app if you have to.
+6. Click **Sync with Google Drive**
+
+### Running Web Version
+* [Visual Studio Code](https://code.visualstudio.com/) installed.
+* **Live Server** extension by Ritwick Dey installed in VS Code.
+
+1. Open Visual Studio Code.
+2. Select **File > Open Folder...** and choose `modulo/web`.
+3. Look at the status bar at the bottom right of the VS Code window and click on the **Go Live** button.
+4. Your default web browser will automatically open and navigate to the local hosting address.
+5. Click **Connect to Google Drive**.
+
 ## Features
 ### Google Drive Sync
 **Proposed**: Use Google Drive to sync notes and data between the app and website. Users can also choose to continue with local save only.
