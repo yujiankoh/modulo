@@ -72,7 +72,7 @@ modulo turns a photo of a school timetable into a structured, editable schedule,
 | Build | Gradle (Kotlin DSL), AGP |
 
 ## User Flow Diagram
-<img width="758" height="569" alt="User Flow Diagram" src="https://github.com/user-attachments/assets/99fe89e7-bfcb-4300-904e-1923029da113" />
+![User Flow Diagram](docs/userFlowDiagram.jpg)
 
 ## Timeline and Development Plan
 | MS | Task | Description | In-Charge | Date |
