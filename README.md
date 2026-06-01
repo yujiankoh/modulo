@@ -102,6 +102,7 @@ Use this tester email when choosing to sync with Google Drive
 ![User Flow Diagram](docs/userFlowDiagram.jpg)
 
 ## Designs
+Note that the designs have not been finalised or implemented yet by MS1.
 ![App Home Page](docs/designs/app-home.jpg)
 ![Web Home Page](docs/designs/web-home.jpg)
 
