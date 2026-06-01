@@ -74,6 +74,10 @@ modulo turns a photo of a school timetable into a structured, editable schedule,
 ## User Flow Diagram
 ![User Flow Diagram](docs/userFlowDiagram.jpg)
 
+## Designs
+![App Home Page](docs/designs/app-home.jpg.jpg)
+![Web Home Page](docs/designs/web-home.jpg.jpg)
+
 ## Timeline and Development Plan
 | MS | Task | Description | In-Charge | Date |
 |----|------|-------------|-----------|------|
