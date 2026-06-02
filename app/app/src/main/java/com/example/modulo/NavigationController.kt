@@ -1,14 +1,11 @@
 package com.example.modulo
 
 import androidx.compose.runtime.Composable
-import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import kotlinx.serialization.Serializable
-import java.net.PasswordAuthentication
 
 @Serializable
 object SignIn
@@ -20,6 +17,7 @@ data class Home(val isDriveSyncEnabled: Boolean)
 @Composable
 fun AppNavigation(
     navController: NavHostController,
+    appViewModel: AppViewModel,
     onAuthentication: () -> Unit
 ) {
     NavHost(
@@ -48,6 +46,7 @@ fun AppNavigation(
 
             HomePage(
                 isDriveSyncEnabled = homeArgs.isDriveSyncEnabled,
+                viewModel = appViewModel
             )
         }
     }

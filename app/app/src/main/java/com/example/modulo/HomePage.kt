@@ -1,5 +1,6 @@
 package com.example.modulo
 
+import android.util.Log
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -40,10 +41,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.modulo.ui.theme.ModuloTheme
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -51,7 +50,7 @@ import java.util.Locale
 @Composable
 fun HomePage(
     isDriveSyncEnabled: Boolean,
-    viewModel: AppViewModel = viewModel()
+    viewModel: AppViewModel = viewModel(),
 ) {
     // Collect info from the model
     val appData by viewModel.appData.collectAsState()
@@ -59,7 +58,7 @@ fun HomePage(
 
     // States from the create-task fields
     val inputTitle = rememberTextFieldState()
-    var selectedTaskType by remember { mutableStateOf("Assignment") }
+    var selectedTaskType by remember { mutableStateOf("assignment") }
     var selectedDeadline by remember { mutableStateOf("") }
 
     val statusText = when (syncState) {
@@ -70,7 +69,7 @@ fun HomePage(
 
     // Relays information to model is user turns on/off Drive Syncing
     LaunchedEffect(isDriveSyncEnabled) {
-        viewModel.setDriveSync(isDriveSyncEnabled);
+        viewModel.setDriveSync(isDriveSyncEnabled)
     }
 
     Column(
@@ -111,23 +110,38 @@ fun HomePage(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        Button(
-            onClick = {
-                if (inputTitle.text.isNotBlank() && selectedDeadline.isNotBlank()) {
-                    viewModel.addTask(
-                        inputTitle.text.toString(),
-                        selectedTaskType,
-                        selectedDeadline,
-                        false
-                    )
+        Row(
+            modifier = Modifier,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Button(
+                onClick = {
+                    if (inputTitle.text.isNotBlank() && selectedDeadline.isNotBlank()) {
+                        viewModel.addTask(
+                            inputTitle.text.toString(),
+                            selectedTaskType,
+                            selectedDeadline,
+                            false
+                        )
 
-                    // Clear input fields
-                    inputTitle.edit { replace(0, length, "") }
-                    selectedDeadline = ""
+                        // Clear input fields
+                        inputTitle.edit { replace(0, length, "") }
+                        selectedDeadline = ""
+                    }
+                }
+            ) {
+                Text("Add Task")
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            if (isDriveSyncEnabled) {
+                Button(
+                    onClick ={ viewModel.downloadFromDrive() }
+                ) {
+                    Text("Download from Drive")
                 }
             }
-        ) {
-            Text("Add Task")
         }
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -153,6 +167,8 @@ fun HomePage(
             Text(text = statusText)
         }
 
+        Spacer(modifier = Modifier.height(48.dp))
+
     }
 }
 
@@ -163,7 +179,7 @@ fun TaskTypeDropDownMenu(
     onTypeSelected: (String) -> Unit
 ) {
     var isExpanded by remember { mutableStateOf(false) }
-    val taskTypes = arrayOf("Assignment", "Tutorial", "Quiz", "Exam")
+    val taskTypes = arrayOf("assignment", "tutorial", "quiz", "exam")
 
     ExposedDropdownMenuBox(
         expanded = isExpanded,
@@ -215,10 +231,10 @@ fun DeadlinePicker(
     }
 
     OutlinedTextField(
-        value = selectedDate,
+        value = formatDate(selectedDate),
         onValueChange = { },
         label = { Text("Deadline") },
-        placeholder = { Text("MM/DD/YYYY") },
+        placeholder = { Text("DD/MM/YYYY") },
         readOnly = true,
         interactionSource = interactionSource,
         modifier = Modifier.width(100.dp)
@@ -232,7 +248,10 @@ fun DeadlinePicker(
                     onClick = {
                         showCalendar = false
                         datePickerState.selectedDateMillis?.let { millis ->
-                            val formatter = SimpleDateFormat("MM/dd/yyyy", Locale.getDefault())
+                            val formatter = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                                .apply {
+                                    timeZone = java.util.TimeZone.getTimeZone("UTC")
+                                }
                             onDateSelected(formatter.format(Date(millis)))
                         }
                     }
@@ -278,11 +297,11 @@ fun TaskCard(
                 ) {
                     Text(
                         text = task.title,
-                        textDecoration = if (task.isCompleted) TextDecoration.LineThrough else TextDecoration.None
+                        textDecoration = if (task.done) TextDecoration.LineThrough else TextDecoration.None
                     )
 
                     Checkbox(
-                        checked = task.isCompleted,
+                        checked = task.done,
                         onCheckedChange = { onToggle(task) },
                     )
                 }
@@ -294,9 +313,25 @@ fun TaskCard(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(text = task.type,)
-                    Text(text = "Due: ${task.deadline}",)
+                    Text(text = "Due: ${formatDate(task.due)}",)
                 }
             }
         }
+    }
+}
+
+fun formatDate(dataDate: String): String {
+    if (dataDate.isBlank()) return ""
+
+    return try {
+        val parser = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+
+        val formatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+
+        val date = parser.parse(dataDate)
+
+        if (date != null) formatter.format(date) else dataDate
+    } catch (e: Exception) {
+        dataDate
     }
 }
