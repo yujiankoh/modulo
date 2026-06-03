@@ -20,26 +20,23 @@ class AppViewModel(
 ) : AndroidViewModel(application) {
     private val TAG = "ViewModel"
 
-    // Stores if syncing is enabled
-    var isDriveSyncEnabled = false
-        private set
-
-    fun setDriveSync(isEnabled: Boolean) {
-        isDriveSyncEnabled = isEnabled
-    }
-
     // Stores the helper for local save
     private val localSaveHelper = LocalSaveHelper(application)
 
     // Stores the helper for syncing
     var syncingHelper: SyncingHelper? = null
 
+    // Stores user email for authentication
     fun setUserEmail(email: String) {
         savedStateHandle["email"] = email
     }
     fun getUserEmail(): String {
         return savedStateHandle["email"] ?: ""
     }
+
+    // Stores whether user is using Google Drive Sync
+    private val _isDriveSyncEnabled = MutableStateFlow(false)
+    val isDriveSyncEnabled = _isDriveSyncEnabled.asStateFlow()
 
     // Stores the app data, load based on local save
     private val _appData = MutableStateFlow(localSaveHelper.loadData())
@@ -51,6 +48,10 @@ class AppViewModel(
 
     // Only sync after a moment of inactivity
     private var delaySync: Job? = null
+
+    fun setDriveSyncEnabled(enabled: Boolean) {
+        _isDriveSyncEnabled.value = enabled
+    }
 
     // TODO: other functions to change appdata
     fun addTask(title: String, type: String, deadline: String, isCompleted: Boolean) {
@@ -85,7 +86,7 @@ class AppViewModel(
 
         localSaveHelper.saveData(_appData.value)
 
-        if (isDriveSyncEnabled) {
+        if (isDriveSyncEnabled.value) {
             // Reset state to UNSYNCED while user is interacting
             _syncState.value = SyncState.UNSYNCED
 

@@ -16,6 +16,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
 import com.example.modulo.helpers.AuthenticationHelper
 import com.example.modulo.helpers.SyncingHelper
+import com.example.modulo.navigation.AppNavigation
+import com.example.modulo.navigation.Home
+import com.example.modulo.navigation.SignIn
 import com.example.modulo.ui.theme.ModuloTheme
 
 class MainActivity : ComponentActivity() {
@@ -41,7 +44,7 @@ class MainActivity : ComponentActivity() {
 
                     appViewModel.syncingHelper = driveHelper
 
-                    navController.navigate(Home(true)) {
+                    navController.navigate(Home) {
                         popUpTo(SignIn) { inclusive = true }
                     }
                 }

@@ -52,12 +52,12 @@ import java.util.TimeZone
 
 @Composable
 fun HomePage(
-    isDriveSyncEnabled: Boolean,
     viewModel: AppViewModel = viewModel(),
 ) {
     // Collect info from the model
     val appData by viewModel.appData.collectAsState()
     val syncState by viewModel.syncState.collectAsState()
+    val isDriveSyncEnabled by viewModel.isDriveSyncEnabled.collectAsState()
 
     // States from the create-task fields
     val inputTitle = rememberTextFieldState()
@@ -68,11 +68,6 @@ fun HomePage(
         SyncState.UNSYNCED -> "Unsynced changes..."
         SyncState.SYNCING -> "Syncing to Drive..."
         SyncState.SYNCED -> "All changes synced"
-    }
-
-    // Relays information to model is user turns on/off Drive Syncing
-    LaunchedEffect(isDriveSyncEnabled) {
-        viewModel.setDriveSync(isDriveSyncEnabled)
     }
 
     Column(
