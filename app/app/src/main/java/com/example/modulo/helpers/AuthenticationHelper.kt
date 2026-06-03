@@ -1,4 +1,4 @@
-package com.example.modulo
+package com.example.modulo.helpers
 
 import android.app.Activity
 import android.util.Base64

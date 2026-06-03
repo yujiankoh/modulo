@@ -14,6 +14,8 @@ import androidx.compose.ui.Modifier
 import androidx.credentials.CredentialManager
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
+import com.example.modulo.helpers.AuthenticationHelper
+import com.example.modulo.helpers.SyncingHelper
 import com.example.modulo.ui.theme.ModuloTheme
 
 class MainActivity : ComponentActivity() {

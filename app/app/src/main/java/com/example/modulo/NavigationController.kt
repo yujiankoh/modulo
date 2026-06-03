@@ -5,6 +5,9 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
+import com.example.modulo.pages.AuthenticatePage
+import com.example.modulo.pages.HomePage
+import com.example.modulo.pages.SignInPage
 import kotlinx.serialization.Serializable
 
 @Serializable

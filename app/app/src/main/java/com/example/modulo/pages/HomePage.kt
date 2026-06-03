@@ -1,6 +1,5 @@
-package com.example.modulo
+package com.example.modulo.pages
 
-import android.util.Log
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -43,9 +42,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.modulo.AppViewModel
+import com.example.modulo.SyncState
+import com.example.modulo.Task
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.TimeZone
 
 @Composable
 fun HomePage(
@@ -250,7 +253,7 @@ fun DeadlinePicker(
                         datePickerState.selectedDateMillis?.let { millis ->
                             val formatter = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
                                 .apply {
-                                    timeZone = java.util.TimeZone.getTimeZone("UTC")
+                                    timeZone = TimeZone.getTimeZone("UTC")
                                 }
                             onDateSelected(formatter.format(Date(millis)))
                         }

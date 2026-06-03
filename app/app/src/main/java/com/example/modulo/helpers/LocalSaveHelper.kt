@@ -1,7 +1,9 @@
-package com.example.modulo
+package com.example.modulo.helpers
 
 import android.content.Context
 import android.util.Log
+import com.example.modulo.AppData
+import com.example.modulo.syncJsonParser
 import kotlinx.serialization.encodeToString
 import java.io.File
 

@@ -1,4 +1,4 @@
-package com.example.modulo
+package com.example.modulo.helpers
 
 import android.accounts.Account
 import android.content.Context
@@ -12,6 +12,7 @@ import com.google.api.services.drive.DriveScopes
 import com.google.api.services.drive.model.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.io.ByteArrayOutputStream
 import kotlin.apply
 
 class SyncingHelper(private val driveService: Drive) {
@@ -90,7 +91,7 @@ class SyncingHelper(private val driveService: Drive) {
 
             val fileId = files[0].id
 
-            val outputStream = java.io.ByteArrayOutputStream()
+            val outputStream = ByteArrayOutputStream()
             driveService.files().get(fileId).executeMediaAndDownloadTo(outputStream)
 
             val jsonString = outputStream.toString("UTF-8")
