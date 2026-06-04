@@ -138,8 +138,8 @@ async function loadData() {
 
 // MODULO app state: what is held in memory
 let appState = {
-  schemaVersion: 1,
-  educationLevel: null,   // "primary" | "secondary" | "jc" | "poly" | "university"
+  schemaVersion: 2,        // was 1 — we finalized the timetable structure + added educationLevel
+  educationLevel: null,
   tasks: [],
   timetable: null,
   updatedAt: null,
@@ -294,9 +294,34 @@ imageInput.addEventListener("change", async () => {
 });
 
 // parse button: for now, just validate we have what we need (to be updated)
-document.getElementById("parseBtn").addEventListener("click", () => {
+const PROXY_URL = "http://localhost:3000/parse-timetable";
+
+document.getElementById("parseBtn").addEventListener("click", async () => {
   if (!appState.educationLevel) { alert("Choose your education level first."); return; }
   if (!selectedImage) { alert("Choose a timetable image first."); return; }
-  document.getElementById("parseOutput").textContent =
-    `Ready to parse a "${appState.educationLevel}" timetable. (Sending to Gemini needs the backend — next step.)`;
+
+  const out = document.getElementById("parseOutput");
+  out.textContent = "Parsing… (can take a few seconds)";
+
+  try {
+    const res = await fetch(PROXY_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        image: selectedImage.base64,
+        mimeType: selectedImage.mimeType,
+        educationLevel: appState.educationLevel,
+      }),
+    });
+    if (!res.ok) throw new Error("Proxy returned " + res.status);
+    const data = await res.json();
+
+    appState.timetable = { modules: data.modules };  // store the parsed result in state
+    await persist();                                  // save it (Drive or local)
+    render();
+    out.textContent = `Parsed ${data.modules.length} module(s):\n` +
+      JSON.stringify(data.modules, null, 2);
+  } catch (err) {
+    out.textContent = "Parse failed: " + err.message;
+  }
 });
