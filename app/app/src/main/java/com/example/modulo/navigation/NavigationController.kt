@@ -16,6 +16,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.toRoute
 import com.example.modulo.AppViewModel
+import com.example.modulo.pages.AddTaskPage
 import com.example.modulo.pages.AuthenticatePage
 import com.example.modulo.pages.HomePage
 import com.example.modulo.pages.SignInPage
@@ -72,13 +73,10 @@ fun AppNavigation(
                 )
             }
 
-            composable<Home> {
-                HomePage(
-                    viewModel = appViewModel
-                )
-            }
+            composable<Home> { HomePage() }
 
-            composable<AddTask> { Text("Add Task Page") }
+            composable<AddTask> { AddTaskPage() }
+
             composable<Calendar> { Text("Calendar Page") }
             composable<AllTasks> { Text("All Tasks Page") }
             composable<StudySession> { Text("Study Session Page") }

@@ -5,17 +5,18 @@ This schema defines the shape of the data that both the web and app will use to 
 - **File name:** `modulo-data.json`
 - **Location:** the Google Drive `appDataFolder` (and for local-only mode, the device's local storage)
 - **Format:** a single JSON object holding the entire app state
-- **Current schema version:** `1`
+- **Current schema version:** `2`
 
 ## Example
 ```json
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "updatedAt": "2026-05-30T09:35:06.606Z",
   "tasks": [
     {
       "id": 1717059306606,
-      "title": "CS1101S tutorial",
+      "moduleCode": "CS1101S",
+      "title": "tutorial 1",
       "due": "2026-06-05",
       "type": "tutorial",
       "done": false,
@@ -38,15 +39,16 @@ This schema defines the shape of the data that both the web and app will use to 
 
 ## Task object
 
-| Field       | Type              | Required | Description |
-|-------------|-------------------|----------|-------------|
-| `id`        | number            | yes      | Unique id for the task. Generated with `Date.now()` (ms since 1970). |
-| `title`     | string            | yes      | Task name, e.g. "CS1101S tutorial". |
-| `due`       | string (`YYYY-MM-DD`) | yes  | Due date. Empty string if no date set. |
-| `type`      | string (enum)     | yes      | One of: `assignment`, `tutorial`, `quiz`, `exam`. |
-| `done`      | boolean           | yes      | Whether the task is completed. |
-| `createdAt` | string (ISO 8601) | yes      | When the task was first created. |
-| `updatedAt` | string (ISO 8601) | yes      | When the task was last changed. |
+| Field        | Type              | Required | Description |
+|--------------|-------------------|----------|-------------|
+| `id`         | number            | yes      | Unique id for the task. Generated with `Date.now()` (ms since 1970). |
+| `moduleCode` | string            | yes      | The name of the module that this task is under |
+| `title`      | string            | yes      | Task name, e.g. "CS1101S tutorial". |
+| `due`        | string (`YYYY-MM-DD`) | yes  | Due date. Empty string if no date set. |
+| `type`       | string (enum)     | yes      | One of: `assignment`, `tutorial`, `quiz`, `exam`. |
+| `done`       | boolean           | yes      | Whether the task is completed. |
+| `createdAt`  | string (ISO 8601) | yes      | When the task was first created. |
+| `updatedAt`  | string (ISO 8601) | yes      | When the task was last changed. |
 
 ## Timetable object
 ```json
@@ -69,15 +71,19 @@ This schema defines the shape of the data that both the web and app will use to 
   ]
 }
 ```
+| Field (Timetable) | Type   | Description |
+|-------------------|--------|-------------|
+| `modules`         | array of Module | All subjects taken in this semester. |
 
-| Field (module) | Type   | Description |
+
+| Field (Module) | Type   | Description |
 |----------------|--------|-------------|
-| `code`         | string | Module code, e.g. "CS1101S". |
+| `code`         | string | Module code, all Caps, e.g. "CS1101S".  |
 | `name`         | string | Full module name. |
 | `color`        | string | Hex colour for the module's colour-coding in the UI. |
-| `slots`        | array  | The recurring class sessions for this module. |
+| `slots`        | array of Slot  | The recurring class sessions for this module. |
 
-| Field (slot) | Type   | Description |
+| Field (Slot) | Type   | Description |
 |--------------|--------|-------------|
 | `day`        | string | `MON`–`SUN`. |
 | `start`      | string | Start time, `HH:MM` (24h). |

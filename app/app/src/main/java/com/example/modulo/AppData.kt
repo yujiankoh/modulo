@@ -16,6 +16,7 @@ enum class SyncState{
 @Serializable
 data class Task(
     val id: Long,
+    val moduleCode: String,
     val title: String,
     val due: String = "",
     val type: String,
@@ -60,7 +61,7 @@ data class Slot(
  */
 @Serializable
 data class AppData(
-    val schemaVersion: Int = 1,
+    val schemaVersion: Int = 2,
     val updatedAt: String? = null,
     val tasks: List<Task> = emptyList(),
     val timetable: Timetable? = null

@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
+import java.time.Instant
 
 class AppViewModel(
     application: Application,
@@ -54,13 +55,18 @@ class AppViewModel(
     }
 
     // TODO: other functions to change appdata
-    fun addTask(title: String, type: String, deadline: String, isCompleted: Boolean) {
+    fun addTask(moduleCode: String, title: String, type: String, deadline: String, isCompleted: Boolean) {
+        val currentTime = System.currentTimeMillis()
+
         val newTask = Task(
-            id = System.currentTimeMillis(),
+            id = currentTime,
+            moduleCode = moduleCode,
             title = title,
             due = deadline,
             type = type,
-            done = isCompleted)
+            done = isCompleted
+
+        )
 
         updateData { currentData ->
             currentData.copy(tasks = currentData.tasks + newTask)
