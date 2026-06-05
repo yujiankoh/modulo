@@ -15,10 +15,10 @@ import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import kotlin.apply
 
-class SyncingHelper(private val driveService: Drive) {
-    private val TAG = "DriveSync"
-    private val FILENAME = "modulo-data.json"
+private const val TAG = "DriveSync"
+private const val FILENAME = "modulo-data.json"
 
+class SyncingHelper(private val driveService: Drive) {
     companion object {
         fun getSyncService(context: Context, userEmail: String) : SyncingHelper {
 

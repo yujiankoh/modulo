@@ -20,12 +20,12 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
-import java.time.Instant
 
-// Flag in device hard drive
+private const val TAG = "ViewModel"
+
+// Flags in device hard drive
 val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 val HAS_SEEN_TUTORIAL = booleanPreferencesKey("has_seen_tutorial")
 val IS_DRIVE_SYNC_ENABLED = booleanPreferencesKey("is_drive_sync_enabled")
@@ -34,11 +34,8 @@ class AppViewModel(
     application: Application,
     private val savedStateHandle: SavedStateHandle
 ) : AndroidViewModel(application) {
-    private val TAG = "ViewModel"
-
     // Stores the helper for local save
     private val localSaveHelper = LocalSaveHelper(application)
-
     // Stores the helper for syncing
     var syncingHelper: SyncingHelper? = null
 
@@ -54,6 +51,7 @@ class AppViewModel(
     private val _isDriveSyncEnabled = MutableStateFlow(false)
     val isDriveSyncEnabled = _isDriveSyncEnabled.asStateFlow()
 
+    // TODO: load based on last write
     // Stores the app data, load based on local save
     private val _appData = MutableStateFlow(localSaveHelper.loadData())
     val appData = _appData.asStateFlow()
@@ -119,7 +117,6 @@ class AppViewModel(
         }
     }
 
-
     fun completeTutorial() {
         viewModelScope.launch {
             getApplication<Application>().dataStore.edit { settings ->
@@ -149,7 +146,6 @@ class AppViewModel(
     // TODO: other functions to change appdata
     fun addTask(moduleCode: String, title: String, type: String, deadline: String, isCompleted: Boolean) {
         val currentTime = System.currentTimeMillis()
-
         val newTask = Task(
             id = currentTime,
             moduleCode = moduleCode,
@@ -181,7 +177,6 @@ class AppViewModel(
 
     private fun updateData(updateFunction: (AppData) -> AppData) {
         _appData.value = updateFunction(_appData.value)
-
         localSaveHelper.saveData(_appData.value)
 
         if (isDriveSyncEnabled.value) {
@@ -201,7 +196,6 @@ class AppViewModel(
         _syncState.value = SyncState.SYNCING
 
         val jsonPayload = syncJsonParser.encodeToString(_appData.value)
-
         val success = syncingHelper?.uploadAppData(jsonPayload) == true
 
         if (success) {

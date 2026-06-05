@@ -7,10 +7,10 @@ import com.example.modulo.syncJsonParser
 import kotlinx.serialization.encodeToString
 import java.io.File
 
-class LocalSaveHelper(private val context: Context) {
-    private val TAG = "LocalSave"
-    private val FILENAME = "modulo-data.json"
+private const val TAG = "LocalSave"
+private const val FILENAME = "modulo-data.json"
 
+class LocalSaveHelper(private val context: Context) {
     fun saveData(appData: AppData) {
         try {
             val jsonString = syncJsonParser.encodeToString(appData)
@@ -18,7 +18,7 @@ class LocalSaveHelper(private val context: Context) {
                 output.write(jsonString.toByteArray())
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to save locally")
+            Log.e(TAG, "Failed to save locally", e)
         }
     }
 

@@ -2,7 +2,6 @@ package com.example.modulo.helpers
 
 import android.app.Activity
 import android.content.Context
-import android.hardware.camera2.CaptureFailure
 import android.util.Base64
 import android.util.Log
 import android.widget.Toast
@@ -214,12 +213,12 @@ object AuthenticationHelper {
         onFailure: () -> Unit
     ) {
         try {
-            // Select accounts that have already logged in, and bypass UI
+            // Select accounts that have already logged in
             val googleUser = signIn(context, credentialManager, true)
             onSuccess(googleUser.id)
 
         } catch (e: GetCredentialException) {
-            // Normal behavior: No saved session was found, or auto-select failed
+            // No saved session found
             Log.d(TAG, "Silent sign-in failed")
             onFailure()
         } catch (e: Exception) {

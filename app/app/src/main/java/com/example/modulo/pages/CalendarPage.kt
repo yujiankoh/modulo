@@ -6,7 +6,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.launch
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -41,13 +40,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.modulo.AppViewModel
-import com.google.android.gms.common.util.AndroidUtilsLight
-import kotlin.contracts.contract
 
 @Composable
 fun CalendarPage(
@@ -149,7 +144,7 @@ fun UploadTimetable() {
                             modifier = Modifier.size(48.dp),
                         )
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text("No image selected",)
+                        Text("No image selected")
                     }
                 }
             }
