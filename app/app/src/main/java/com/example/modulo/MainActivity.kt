@@ -31,35 +31,34 @@ class MainActivity : ComponentActivity() {
         credentialManager = CredentialManager.create(this)
 
         setContent {
+            val navController = rememberNavController()
+            val scope = rememberCoroutineScope()
+
+            val appViewModel: AppViewModel = viewModel()
+
+            // Action for when drive authorization is successful
+            val navigateToHomeAfterSync: (String) -> Unit = { email ->
+                val driveHelper = SyncingHelper.getSyncService(this@MainActivity, email)
+
+                appViewModel.syncingHelper = driveHelper
+
+                navController.navigate(Home) {
+                    popUpTo(SignIn) { inclusive = true }
+                }
+            }
+
+            // Waits for user reply on authorization and passes result
+            val driveAuthorizationLauncher = rememberLauncherForActivityResult(
+                contract = ActivityResultContracts.StartIntentSenderForResult()
+            ) { result ->
+                AuthenticationHelper.onDrivePermission(
+                    this,
+                    result,
+                    appViewModel.getUserEmail(),
+                    navigateToHomeAfterSync)
+            }
+
             ModuloTheme {
-
-                val navController = rememberNavController()
-                val scope = rememberCoroutineScope()
-
-                val appViewModel: AppViewModel = viewModel()
-
-                // Action for when drive authorization is successful
-                val navigateToHomeAfterSync: (String) -> Unit = { email ->
-                    val driveHelper = SyncingHelper.getSyncService(this@MainActivity, email)
-
-                    appViewModel.syncingHelper = driveHelper
-
-                    navController.navigate(Home) {
-                        popUpTo(SignIn) { inclusive = true }
-                    }
-                }
-
-                // Waits for user reply on authorization and passes result
-                val driveAuthorizationLauncher = rememberLauncherForActivityResult(
-                    contract = ActivityResultContracts.StartIntentSenderForResult()
-                ) { result ->
-                    AuthenticationHelper.onDrivePermission(
-                        this,
-                        result,
-                        appViewModel.getUserEmail(),
-                        navigateToHomeAfterSync)
-                }
-
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background

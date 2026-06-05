@@ -18,6 +18,7 @@ import androidx.navigation.toRoute
 import com.example.modulo.AppViewModel
 import com.example.modulo.pages.AddTaskPage
 import com.example.modulo.pages.AuthenticatePage
+import com.example.modulo.pages.CalendarPage
 import com.example.modulo.pages.HomePage
 import com.example.modulo.pages.SignInPage
 import kotlinx.serialization.Serializable
@@ -77,7 +78,8 @@ fun AppNavigation(
 
             composable<AddTask> { AddTaskPage() }
 
-            composable<Calendar> { Text("Calendar Page") }
+            composable<Calendar> { CalendarPage() }
+            
             composable<AllTasks> { Text("All Tasks Page") }
             composable<StudySession> { Text("Study Session Page") }
         }
