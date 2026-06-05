@@ -1,6 +1,5 @@
 package com.example.modulo.pages
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -11,14 +10,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import com.example.modulo.R
 
 @Composable
-fun SignInPage(
-    onSyncWithDriveClick: () -> Unit,
-    onLocalSaveClick:() -> Unit
+fun TutorialPage(
+    onSkipClick: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -26,17 +22,14 @@ fun SignInPage(
             .wrapContentSize(Alignment.Center),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Image(
-            painter = painterResource(R.drawable.logo),
-            contentDescription = "logo"
-        )
+        Text("Tutorial Page")
         Spacer(modifier = Modifier.height(16.dp))
 
-        Button(onClick = onSyncWithDriveClick) {
-            Text("Sync with Google Drive")
-        }
-        Button(onClick = onLocalSaveClick) {
-            Text("Continue with Local Save")
+        Button (
+            onClick = onSkipClick
+        ) {
+            Text("Skip")
         }
     }
+
 }

@@ -40,7 +40,8 @@ import java.util.TimeZone
 
 @Composable
 fun AddTaskPage(
-    viewModel: AppViewModel = viewModel()
+    viewModel: AppViewModel,
+    onAddTask: () -> Unit
 ) {
     // Collect info from the model
     val appData by viewModel.appData.collectAsState()
@@ -105,6 +106,7 @@ fun AddTaskPage(
                     inputTitle.edit { replace(0, length, "") }
                     selectedDeadline = ""
                 }
+                onAddTask()
             }
         ) {
             Text("Add Task")

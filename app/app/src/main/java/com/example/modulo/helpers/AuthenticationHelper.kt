@@ -1,6 +1,8 @@
 package com.example.modulo.helpers
 
 import android.app.Activity
+import android.content.Context
+import android.hardware.camera2.CaptureFailure
 import android.util.Base64
 import android.util.Log
 import android.widget.Toast
@@ -9,6 +11,7 @@ import androidx.activity.result.IntentSenderRequest
 import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
+import androidx.credentials.exceptions.GetCredentialException
 import androidx.credentials.exceptions.NoCredentialException
 import com.google.android.gms.auth.api.identity.AuthorizationRequest
 import com.google.android.gms.auth.api.identity.AuthorizationResult
@@ -97,7 +100,7 @@ object AuthenticationHelper {
      * Implement Sign in with Google
      */
     private suspend fun signIn(
-        activity: Activity,
+        context: Context,
         credentialManager: CredentialManager,
         filterByAuthorizedAccounts: Boolean
     ) : GoogleIdTokenCredential {
@@ -113,7 +116,7 @@ object AuthenticationHelper {
             .addCredentialOption(googleIdOption)
             .build()
 
-        val result = credentialManager.getCredential(context = activity, request = request)
+        val result = credentialManager.getCredential(context = context, request = request)
         val credential = result.credential
 
         if (credential is CustomCredential && credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
@@ -198,6 +201,30 @@ object AuthenticationHelper {
                 "Google Drive authorization failed",
                 Toast.LENGTH_SHORT
             ).show()
+        }
+    }
+
+    /**
+     * Silently attempt to sign in
+     */
+    suspend fun silentSignIn(
+        context: Context,
+        credentialManager: CredentialManager,
+        onSuccess: (String) -> Unit,
+        onFailure: () -> Unit
+    ) {
+        try {
+            // Select accounts that have already logged in, and bypass UI
+            val googleUser = signIn(context, credentialManager, true)
+            onSuccess(googleUser.id)
+
+        } catch (e: GetCredentialException) {
+            // Normal behavior: No saved session was found, or auto-select failed
+            Log.d(TAG, "Silent sign-in failed")
+            onFailure()
+        } catch (e: Exception) {
+            Log.e(TAG, "Unexpected error during silent sign-in", e)
+            onFailure()
         }
     }
 }

@@ -51,7 +51,7 @@ import kotlin.contracts.contract
 
 @Composable
 fun CalendarPage(
-    viewModel: AppViewModel = viewModel()
+    viewModel: AppViewModel
 ) {
     // Collect info from the model
     val appData by viewModel.appData.collectAsState()

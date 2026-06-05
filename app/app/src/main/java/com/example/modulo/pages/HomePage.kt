@@ -32,7 +32,7 @@ import java.util.Locale
 
 @Composable
 fun HomePage(
-    viewModel: AppViewModel = viewModel(),
+    viewModel: AppViewModel,
 ) {
     // Collect info from the model
     val appData by viewModel.appData.collectAsState()

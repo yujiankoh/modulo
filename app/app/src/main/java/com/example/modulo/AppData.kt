@@ -11,6 +11,13 @@ enum class SyncState{
 }
 
 /**
+ * This enum class encapsulates the states of app startup
+ */
+enum class StartupState{
+    LOADING, TUTORIAL, SIGN_IN, AUTHENTICATE, READY
+}
+
+/**
  * This data class encapsulates the information of a task
  */
 @Serializable

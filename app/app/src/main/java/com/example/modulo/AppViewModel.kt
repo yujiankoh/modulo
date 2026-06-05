@@ -1,19 +1,34 @@
 package com.example.modulo
 
 import android.app.Application
+import android.content.Context
 import android.util.Log
+import androidx.credentials.CredentialManager
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.preferencesDataStore
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
+import com.example.modulo.helpers.AuthenticationHelper
 import com.example.modulo.helpers.LocalSaveHelper
 import com.example.modulo.helpers.SyncingHelper
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import java.time.Instant
+
+// Flag in device hard drive
+val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
+val HAS_SEEN_TUTORIAL = booleanPreferencesKey("has_seen_tutorial")
+val IS_DRIVE_SYNC_ENABLED = booleanPreferencesKey("is_drive_sync_enabled")
 
 class AppViewModel(
     application: Application,
@@ -47,11 +62,88 @@ class AppViewModel(
     private val _syncState = MutableStateFlow(SyncState.SYNCED)
     val syncState = _syncState.asStateFlow()
 
+    // Stores the current startup state
+    private val _startupState = MutableStateFlow(StartupState.LOADING)
+    val startupState = _startupState.asStateFlow()
+
     // Only sync after a moment of inactivity
     private var delaySync: Job? = null
 
-    fun setDriveSyncEnabled(enabled: Boolean) {
-        _isDriveSyncEnabled.value = enabled
+    // Functions for startup
+    init {
+        startUpChecks()
+    }
+
+    private fun startUpChecks() {
+        viewModelScope.launch {
+            val prefs = getApplication<Application>().dataStore.data.first()
+            val hasSeenTutorial = prefs[HAS_SEEN_TUTORIAL] ?: false
+            val isSyncEnabled = prefs[IS_DRIVE_SYNC_ENABLED]
+
+            // Check for first time users
+            if (!hasSeenTutorial) {
+                _startupState.value = StartupState.TUTORIAL
+                return@launch
+            }
+
+            when (isSyncEnabled) {
+                true -> {
+                    // User selected sync, go to Silent Sign-in
+                    _isDriveSyncEnabled.value = true
+
+                    val credentialManager = CredentialManager.create(getApplication())
+
+                    AuthenticationHelper.silentSignIn(
+                        context = getApplication(),
+                        credentialManager = credentialManager,
+                        onSuccess = { email ->
+                            setUserEmail(email)
+                            syncingHelper = SyncingHelper.getSyncService(getApplication(), email)
+                            _startupState.value = StartupState.READY
+                        },
+                        onFailure = {
+                            _startupState.value = StartupState.AUTHENTICATE
+                        }
+                    )
+                }
+                false -> {
+                    // User selected local save, go to Home
+                    _isDriveSyncEnabled.value = false
+                    _startupState.value = StartupState.READY
+                }
+                null -> {
+                    // Completed tutorial but user did not select, go to Sign-in
+                    _startupState.value = StartupState.SIGN_IN
+                }
+            }
+        }
+    }
+
+
+    fun completeTutorial() {
+        viewModelScope.launch {
+            getApplication<Application>().dataStore.edit { settings ->
+                settings[HAS_SEEN_TUTORIAL] = true
+            }
+            _startupState.value = StartupState.SIGN_IN
+        }
+    }
+
+    fun saveSyncPreference(enabled: Boolean) {
+        viewModelScope.launch {
+            getApplication<Application>().dataStore.edit { settings ->
+                settings[IS_DRIVE_SYNC_ENABLED] = enabled
+            }
+            _isDriveSyncEnabled.value = enabled
+
+            if (!enabled) {
+                _startupState.value = StartupState.READY
+            }
+        }
+    }
+
+    fun navigateToHome() {
+        _startupState.value = StartupState.READY
     }
 
     // TODO: other functions to change appdata
@@ -138,7 +230,7 @@ class AppViewModel(
 
                     Log.d(TAG, "Data successfully downloaded and saved")
                 } catch (e: Exception) {
-                    Log.e(TAG, "Failed to parse downloaded data")
+                    Log.e(TAG, "Failed to parse downloaded data", e)
                 }
             }
         }
