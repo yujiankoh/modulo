@@ -24,6 +24,7 @@ import com.example.modulo.StartupState
 import com.example.modulo.helpers.AuthenticationHelper
 import com.example.modulo.helpers.SyncingHelper
 import com.example.modulo.pages.AddTaskPage
+import com.example.modulo.pages.AllTaskPage
 import com.example.modulo.pages.AuthenticatePage
 import com.example.modulo.pages.CalendarPage
 import com.example.modulo.pages.HomePage
@@ -194,7 +195,7 @@ fun NavGraphBuilder.appNavigation(viewModel: AppViewModel) {
 
                 composable<Calendar> { CalendarPage(viewModel = viewModel) }
 
-                composable<AllTasks> { Text("All Tasks Page") }
+                composable<AllTasks> { AllTaskPage(viewModel = viewModel) }
                 composable<StudySession> { Text("Study Session Page") }
             }
 

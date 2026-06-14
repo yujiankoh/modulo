@@ -161,7 +161,7 @@ class AppViewModel(
         }
     }
 
-    fun toggleTaskCompletion(toggledTask: Task) {
+    fun completeTask(toggledTask: Task) {
         updateData { currentData ->
             val updatedTasks = currentData.tasks.map { task ->
                 if (task == toggledTask) {
@@ -172,6 +172,14 @@ class AppViewModel(
             }
 
             currentData.copy(tasks = updatedTasks)
+        }
+    }
+
+    fun deleteTask(deletedTask: Task) {
+        updateData { currentData ->
+            currentData.copy(
+                tasks = currentData.tasks.filter { it != deletedTask }
+            )
         }
     }
 

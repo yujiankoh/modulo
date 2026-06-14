@@ -1,33 +1,29 @@
 package com.example.modulo.pages
 
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import com.example.modulo.AppViewModel
 import com.example.modulo.SyncState
 import com.example.modulo.Task
-import java.text.SimpleDateFormat
-import java.util.Locale
 
 @Composable
 fun HomePage(
@@ -44,10 +40,17 @@ fun HomePage(
         SyncState.SYNCED -> "All changes synced"
     }
 
+    var deletedTask by remember { mutableStateOf<Task?>(null) }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .wrapContentSize(Alignment.Center),
+            .wrapContentSize(Alignment.Center)
+            .pointerInput(Unit) {
+                detectTapGestures(onTap = {
+                    deletedTask = null;
+                })
+            },
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Spacer(modifier = Modifier.height(24.dp))
@@ -76,8 +79,15 @@ fun HomePage(
             items(appData.tasks) { task ->
                 TaskCard(
                     task = task,
+                    showDelete = deletedTask == task,
+                    onLongPress = { deletedTask = task },
+                    onNormalPress = { deletedTask = null },
                     onToggle = { clickedTask ->
-                        viewModel.toggleTaskCompletion(clickedTask)
+                        viewModel.completeTask(clickedTask)
+                    },
+                    onDelete = {
+                        viewModel.deleteTask(task)
+                        deletedTask = null
                     }
                 )
             }
@@ -89,69 +99,5 @@ fun HomePage(
 
         Spacer(modifier = Modifier.height(48.dp))
 
-    }
-}
-
-@Composable
-fun TaskCard(
-    task: Task,
-    onToggle: (Task) -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp, horizontal = 8.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = task.title,
-                        textDecoration = if (task.done) TextDecoration.LineThrough else TextDecoration.None
-                    )
-
-                    Checkbox(
-                        checked = task.done,
-                        onCheckedChange = { onToggle(task) },
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(4.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(text = task.type)
-                    Text(text = "Due: ${formatDate(task.due)}")
-                }
-            }
-        }
-    }
-}
-
-fun formatDate(dataDate: String): String {
-    if (dataDate.isBlank()) return ""
-
-    return try {
-        val parser = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-
-        val formatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-
-        val date = parser.parse(dataDate)
-
-        if (date != null) formatter.format(date) else dataDate
-    } catch (e: Exception) {
-        dataDate
     }
 }
