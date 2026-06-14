@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -24,6 +25,10 @@ import androidx.compose.ui.unit.dp
 import com.example.modulo.AppViewModel
 import com.example.modulo.SyncState
 import com.example.modulo.Task
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
+import java.util.TimeZone
 
 @Composable
 fun HomePage(
@@ -42,13 +47,38 @@ fun HomePage(
 
     var deletedTask by remember { mutableStateOf<Task?>(null) }
 
+    val dueTasks = remember(appData.tasks) {
+        val parser = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).apply {
+            timeZone = TimeZone.getTimeZone("UTC")
+        }
+
+        // Calculate the cutoff date
+        val cutoff = Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply {
+            add(Calendar.DAY_OF_YEAR, 7)
+            set(Calendar.HOUR_OF_DAY, 23)
+            set(Calendar.MINUTE, 59)
+            set(Calendar.SECOND, 59)
+        }
+
+        appData.tasks.filter { task ->
+            if (task.done || task.due.isBlank()) return@filter false
+
+            try {
+                val dueDate = parser.parse(task.due)
+                dueDate != null && !dueDate.after(cutoff.time)
+            } catch (e: Exception) {
+                false
+            }
+        }.sortedBy { it.due }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .wrapContentSize(Alignment.Center)
             .pointerInput(Unit) {
                 detectTapGestures(onTap = {
-                    deletedTask = null;
+                    deletedTask = null
                 })
             },
         horizontalAlignment = Alignment.CenterHorizontally
@@ -76,20 +106,30 @@ fun HomePage(
                 .fillMaxWidth()
                 .weight(1f)
         ) {
-            items(appData.tasks) { task ->
-                TaskCard(
-                    task = task,
-                    showDelete = deletedTask == task,
-                    onLongPress = { deletedTask = task },
-                    onNormalPress = { deletedTask = null },
-                    onToggle = { clickedTask ->
-                        viewModel.completeTask(clickedTask)
-                    },
-                    onDelete = {
-                        viewModel.deleteTask(task)
-                        deletedTask = null
-                    }
-                )
+            if (dueTasks.isEmpty()) {
+                item {
+                    Text(
+                        text = "No tasks due in a week.",
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
+            } else {
+                items(dueTasks) { task ->
+                    TaskCard(
+                        task = task,
+                        showDelete = deletedTask == task,
+                        onLongPress = { deletedTask = task },
+                        onNormalPress = { deletedTask = null },
+                        onToggle = { clickedTask ->
+                            viewModel.completeTask(clickedTask)
+                        },
+                        onDelete = {
+                            viewModel.deleteTask(task)
+                            deletedTask = null
+                        },
+                        dueText = formatRelativeDate(task.due)
+                    )
+                }
             }
         }
 
@@ -99,5 +139,47 @@ fun HomePage(
 
         Spacer(modifier = Modifier.height(48.dp))
 
+    }
+}
+
+fun formatRelativeDate(dataDate: String): String {
+    if (dataDate.isBlank()) return ""
+
+    return try {
+        val parser = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).apply {
+            timeZone = TimeZone.getTimeZone("UTC")
+        }
+        val dueDate = parser.parse(dataDate) ?: return dataDate
+
+        // Get today's date in UTC
+        val today = Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply {
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+
+        val due = Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply {
+            time = dueDate
+        }
+
+        // Calculate days between by dividing the millisecond difference
+        val diffMillis = due.timeInMillis - today.timeInMillis
+        val daysBetween = diffMillis / (1000 * 60 * 60 * 24)
+
+        when {
+            daysBetween < 0 -> "Overdue"
+            daysBetween == 0L -> "Today"
+            daysBetween == 1L -> "Tomorrow"
+
+            else -> {
+                val displayFormatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).apply {
+                    timeZone = TimeZone.getTimeZone("UTC")
+                }
+                displayFormatter.format(dueDate)
+            }
+        }
+    } catch (e: Exception) {
+        dataDate
     }
 }

@@ -1,5 +1,6 @@
 package com.example.modulo.pages
 
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -57,7 +59,7 @@ fun AllTaskPage(
             .fillMaxSize()
             .pointerInput(Unit) {
                 detectTapGestures(onTap = {
-                    deletedTask = null;
+                    deletedTask = null
                 })
             }
     ) {
@@ -154,7 +156,8 @@ fun TaskCard(
     onLongPress: () -> Unit,
     onNormalPress: () -> Unit,
     onToggle: (Task) -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    dueText: String = formatDate(task.due)
 ) {
 
     val cardColour = if (showDelete) {
@@ -179,7 +182,7 @@ fun TaskCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(
-                modifier = Modifier.padding(16.dp)
+                modifier = Modifier.padding(8.dp)
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -188,7 +191,8 @@ fun TaskCard(
                 ) {
                     Text(
                         text = task.title,
-                        textDecoration = if (task.done) TextDecoration.LineThrough else TextDecoration.None
+                        textDecoration = if (task.done) TextDecoration.LineThrough else TextDecoration.None,
+                        modifier = Modifier.padding(start = 8.dp)
                     )
 
                     if (showDelete) {
@@ -206,15 +210,32 @@ fun TaskCard(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(4.dp))
+                //Spacer(modifier = Modifier.height(4.dp))
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(text = task.moduleCode)
-                    Text(text = task.type)
-                    Text(text = "Due: ${formatDate(task.due)}")
+                    Row {
+                        Text(
+                            text = task.moduleCode,
+                            modifier = Modifier
+                                .border(width = 1.dp, color = MaterialTheme.colorScheme.outline, shape = RoundedCornerShape(4.dp))
+                                .padding(horizontal = 8.dp, vertical = 4.dp)
+                        )
+                        Spacer(Modifier.padding(4.dp))
+                        Text(
+                            text = task.type,
+                            modifier = Modifier
+                                .border(width = 1.dp, color = MaterialTheme.colorScheme.outline, shape = RoundedCornerShape(4.dp))
+                                .padding(horizontal = 8.dp, vertical = 4.dp)
+                        )
+                    }
+                    Text(
+                        text = "Due: $dueText",
+                        modifier = Modifier.padding(end = 8.dp)
+                    )
                 }
             }
         }
