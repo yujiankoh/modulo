@@ -7,7 +7,10 @@ const app = express();
 app.use(cors());                                // allow web/app (other origins) to call this
 app.use(express.json({ limit: "10mb" }));       // images are big — raise the body limit
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const ai = new GoogleGenAI({
+  apiKey: process.env.GEMINI_API_KEY,
+  httpOptions: { timeout: 180000 },             // wait up to 3 min — Gemini parses can exceed the 1-min default
+});
 const MODEL = "gemini-3.5-flash";               // a fast vision model — verify in AI Studio
 
 function buildPrompt(level) {

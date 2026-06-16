@@ -293,8 +293,8 @@ imageInput.addEventListener("change", async () => {
     `Image ready (${mimeType}, ~${Math.round(base64.length / 1024)} KB). Parsing is the next step.`;
 });
 
-// parse button: for now, just validate we have what we need (to be updated)
-const PROXY_URL = "http://localhost:3000/parse-timetable";
+// parse button: sends the image to the deployed proxy, which calls Gemini and returns parsed modules
+const PROXY_URL = "https://modulo-proxy.onrender.com/parse-timetable";
 
 document.getElementById("parseBtn").addEventListener("click", async () => {
   if (!appState.educationLevel) { alert("Choose your education level first."); return; }
