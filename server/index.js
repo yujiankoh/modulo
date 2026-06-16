@@ -93,7 +93,7 @@ app.post("/parse-timetable", async (req, res) => {
       ],
       config: {
         responseMimeType: "application/json",
-        thinkingConfig: { thinkingBudget: 0 },     // 0 = no "thinking" → fastest; raise if accuracy drops
+        thinkingConfig: { thinkingBudget: 1024 },  // small thinking budget: faster than default, accurate enough; tune as needed
       },
     });
 
