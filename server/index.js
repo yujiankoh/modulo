@@ -92,8 +92,7 @@ app.post("/parse-timetable", async (req, res) => {
         { text: buildPrompt(educationLevel) },
       ],
       config: {
-        responseMimeType: "application/json",
-        thinkingConfig: { thinkingBudget: 0 },  // small thinking budget: faster than default, accurate enough; tune as needed
+        responseMimeType: "application/json" // small thinking budget: faster than default, accurate enough; tune as needed
       },
     });
 
