@@ -91,7 +91,10 @@ app.post("/parse-timetable", async (req, res) => {
         { inlineData: { mimeType, data: image } },
         { text: buildPrompt(educationLevel) },
       ],
-      config: { responseMimeType: "application/json" },
+      config: {
+        responseMimeType: "application/json",
+        thinkingConfig: { thinkingBudget: 0 },     // 0 = no "thinking" → fastest; raise if accuracy drops
+      },
     });
 
     const parsed = JSON.parse(response.text);
