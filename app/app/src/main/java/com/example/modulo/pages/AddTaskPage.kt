@@ -2,10 +2,12 @@ package com.example.modulo.pages
 
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.Button
@@ -30,8 +32,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 import com.example.modulo.AppData
 import com.example.modulo.AppViewModel
+import com.example.modulo.TimetableState
+import com.example.modulo.navigation.TimetableUpload
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -40,10 +45,12 @@ import java.util.TimeZone
 @Composable
 fun AddTaskPage(
     viewModel: AppViewModel,
+    navController: NavController,
     onAddTask: () -> Unit
 ) {
     // Collect info from the model
     val appData by viewModel.appData.collectAsState()
+    val timetableState by viewModel.timetableState.collectAsState()
 
     // Collect the first module
     val initialModule = appData.timetable?.modules?.first()
@@ -55,60 +62,76 @@ fun AddTaskPage(
     var selectedTaskType by remember { mutableStateOf("assignment") }
     var selectedDeadline by remember { mutableStateOf("") }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .wrapContentSize(Alignment.Center),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        OutlinedTextField(
-            state = inputTitle,
-            label = { Text("Title") }
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        ModuleDropDownMenu(
-            selectedModule = selectedModule,
-            appData = appData,
-            onModuleSelected = {selectedModule = it}
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        TaskTypeDropDownMenu(
-            selectedType = selectedTaskType,
-            onTypeSelected = {selectedTaskType = it}
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        DeadlinePicker(
-            selectedDate = selectedDeadline,
-            onDateSelected = {selectedDeadline = it}
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Button(
-            onClick = {
-                viewModel.addTask(
-                    selectedModule,
-                    inputTitle.text.toString(),
-                    selectedTaskType,
-                    selectedDeadline,
-                    false
-                )
-
-                // Clear input fields
-                inputTitle.edit { replace(0, length, "") }
-                selectedDeadline = ""
-
-                onAddTask()
-            },
-            enabled = inputTitle.text.isNotBlank() && selectedDeadline.isNotBlank() && selectedModule.isEmpty()
+    if (appData.timetable == null && timetableState is TimetableState.Idle) {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text("Add Task")
+            MissingTimetableBanner (
+                onUploadClicked = {
+                    navController.navigate(TimetableUpload)
+                }
+            )
+        }
+
+    } else {
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .wrapContentSize(Alignment.Center),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            OutlinedTextField(
+                state = inputTitle,
+                label = { Text("Title") }
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            ModuleDropDownMenu(
+                selectedModule = selectedModule,
+                appData = appData,
+                onModuleSelected = { selectedModule = it }
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            TaskTypeDropDownMenu(
+                selectedType = selectedTaskType,
+                onTypeSelected = { selectedTaskType = it }
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            DeadlinePicker(
+                selectedDate = selectedDeadline,
+                onDateSelected = { selectedDeadline = it }
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Button(
+                onClick = {
+                    viewModel.addTask(
+                        selectedModule,
+                        inputTitle.text.toString(),
+                        selectedTaskType,
+                        selectedDeadline,
+                        false
+                    )
+
+                    // Clear input fields
+                    inputTitle.edit { replace(0, length, "") }
+                    selectedDeadline = ""
+
+                    onAddTask()
+                },
+                enabled = inputTitle.text.isNotBlank() && selectedDeadline.isNotBlank() && selectedModule.isEmpty()
+            ) {
+                Text("Add Task")
+            }
         }
     }
 }

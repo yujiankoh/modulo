@@ -22,9 +22,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 import com.example.modulo.AppViewModel
 import com.example.modulo.SyncState
 import com.example.modulo.Task
+import com.example.modulo.TimetableState
+import com.example.modulo.navigation.TimetableUpload
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
@@ -33,11 +36,13 @@ import java.util.TimeZone
 @Composable
 fun HomePage(
     viewModel: AppViewModel,
+    navController: NavController
 ) {
     // Collect info from the model
     val appData by viewModel.appData.collectAsState()
     val syncState by viewModel.syncState.collectAsState()
     val isDriveSyncEnabled by viewModel.isDriveSyncEnabled.collectAsState()
+    val timetableState by viewModel.timetableState.collectAsState()
 
     val statusText = when (syncState) {
         SyncState.UNSYNCED -> "Unsynced changes..."
@@ -83,6 +88,14 @@ fun HomePage(
             },
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        if (appData.timetable == null && timetableState is TimetableState.Idle) {
+            MissingTimetableBanner (
+                onUploadClicked = {
+                    navController.navigate(TimetableUpload)
+                }
+            )
+        }
+
         Spacer(modifier = Modifier.height(24.dp))
         Text("HomePage")
         Spacer(modifier = Modifier.height(8.dp))

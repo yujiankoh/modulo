@@ -3,7 +3,12 @@ package com.example.modulo.navigation
 import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -11,7 +16,9 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.zIndex
 import androidx.credentials.CredentialManager
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
@@ -30,7 +37,9 @@ import com.example.modulo.pages.CalendarPage
 import com.example.modulo.pages.HomePage
 import com.example.modulo.pages.LoadingPage
 import com.example.modulo.pages.SignInPage
+import com.example.modulo.pages.TimetableStateOverlay
 import com.example.modulo.pages.TutorialPage
+import com.example.modulo.pages.UploadTimetablePage
 import kotlinx.serialization.Serializable
 
 @Serializable object StartupGraph
@@ -47,12 +56,15 @@ import kotlinx.serialization.Serializable
 @Serializable object AllTasks
 @Serializable object StudySession
 
+@Serializable object TimetableUpload;
+
 @Composable
 fun RootNavigation(
     viewModel: AppViewModel,
 ) {
     val navController = rememberNavController()
     val startupState by viewModel.startupState.collectAsState()
+    val timetableState by viewModel.timetableState.collectAsState()
 
     val context = requireNotNull(LocalActivity.current)
     val scope = rememberCoroutineScope()
@@ -119,17 +131,28 @@ fun RootNavigation(
         }
     }
 
-    NavHost(
-        navController = navController,
-        startDestination = StartupGraph
-    ) {
-        startupNavigation(
+    Box(modifier = Modifier.fillMaxSize()) {
+        NavHost(
             navController = navController,
-            viewModel = viewModel,
-            onAuthentication = triggerSignIn
-        )
+            startDestination = StartupGraph
+        ) {
+            startupNavigation(
+                navController = navController,
+                viewModel = viewModel,
+                onAuthentication = triggerSignIn
+            )
 
-        appNavigation(viewModel)
+            appNavigation(viewModel)
+        }
+
+        TimetableStateOverlay(
+            state = timetableState,
+            viewModel = viewModel,
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .statusBarsPadding()
+                .zIndex(100f)
+        )
     }
 }
 
@@ -182,11 +205,12 @@ fun NavGraphBuilder.appNavigation(viewModel: AppViewModel) {
                 modifier = Modifier.padding(innerPadding)
             ) {
 
-                composable<Home> { HomePage(viewModel = viewModel) }
+                composable<Home> { HomePage(viewModel = viewModel, navController = navController) }
 
                 composable<AddTask> {
                     AddTaskPage(
                         viewModel = viewModel,
+                        navController = navController,
                         onAddTask = {
                             navController.popBackStack()
                         }
@@ -196,7 +220,17 @@ fun NavGraphBuilder.appNavigation(viewModel: AppViewModel) {
                 composable<Calendar> { CalendarPage(viewModel = viewModel) }
 
                 composable<AllTasks> { AllTaskPage(viewModel = viewModel) }
+
                 composable<StudySession> { Text("Study Session Page") }
+
+                composable<TimetableUpload> {
+                    UploadTimetablePage(
+                        viewModel = viewModel,
+                        onBack = {
+                            navController.popBackStack()
+                        }
+                    )
+                }
             }
 
         }

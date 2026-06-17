@@ -20,19 +20,27 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -48,13 +56,16 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.example.modulo.AppViewModel
+import com.example.modulo.TimetableState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 
 @Composable
 fun UploadTimetablePage(
-    viewModel: AppViewModel
+    viewModel: AppViewModel,
+    onBack: () -> Unit
 ) {
     val context = LocalContext.current
     var selectedEducation by remember { mutableStateOf("primary") }
@@ -83,6 +94,8 @@ fun UploadTimetablePage(
                     mimeType = "image/jpeg",
                     educationLevel = selectedEducation
                 )
+
+                onBack();
             }
         )
     }
@@ -196,8 +209,11 @@ fun UploadTimetable(
                     if (finalBitmap != null) {
                         val stream = ByteArrayOutputStream()
                         finalBitmap.compress(Bitmap.CompressFormat.JPEG, 80, stream)
+                        val bytes = stream.toByteArray()
 
-                        onUploadTimetable(stream.toByteArray())
+                        withContext(Dispatchers.Main) {
+                            onUploadTimetable(bytes)
+                        }
                     }
                 }
             },
@@ -215,7 +231,7 @@ fun EducationDropDownMenu(
     onEduSelected: (String) -> Unit
 ) {
     var isExpanded by remember { mutableStateOf(false) }
-    val educationLevels = arrayOf("primary", "secondary", "jc", "polytechnic", "university")
+    val educationLevels = arrayOf("primary", "secondary", "jc", "poly", "university")
 
     ExposedDropdownMenuBox(
         expanded = isExpanded,
@@ -259,5 +275,109 @@ fun getBitmapFromUri(context: Context, uri: Uri): Bitmap? {
     } catch (e: Exception) {
         e.printStackTrace()
         null
+    }
+}
+
+@Composable
+fun TimetableStateOverlay(
+    state: TimetableState,
+    viewModel: AppViewModel,
+    modifier: Modifier = Modifier
+) {
+    when (state) {
+        is TimetableState.Processing -> {
+            Card(
+                modifier = modifier
+                    .padding(16.dp)
+                    .fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Text(
+                        text = "Reading your timetable...\nYou can continue using the app.",
+                    )
+                }
+            }
+        }
+
+        is TimetableState.ReviewData -> {
+            AlertDialog(
+                onDismissRequest = { viewModel.clearTimetableState() },
+                title = { Text("Confirm Schedule Data") },
+                text = {
+                    Column {
+                        Text("We detected the following modules. Please verify before saving:")
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        // Scrollable list if they have many modules
+                        state.timetable.modules.forEach { module ->
+                            Text(
+                                text = "• ${module.code}: ${module.name}",
+                            )
+                        }
+                    }
+                },
+                confirmButton = {
+                    Button(onClick = { viewModel.saveTimetable(state.timetable) }) {
+                        Text("Confirm Timetable")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { viewModel.clearTimetableState() }) {
+                        Text("Discard")
+                    }
+                }
+            )
+        }
+
+        is TimetableState.Error -> {
+            AlertDialog(
+                onDismissRequest = { viewModel.clearTimetableState() },
+                title = { Text("Parsing Failed") },
+                text = { Text(state.message) },
+                confirmButton = {
+                    Button(onClick = { viewModel.clearTimetableState() }) {
+                        Text("OK")
+                    }
+                }
+            )
+        }
+
+        is TimetableState.Idle -> {}
+    }
+}
+
+@Composable
+fun MissingTimetableBanner(onUploadClicked: () -> Unit) {
+    Card(
+        onClick = onUploadClicked,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        colors = CardDefaults.cardColors(
+            // Uses a soft tinted background to make it stand out from normal tasks
+            containerColor = MaterialTheme.colorScheme.error
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Default.Warning,
+                contentDescription = "Missing Timetable",
+            )
+            Spacer(modifier = Modifier.width(16.dp))
+            Text(
+                text = "No timetable detected. Tap here to upload your schedule automatically.",
+            )
+        }
     }
 }

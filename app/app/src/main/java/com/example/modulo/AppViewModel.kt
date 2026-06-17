@@ -15,6 +15,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.example.modulo.helpers.AuthenticationHelper
 import com.example.modulo.helpers.LocalSaveHelper
+import com.example.modulo.helpers.NetworkResult
 import com.example.modulo.helpers.SyncingHelper
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -65,6 +66,10 @@ class AppViewModel(
     // Stores the current startup state
     private val _startupState = MutableStateFlow(StartupState.LOADING)
     val startupState = _startupState.asStateFlow()
+
+    // Stores the status of timetable parsing
+    private val _timetableState = MutableStateFlow<TimetableState>(TimetableState.Idle)
+    val timetableState = _timetableState.asStateFlow()
 
     // Only sync after a moment of inactivity
     private var delaySync: Job? = null
@@ -238,7 +243,12 @@ class AppViewModel(
         }
     }
 
+    fun clearTimetableState() {
+        _timetableState.value = TimetableState.Idle
+    }
+
     fun uploadTimetable(imageBytes: ByteArray, mimeType: String, educationLevel: String) {
+        _timetableState.value = TimetableState.Processing;
         viewModelScope.launch {
             try {
                 val base64String = Base64.encodeToString(imageBytes, Base64.NO_WRAP)
@@ -249,16 +259,38 @@ class AppViewModel(
                     educationLevel = educationLevel
                 )
 
-                val parsedTimetable = parsingHelper.parseTimetable(parsingData)
-
-                Log.d(TAG, "Successfully parsed timetable")
-
-                updateData { currentData ->
-                    currentData.copy(timetable = parsedTimetable)
+                when (val result = parsingHelper.parseTimetable(parsingData)) {
+                    is NetworkResult.Success -> {
+                        _timetableState.value = TimetableState.ReviewData(result.data)
+                    }
+                    is NetworkResult.Failure -> {
+                        val message = when (result.statusCode) {
+                            429 -> "Parsing limit reached for today, try again tomorrow."
+                            504 -> "Taking too long, please retry."
+                            400 -> "Invalid image format sent to server. Please try another image."
+                            else -> "Couldn't read the timetable, try another photo."
+                        }
+                        _timetableState.value = TimetableState.Error(message)
+                    }
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Error uploading/parsing timetable", e)
+                Log.e(TAG, "Unexpected error during upload", e)
+                _timetableState.value = TimetableState.Error("An unexpected error occurred. Please try again.")
             }
         }
     }
+
+    fun saveTimetable(timetable: Timetable) {
+        updateData { currentData ->
+            currentData.copy(timetable = timetable)
+        }
+        _timetableState.value = TimetableState.Idle
+    }
+}
+
+sealed interface TimetableState {
+    object Idle : TimetableState
+    object Processing : TimetableState
+    data class ReviewData(val timetable: Timetable) : TimetableState
+    data class Error(val message: String) : TimetableState
 }
