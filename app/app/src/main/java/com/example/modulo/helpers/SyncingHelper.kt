@@ -3,6 +3,8 @@ package com.example.modulo.helpers
 import android.accounts.Account
 import android.content.Context
 import android.util.Log
+import com.example.modulo.AppData
+import com.example.modulo.syncJsonParser
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential
 import com.google.api.client.http.ByteArrayContent
 import com.google.api.client.http.javanet.NetHttpTransport
@@ -12,6 +14,7 @@ import com.google.api.services.drive.DriveScopes
 import com.google.api.services.drive.model.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.encodeToString
 import java.io.ByteArrayOutputStream
 import kotlin.apply
 
@@ -41,13 +44,15 @@ class SyncingHelper(private val driveService: Drive) {
         }
     }
 
-    suspend fun uploadAppData(jsonString: String) = withContext(Dispatchers.IO) {
+    suspend fun uploadAppData(appData: AppData) = withContext(Dispatchers.IO) {
         try {
             // Search for the JSON file
             val fileList = driveService.files().list()
                 .setSpaces("appDataFolder")
                 .setQ("name='$FILENAME'")
                 .execute()
+
+            val jsonString = syncJsonParser.encodeToString(appData)
 
             val  content = ByteArrayContent.fromString("application/json", jsonString)
 
@@ -74,7 +79,7 @@ class SyncingHelper(private val driveService: Drive) {
         }
     }
 
-    suspend fun downloadAppData() : String? = withContext(Dispatchers.IO) {
+    suspend fun downloadAppData() : AppData? = withContext(Dispatchers.IO) {
         try {
             val fileList = driveService.files().list()
                 .setSpaces("appDataFolder")
@@ -97,7 +102,9 @@ class SyncingHelper(private val driveService: Drive) {
             val jsonString = outputStream.toString("UTF-8")
             Log.d(TAG, "Successfully downloaded JSON string from Drive")
 
-            return@withContext jsonString
+            val downloadedData = syncJsonParser.decodeFromString<AppData>(jsonString)
+
+            return@withContext downloadedData
         } catch (e: Exception) {
             Log.e(TAG, "Failed to read from Google Drive", e)
             return@withContext null

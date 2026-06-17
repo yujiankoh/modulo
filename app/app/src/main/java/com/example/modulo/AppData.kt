@@ -37,6 +37,7 @@ data class Task(
  */
 @Serializable
 data class Timetable(
+    val educationLevel: String,
     val modules: List<Module> = emptyList()
 )
 
@@ -47,7 +48,6 @@ data class Timetable(
 data class Module(
     val code: String,
     val name: String,
-    val color: String,
     val slots: List<Slot> = emptyList()
 )
 
@@ -60,7 +60,9 @@ data class Slot(
     val start: String,
     val end: String,
     val location: String = "",
-    val type: String = ""
+    val sessionType: String = "",
+    val classNo: String = "",
+    val teacher: String = ""
 )
 
 /**
@@ -69,11 +71,22 @@ data class Slot(
 @Serializable
 data class AppData(
     val schemaVersion: Int = 2,
+    val educationLevel: String? = null,
     val updatedAt: String? = null,
     val tasks: List<Task> = emptyList(),
     val timetable: Timetable? = null
 )
+/**
+ * This data class encapsulates all the timetable information to send to proxy
+ */
+@Serializable
+data class ParsingData(
+    val image: String,
+    val mimeType: String,
+    val educationLevel: String
+)
 
+@Serializable
 val syncJsonParser = Json {
     ignoreUnknownKeys = true
     encodeDefaults = true

@@ -2,6 +2,7 @@ package com.example.modulo
 
 import android.app.Application
 import android.content.Context
+import android.util.Base64
 import android.util.Log
 import androidx.credentials.CredentialManager
 import androidx.datastore.core.DataStore
@@ -21,7 +22,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.serialization.encodeToString
 
 private const val TAG = "ViewModel"
 
@@ -38,6 +38,8 @@ class AppViewModel(
     private val localSaveHelper = LocalSaveHelper(application)
     // Stores the helper for syncing
     var syncingHelper: SyncingHelper? = null
+    // Stores the helper for parsing timetable
+    private val parsingHelper = com.example.modulo.helpers.ParsingHelper()
 
     // Stores user email for authentication
     fun setUserEmail(email: String) {
@@ -183,6 +185,7 @@ class AppViewModel(
         }
     }
 
+    // function that both updates local save and Google Drive
     private fun updateData(updateFunction: (AppData) -> AppData) {
         _appData.value = updateFunction(_appData.value)
         localSaveHelper.saveData(_appData.value)
@@ -203,8 +206,7 @@ class AppViewModel(
     private suspend fun triggerDriveSync() {
         _syncState.value = SyncState.SYNCING
 
-        val jsonPayload = syncJsonParser.encodeToString(_appData.value)
-        val success = syncingHelper?.uploadAppData(jsonPayload) == true
+        val success = syncingHelper?.uploadAppData(_appData.value) == true
 
         if (success) {
             _syncState.value = SyncState.SYNCED
@@ -221,12 +223,10 @@ class AppViewModel(
         }
 
         viewModelScope.launch {
-            val jsonString = helper.downloadAppData()
+            val downloadedData = helper.downloadAppData()
 
-            if (jsonString != null) {
+            if (downloadedData != null) {
                 try {
-                    val downloadedData = syncJsonParser.decodeFromString<AppData>(jsonString)
-
                     _appData.value = downloadedData
                     localSaveHelper.saveData(downloadedData)
 
@@ -234,6 +234,30 @@ class AppViewModel(
                 } catch (e: Exception) {
                     Log.e(TAG, "Failed to parse downloaded data", e)
                 }
+            }
+        }
+    }
+
+    fun uploadTimetable(imageBytes: ByteArray, mimeType: String, educationLevel: String) {
+        viewModelScope.launch {
+            try {
+                val base64String = Base64.encodeToString(imageBytes, Base64.NO_WRAP)
+
+                val parsingData = ParsingData(
+                    image = base64String,
+                    mimeType = mimeType,
+                    educationLevel = educationLevel
+                )
+
+                val parsedTimetable = parsingHelper.parseTimetable(parsingData)
+
+                Log.d(TAG, "Successfully parsed timetable")
+
+                updateData { currentData ->
+                    currentData.copy(timetable = parsedTimetable)
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error uploading/parsing timetable", e)
             }
         }
     }

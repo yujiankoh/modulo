@@ -92,21 +92,21 @@ fun AddTaskPage(
 
         Button(
             onClick = {
-                if (inputTitle.text.isNotBlank() && selectedDeadline.isNotBlank()) {
-                    viewModel.addTask(
-                        selectedModule,
-                        inputTitle.text.toString(),
-                        selectedTaskType,
-                        selectedDeadline,
-                        false
-                    )
+                viewModel.addTask(
+                    selectedModule,
+                    inputTitle.text.toString(),
+                    selectedTaskType,
+                    selectedDeadline,
+                    false
+                )
 
-                    // Clear input fields
-                    inputTitle.edit { replace(0, length, "") }
-                    selectedDeadline = ""
-                }
+                // Clear input fields
+                inputTitle.edit { replace(0, length, "") }
+                selectedDeadline = ""
+
                 onAddTask()
-            }
+            },
+            enabled = inputTitle.text.isNotBlank() && selectedDeadline.isNotBlank() && selectedModule.isEmpty()
         ) {
             Text("Add Task")
         }
