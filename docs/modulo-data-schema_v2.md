@@ -95,8 +95,7 @@ to the level and leaves the rest as `""`; the STORAGE shape is identical for eve
           "end": "14:00",
           "location": "COM4-02-04",
           "sessionType": "lecture",
-          "classNo": "1",
-          "teacher": ""
+          "classNo": "1"
         }
       ]
     }
@@ -118,7 +117,6 @@ to the level and leaves the rest as `""`; the STORAGE shape is identical for eve
 | `location`    | string | Venue. May be `""`. |
 | `sessionType` | string | Normalized category — see per-level values below. |
 | `classNo`     | string | Class/group number (e.g. "1", "31B"). `""` for school levels. |
-| `teacher`     | string | Teacher name (school levels, if shown). `""` for tertiary. |
 
 ### Which fields each level populates
 
@@ -129,7 +127,6 @@ to the level and leaves the rest as `""`; the STORAGE shape is identical for eve
 | `sessionType` | lesson / cca | lesson / cca | lecture / tutorial | lecture / tutorial / lab / practical | lecture / tutorial / lab / recitation / seminar |
 | `classNo`     | —       | —         | (if shown) | ✓ | ✓ |
 | `location`    | (if shown) | (if shown) | ✓ | ✓ | ✓ |
-| `teacher`     | (if shown) | (if shown) | (if shown) | — | — |
 
 > `color` for module colour-coding is assigned client-side in the UI, not by the parser,
 > so it is not part of this contract.
@@ -211,8 +208,7 @@ data class Slot(
     val end: String,
     val location: String = "",
     val sessionType: String = "",  // lecture | tutorial | lab | recitation | seminar | practical | lesson | cca
-    val classNo: String = "",
-    val teacher: String = ""
+    val classNo: String = ""
 )
 ```
 
@@ -224,3 +220,4 @@ data class Slot(
 |---------|------------|--------|
 | 1       | 2026-05-30 | Initial schema: `tasks`, provisional `timetable`, time fields. |
 | 2       | 2026-06-03 | Added `educationLevel`. Finalized the level-aware `timetable` structure: `slots` now use `sessionType` + `classNo` + `teacher` (replacing the provisional `type`). |
+| 2       | 2026-06-16 | Dropped the unused `teacher` field from `Slot` — the proxy never emitted it and we decided not to capture teacher info; `location` is the room/venue only. `schemaVersion` stays 2. Ling Song informed. |

@@ -29,30 +29,30 @@ Only include information actually visible in the image — never invent anything
 - Each entry is a SUBJECT (English, Mathematics, Mother Tongue, Science, Social Studies, Art, Music, PE, etc.).
 - "code" is always "". "classNo" is always "".
 - "sessionType" is "lesson", or "cca" for co-curricular activities.
-- Capture "teacher" and "location" only if shown.`,
+- Capture "location" (the room/venue) only if shown — do NOT include teacher names or initials.`,
 
     secondary: `LEVEL: Secondary school — a weekly grid of periods.
 - Each entry is a SUBJECT (English, E Math, A Math, Physics, Chemistry, Biology, Humanities, Mother Tongue, etc.).
 - "code" is always "". "classNo" is always "".
 - "sessionType" is "lesson", or "cca" for CCA.
-- Capture "teacher" and "location" only if shown.`,
+- Capture "location" (the room/venue) only if shown — do NOT include teacher names or initials.`,
 
     jc: `LEVEL: Junior College — a weekly grid.
 - Each entry is a SUBJECT with its level, e.g. "H2 Mathematics", "H1 Economics", "GP", "Project Work".
 - "code" is always "".
 - "sessionType" is "lecture" or "tutorial" (JC subjects split into both); use "lesson" if unclear.
-- Capture "location" if shown; "classNo" (tutorial group) and "teacher" only if shown.`,
+- Capture "location" (the room/venue) and "classNo" (tutorial group) only if shown — do NOT put teacher names or initials in "location".`,
 
     poly: `LEVEL: Polytechnic — module-based.
 - Each entry is a MODULE with a code and name.
 - "sessionType" is one of "lecture", "tutorial", "lab", "practical".
-- Capture "classNo" (group/class number), "location" (venue), and "teacher" if shown.`,
+- Capture "classNo" (group/class number) and "location" (venue) if shown — do NOT put teacher names in "location".`,
 
     university: `LEVEL: University — module-based (e.g. CS2030S).
 - Each entry is a MODULE with a code and (if shown) a name.
 - "sessionType" is one of "lecture", "tutorial", "lab", "recitation", "seminar".
 - Capture "classNo" (the class/group number, e.g. "1", "31B") SEPARATELY — do NOT merge it into sessionType.
-- Capture "location" (venue) if shown. "teacher" is usually not shown; leave "".`,
+- Capture "location" (venue) if shown — the room only, not teacher names.`,
   };
 
   return `${base}\n\n${perLevel[level] || perLevel.secondary}
