@@ -39,10 +39,12 @@ class ParsingHelper {
             if (responseCode == HttpURLConnection.HTTP_OK) {
                 val jsonString = connection.inputStream.bufferedReader().use { it.readText() }
                 val timetable = syncJsonParser.decodeFromString<Timetable>(jsonString)
+
                 return@withContext NetworkResult.Success(timetable)
             } else {
                 val errorResponse = connection.errorStream?.bufferedReader()?.use { it.readText() }
                 Log.e(TAG, "Server Error: $responseCode - $errorResponse")
+
                 return@withContext NetworkResult.Failure(responseCode, errorResponse)
             }
         } catch (e: java.net.SocketTimeoutException) {

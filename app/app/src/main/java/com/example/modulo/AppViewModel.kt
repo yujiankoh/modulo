@@ -151,11 +151,17 @@ class AppViewModel(
     }
 
     // TODO: other functions to change appdata
-    fun addTask(moduleCode: String, title: String, type: String, deadline: String, isCompleted: Boolean) {
+    fun addTask(module: Module?, title: String, type: String, deadline: String, isCompleted: Boolean) {
         val currentTime = System.currentTimeMillis()
         val newTask = Task(
             id = currentTime,
-            moduleCode = moduleCode,
+            module = if (module == null) {
+                    ""
+                } else if (module.code != "") {
+                    module.code
+                } else {
+                    module.name
+                },
             title = title,
             due = deadline,
             type = type,

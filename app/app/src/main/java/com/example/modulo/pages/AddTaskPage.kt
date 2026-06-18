@@ -31,10 +31,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.modulo.AppData
 import com.example.modulo.AppViewModel
+import com.example.modulo.Module
 import com.example.modulo.TimetableState
 import com.example.modulo.navigation.TimetableUpload
 import java.text.SimpleDateFormat
@@ -54,11 +56,10 @@ fun AddTaskPage(
 
     // Collect the first module
     val initialModule = appData.timetable?.modules?.first()
-    val initialModuleName = "${initialModule?.code}: ${initialModule?.name}"
 
     // States from the create-task fields
     val inputTitle = rememberTextFieldState()
-    var selectedModule by remember { mutableStateOf(initialModuleName) }
+    var selectedModule by remember { mutableStateOf(initialModule) }
     var selectedTaskType by remember { mutableStateOf("assignment") }
     var selectedDeadline by remember { mutableStateOf("") }
 
@@ -128,7 +129,7 @@ fun AddTaskPage(
 
                     onAddTask()
                 },
-                enabled = inputTitle.text.isNotBlank() && selectedDeadline.isNotBlank() && selectedModule.isEmpty()
+                enabled = inputTitle.text.isNotBlank() && selectedDeadline.isNotBlank() && selectedModule != null
             ) {
                 Text("Add Task")
             }
@@ -139,13 +140,20 @@ fun AddTaskPage(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ModuleDropDownMenu(
-    selectedModule: String,
+    selectedModule: Module?,
     appData: AppData,
-    onModuleSelected: (String) -> Unit
+    onModuleSelected: (Module) -> Unit
 ) {
     var isExpanded by remember { mutableStateOf(false) }
-    val modules = appData.timetable?.modules?.map { mod ->
-        "${mod.code}: ${mod.name}"
+    val modules = appData.timetable?.modules
+
+    // Prevent overflowing in display text field
+    val moduleName = toDisplay(selectedModule)
+    val maxLength = 25
+    val displayValue = if (moduleName.length > maxLength) {
+        moduleName.take(maxLength - 3) + "..."
+    } else {
+        moduleName
     }
 
     ExposedDropdownMenuBox(
@@ -153,9 +161,10 @@ fun ModuleDropDownMenu(
         onExpandedChange = { isExpanded = !isExpanded }
     ) {
         OutlinedTextField(
-            value = selectedModule,
+            value = displayValue,
             onValueChange = {},
             readOnly = true,
+            singleLine = true,
             label = { Text("Module") },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isExpanded) },
             modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
@@ -167,7 +176,9 @@ fun ModuleDropDownMenu(
         ) {
             modules?.forEach { item ->
                 DropdownMenuItem(
-                    text = { Text(text = item) },
+                    text = {
+                        Text(text = toDisplay(item), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    },
                     onClick = {
                         onModuleSelected(item)
                         isExpanded = false
@@ -176,6 +187,13 @@ fun ModuleDropDownMenu(
             }
         }
     }
+}
+
+fun toDisplay(module: Module?): String {
+    if (module == null) {
+        return "No modules detected"
+    }
+    return if (module.code == "") module.name else "${module.code}: ${module.name}"
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

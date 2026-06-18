@@ -23,7 +23,7 @@ enum class StartupState{
 @Serializable
 data class Task(
     val id: Long,
-    val moduleCode: String,
+    val module: String = "",
     val title: String,
     val due: String = "",
     val type: String,

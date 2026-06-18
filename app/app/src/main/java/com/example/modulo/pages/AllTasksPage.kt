@@ -219,7 +219,7 @@ fun TaskCard(
                 ) {
                     Row {
                         Text(
-                            text = task.moduleCode,
+                            text = task.module,
                             modifier = Modifier
                                 .border(width = 1.dp, color = MaterialTheme.colorScheme.outline, shape = RoundedCornerShape(4.dp))
                                 .padding(horizontal = 8.dp, vertical = 4.dp)
