@@ -15,10 +15,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
@@ -35,9 +31,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import com.example.modulo.AppViewModel
+import com.example.modulo.R
+import com.example.modulo.R.drawable
 import com.example.modulo.Task
 import java.text.SimpleDateFormat
 import java.util.Locale
@@ -113,7 +112,7 @@ fun AllTaskPage(
                     Text("${completedTasks.size} Completed ${if (completedTasks.size < 2) "Work" else "Works"}")
 
                     Icon(
-                        imageVector = if (isCompletedSectionExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                        painter = if (isCompletedSectionExpanded) painterResource(R.drawable.chevron) else painterResource(R.drawable.chevron_down),
                         contentDescription = if (isCompletedSectionExpanded) "Hide Completed" else "Show Completed"
                     )
                 }
@@ -198,7 +197,7 @@ fun TaskCard(
                     if (showDelete) {
                         IconButton(onClick = { onDelete() }) {
                             Icon(
-                                imageVector = Icons.Default.Delete,
+                                painter = painterResource(R.drawable.trash_2),
                                 contentDescription = "Delete Task"
                             )
                         }

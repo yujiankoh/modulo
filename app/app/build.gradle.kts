@@ -84,8 +84,6 @@ dependencies {
     implementation("com.google.apis:google-api-services-drive:v3-rev20230822-2.0.0")
     implementation("com.google.code.gson:gson:2.10.1")
 
-    implementation("androidx.compose.material:material-icons-extended")
-
     implementation("io.coil-kt:coil-compose:2.6.0")
 
     implementation("androidx.datastore:datastore-preferences:1.0.0")

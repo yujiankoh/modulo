@@ -8,12 +8,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.List
-import androidx.compose.material.icons.automirrored.filled.MenuBook
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -30,9 +24,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
+import com.example.modulo.R
 
 @Composable
 fun NavigationBottomBar(
@@ -65,7 +61,7 @@ fun NavigationBottomBar(
                     NavigationBar {
                         // Home
                         NavigationBarItem(
-                            icon = { Icon(Icons.Default.Home, contentDescription = "Home") },
+                            icon = { Icon(painter = painterResource(R.drawable.house), contentDescription = "Home") },
                             label = { Text("Home") },
                             selected = currentDestination.contains("Home"),
                             onClick = { navController.navigateBottom(Home) }
@@ -73,7 +69,7 @@ fun NavigationBottomBar(
 
                         // Calender
                         NavigationBarItem(
-                            icon = { Icon(Icons.Default.DateRange, contentDescription = "Calendar") },
+                            icon = { Icon(painter = painterResource(R.drawable.calendar_days), contentDescription = "Calendar") },
                             label = { Text("Calendar") },
                             selected = currentDestination.contains("Calendar"),
                             onClick = { navController.navigateBottom(Calendar) }
@@ -90,7 +86,7 @@ fun NavigationBottomBar(
 
                         // All Task
                         NavigationBarItem(
-                            icon = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = "All Tasks") },
+                            icon = { Icon(painter = painterResource(R.drawable.list), contentDescription = "All Tasks") },
                             label = { Text("Tasks") },
                             selected = currentDestination.contains("AllTasks"),
                             onClick = { navController.navigateBottom(AllTasks) }
@@ -98,7 +94,7 @@ fun NavigationBottomBar(
 
                         // Study Session
                         NavigationBarItem(
-                            icon = { Icon(Icons.AutoMirrored.Filled.MenuBook, contentDescription = "Study") },
+                            icon = { Icon(painter = painterResource(R.drawable.book_open_text), contentDescription = "Study") },
                             label = { Text("Study") },
                             selected = currentDestination.contains("StudySession"),
                             onClick = { navController.navigateBottom(StudySession) }
@@ -138,7 +134,7 @@ fun NavigationBottomBar(
                             .align(Alignment.TopCenter)
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Add,
+                            painter = painterResource(R.drawable.plus),
                             contentDescription = "Add Task",
                             modifier = Modifier.rotate(rotation)
                         )
