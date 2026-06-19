@@ -105,8 +105,26 @@ app.post("/parse-timetable", async (req, res) => {
     res.json({ educationLevel, modules: parsed.modules || [] });
   } catch (err) {
     console.error("Parse error:", err);
-    res.status(500).json({ error: "Failed to parse timetable" });
+    // Forward the REAL status code so the web can show a specific message instead
+    // of a generic failure. @google/genai puts the upstream HTTP code on err.status
+    // (e.g. 429 quota, 503 busy, 504 deadline). Our own 3-min client timeout surfaces
+    // as an AbortError, which we map to 504 (also a "too slow" case).
+    const status = err.name === "AbortError" ? 504 : (err.status || 500);
+    res.status(status).json({ error: "Failed to parse timetable" });
   }
+});
+
+// Global error handler — the final net for anything that slips past the routes,
+// most importantly errors thrown by middleware BEFORE the handler runs (e.g.
+// express.json rejecting a too-large or malformed body). The 4-arg signature
+// (err, req, res, next) is how Express recognizes an error handler, and it must
+// be registered last so it sits at the bottom of the middleware stack.
+app.use((err, req, res, next) => {
+  console.error("Unhandled error:", err);
+  if (res.headersSent) return next(err);   // response already started — let Express finish it
+  // body-parser sets err.status/statusCode (413 too large, 400 malformed JSON).
+  const status = err.status || err.statusCode || 500;
+  res.status(status).json({ error: "Request could not be processed" });
 });
 
 // Render provides the port via an environment variable; fall back to 3000 locally.

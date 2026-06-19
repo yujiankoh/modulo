@@ -72,6 +72,18 @@ imageInput.addEventListener("change", async () => {
 // returns parsed modules.
 const PROXY_URL = "https://modulo-proxy.onrender.com/parse-timetable";
 
+// Map a proxy/Gemini HTTP status to a clear, student-friendly message.
+function parseErrorMessage(status) {
+  switch (status) {
+    case 400: return "Couldn't read that image — pick a clearer timetable photo.";
+    case 413: return "That image is too large — try a smaller, clearer photo.";
+    case 429: return "Parsing limit reached for today — please try again later.";
+    case 503: return "The parser is busy right now — try again in a moment.";
+    case 504: return "That took too long — try again (a smaller/clearer photo helps).";
+    default:  return "Something went wrong reading the timetable — try again or another photo.";
+  }
+}
+
 document.getElementById("parseBtn").addEventListener("click", async () => {
   if (!appState.educationLevel) { alert("Choose your education level first."); return; }
   if (!selectedImage) { alert("Choose a timetable image first."); return; }
@@ -89,7 +101,12 @@ document.getElementById("parseBtn").addEventListener("click", async () => {
         educationLevel: appState.educationLevel,
       }),
     });
-    if (!res.ok) throw new Error("Proxy returned " + res.status);
+    // fetch() does NOT throw on HTTP errors (429/503/504/...), so check res.ok
+    // and map the status to a clear message.
+    if (!res.ok) {
+      out.textContent = parseErrorMessage(res.status);
+      return;
+    }
     const data = await res.json();
 
     appState.timetable = { modules: data.modules };  // store the parsed result in state
@@ -98,6 +115,8 @@ document.getElementById("parseBtn").addEventListener("click", async () => {
     out.textContent = `Parsed ${data.modules.length} module(s):\n` +
       JSON.stringify(data.modules, null, 2);
   } catch (err) {
-    out.textContent = "Parse failed: " + err.message;
+    // Only reached on a network-level failure (server unreachable, offline, CORS) —
+    // HTTP error statuses are handled above, not here.
+    out.textContent = "Can't reach the server — check your connection and try again.";
   }
 });
