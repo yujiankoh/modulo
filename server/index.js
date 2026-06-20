@@ -83,6 +83,26 @@ Return JSON in exactly this shape:
 }`;
 }
 
+// Pull the first balanced {...} JSON object out of a string, ignoring anything
+// before or after it (stray notes, repeated chunks, fences). Gemini with
+// responseMimeType JSON is usually clean, but not always — especially on large outputs.
+function extractJson(text) {
+  const start = text.indexOf("{");
+  if (start === -1) return text;            // no object found; let JSON.parse report it
+  let depth = 0, inStr = false, esc = false;
+  for (let i = start; i < text.length; i++) {
+    const c = text[i];
+    if (inStr) {
+      if (esc) esc = false;
+      else if (c === "\\") esc = true;
+      else if (c === '"') inStr = false;
+    } else if (c === '"') inStr = true;
+    else if (c === "{") depth++;
+    else if (c === "}" && --depth === 0) return text.slice(start, i + 1);
+  }
+  return text.slice(start);                 // unbalanced; let JSON.parse report it
+}
+
 app.post("/parse-timetable", async (req, res) => {
   try {
     const { image, mimeType, educationLevel } = req.body;
@@ -101,7 +121,9 @@ app.post("/parse-timetable", async (req, res) => {
       },
     });
 
-    const parsed = JSON.parse(response.text);
+    // Gemini occasionally appends stray text after the JSON; extract the JSON
+    // object first so a clean parse doesn't choke on trailing characters.
+    const parsed = JSON.parse(extractJson(response.text));
     res.json({ educationLevel, modules: parsed.modules || [] });
   } catch (err) {
     console.error("Parse error:", err);
