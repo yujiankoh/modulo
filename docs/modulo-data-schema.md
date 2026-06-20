@@ -95,7 +95,8 @@ to the level and leaves the rest as `""`; the STORAGE shape is identical for eve
           "end": "14:00",
           "location": "COM4-02-04",
           "sessionType": "lecture",
-          "classNo": "1"
+          "classNo": "1",
+          "week": "all"
         }
       ]
     }
@@ -117,6 +118,7 @@ to the level and leaves the rest as `""`; the STORAGE shape is identical for eve
 | `location`    | string | Venue. May be `""`. |
 | `sessionType` | string | Normalized category — see per-level values below. |
 | `classNo`     | string | Class/group number (e.g. "1", "31B"). `""` for school levels. |
+| `week`        | string | Which weeks this session runs: `"all"` (every week — the default), `"odd"`, or `"even"`. For alternating-week timetables. Read defensively: treat a missing `week` as `"all"`. |
 
 ### Which fields each level populates
 
@@ -127,9 +129,15 @@ to the level and leaves the rest as `""`; the STORAGE shape is identical for eve
 | `sessionType` | lesson / cca | lesson / cca | lecture / tutorial | lecture / tutorial / lab / practical | lecture / tutorial / lab / recitation / seminar |
 | `classNo`     | —       | —         | (if shown) | ✓ | ✓ |
 | `location`    | (if shown) | (if shown) | ✓ | ✓ | ✓ |
+| `week`        | all/odd/even | all/odd/even | all/odd/even | all/odd/even | all/odd/even |
 
 > `color` for module colour-coding is assigned client-side in the UI, not by the parser,
 > so it is not part of this contract.
+
+> `week` defaults to `"all"` and only differs when a timetable has an odd/even split. Sec/JC
+> usually publish **two separate** Odd/Even Week images (parse each, slots tagged from the title);
+> Uni/Poly use **per-cell labels** in one image (e.g. "Even Weeks", odd week-number lists). Week
+> ranges / specific-week lists are collapsed to `all`/`odd`/`even` (finer granularity isn't stored).
 
 ---
 
@@ -208,7 +216,8 @@ data class Slot(
     val end: String,
     val location: String = "",
     val sessionType: String = "",  // lecture | tutorial | lab | recitation | seminar | practical | lesson | cca
-    val classNo: String = ""
+    val classNo: String = "",
+    val week: String = "all"       // all | odd | even  (default all; for alternating-week timetables)
 )
 ```
 
@@ -221,3 +230,4 @@ data class Slot(
 | 1       | 2026-05-30 | Initial schema: `tasks`, provisional `timetable`, time fields. |
 | 2       | 2026-06-03 | Added `educationLevel`. Finalized the level-aware `timetable` structure: `slots` now use `sessionType` + `classNo` + `teacher` (replacing the provisional `type`). |
 | 2       | 2026-06-16 | Dropped the unused `teacher` field from `Slot` — the proxy never emitted it and we decided not to capture teacher info; `location` is the room/venue only. `schemaVersion` stays 2. Ling Song informed. |
+| 2       | 2026-06-18 | Added `week` (`all`/`odd`/`even`, default `all`) to `Slot` for alternating-week timetables. Additive + defaulted, so old files still load; `schemaVersion` stays 2. **Ling Song: add `val week: String = "all"` to the Kotlin `Slot`.** |
