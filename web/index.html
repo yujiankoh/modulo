@@ -35,6 +35,25 @@
   <button id="parseBtn">Parse timetable</button>
   <pre id="parseOutput"></pre>
 
+  <!-- Read-only display of the saved timetable; refreshed on save/parse/load. -->
+  <div id="timetableDisplay"></div>
+
+  <!-- Manual timetable editor (Phase 5): opens to CORRECT a parsed timetable, or to
+       ENTER one by hand when parsing fails / there's no photo. JS fills #moduleList. -->
+  <button id="manualEntryBtn">Enter / edit timetable manually</button>
+
+  <div id="timetableEditor" style="display: none;">
+    <h3>Edit timetable</h3>
+    <p id="editorHint">Add your modules and their class slots, then Save.</p>
+    <div id="moduleList"></div>
+    <button id="addModuleBtn">+ Add module</button>
+    <div>
+      <button id="saveTimetableBtn">Save timetable</button>
+      <button id="closeEditorBtn">Close</button>
+      <span id="editorStatus"></span>
+    </div>
+  </div>
+
   <!-- Task adding portion -->
   <hr />
   <h2>Tasks</h2>

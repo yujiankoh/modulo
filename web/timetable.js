@@ -109,7 +109,8 @@ document.getElementById("parseBtn").addEventListener("click", async () => {
     }
     const data = await res.json();
 
-    appState.timetable = { modules: data.modules };  // store the parsed result in state
+    // store the parsed result in state (same v2 shape the manual editor saves)
+    appState.timetable = { educationLevel: appState.educationLevel || "", modules: data.modules };
     await persist();                                  // save it (Drive or local)
     render();
     out.textContent = `Parsed ${data.modules.length} module(s):\n` +

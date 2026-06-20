@@ -41,6 +41,8 @@ export async function persist() {
   } else if (storageMode === "local") {
     localStorage.setItem(LOCAL_KEY, JSON.stringify(appState));
   }
+  // Tell any interested view (e.g. the timetable display) that state changed.
+  window.dispatchEvent(new Event("modulo:datachanged"));
 }
 
 // Load the saved state into memory, then draw it.
@@ -60,6 +62,7 @@ export async function loadInitialData() {
     if (!appState.tasks) appState.tasks = [];
   }
   render();
+  window.dispatchEvent(new Event("modulo:datachanged"));
 }
 
 // Each action changes memory, saves, then re-draws. Private to this module —

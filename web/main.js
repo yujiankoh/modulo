@@ -6,6 +6,7 @@ import { initTokenClient, getToken } from "./auth.js";
 import { loadInitialData, setStorageMode, getSavedMode } from "./data.js";
 import { setStatus } from "./ui.js";
 import "./timetable.js"; // side-effect import: runs timetable's event wiring
+import "./timetableEditor.js"; // side-effect import: runs the manual editor's wiring
 
 // Runs after the page + Google's library have finished loading.
 window.onload = () => {
