@@ -7,6 +7,7 @@
 import { appState, persist } from "./data.js";
 
 const DAYS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
+const WEEKS = ["all", "odd", "even"];   // alternating-week support
 // Full set — used as a fallback when no level is chosen yet.
 const SESSION_TYPES = [
   "lecture", "tutorial", "lab", "recitation",
@@ -76,13 +77,14 @@ function addSlot(slotListEl, slot = {}) {
   const location = makeInput("text", "slot-location", slot.location || "", "location");
   const sessionType = makeSelect("slot-sessionType", sessionTypes, slot.sessionType || sessionTypes[0]);
   const classNo = makeInput("text", "slot-classNo", slot.classNo || "", "class no.");
+  const week = makeSelect("slot-week", WEEKS, slot.week || "all");
 
   const delBtn = document.createElement("button");
   delBtn.type = "button";                       // not a form submit button
   delBtn.textContent = "Delete slot";
   delBtn.addEventListener("click", () => row.remove());
 
-  row.append(day, start, end, location, sessionType, classNo, delBtn);
+  row.append(day, start, end, location, sessionType, classNo, week, delBtn);
   slotListEl.append(row);
 }
 
@@ -141,6 +143,7 @@ function harvestTimetable() {
         location: row.querySelector(".slot-location").value.trim(),
         sessionType: row.querySelector(".slot-sessionType").value,
         classNo: row.querySelector(".slot-classNo").value.trim(),
+        week: row.querySelector(".slot-week").value,
       });
     }
     modules.push({ code, name, slots });
@@ -238,6 +241,7 @@ function renderTimetable() {
         s.day,
         s.start && s.end ? `${s.start}–${s.end}` : "",
         s.sessionType,
+        s.week && s.week !== "all" ? `(${s.week})` : "",   // tag only odd/even
         s.classNo ? `[${s.classNo}]` : "",
         s.location,
       ].filter(Boolean).join(" · ");
