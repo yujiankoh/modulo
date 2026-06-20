@@ -20,6 +20,10 @@ Each "day" must be one of MON, TUE, WED, THU, FRI, SAT, SUN.
 For "sessionType" use one of: lecture, tutorial, lab, recitation, seminar, sectional, lesson.
 Map labels: LEC->lecture, TUT->tutorial, LAB->lab, REC->recitation, SEC->sectional, SEM->seminar.
 Put any class/group number (the "1" in "LEC [1]", or "31B" in "TUT [31B]") in "classNo".
+For "week", capture whether a session runs every week or only on alternating weeks:
+- Default to "all" (runs every week) unless the image clearly shows an odd/even split.
+- If the WHOLE timetable is headed for one week (e.g. a title like "Odd Week" or "Even Week"), set "week" to "odd" or "even" for EVERY session accordingly.
+- If a single cell is labelled for specific weeks: "Even Weeks" (or a list of only even week numbers) -> "even"; "Odd Weeks" (or a list of only odd week numbers, e.g. "Weeks 3, 5, 7, 9, 11") -> "odd"; a continuous range (e.g. "Weeks 3-13"), "every week", or no week label -> "all".
 Set "name" only if the subject/module title is actually visible in the image; otherwise "".
 Do NOT include non-academic blocks such as flag-raising, assembly, recess, break, lunch, morning reading, dismissal, or administrative periods — only capture actual lessons/classes.
 Only include information actually visible in the image — never invent anything.`;
@@ -70,7 +74,8 @@ Return JSON in exactly this shape:
           "end": "10:00",
           "location": "string",
           "sessionType": "string",
-          "classNo": "string"
+          "classNo": "string",
+          "week": "all"
         }
       ]
     }
