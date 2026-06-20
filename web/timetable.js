@@ -104,7 +104,8 @@ document.getElementById("parseBtn").addEventListener("click", async () => {
     // fetch() does NOT throw on HTTP errors (429/503/504/...), so check res.ok
     // and map the status to a clear message.
     if (!res.ok) {
-      out.textContent = parseErrorMessage(res.status);
+      out.textContent = parseErrorMessage(res.status) +
+        "\nYou can still enter your timetable manually below.";
       return;
     }
     const data = await res.json();
@@ -118,6 +119,7 @@ document.getElementById("parseBtn").addEventListener("click", async () => {
   } catch (err) {
     // Only reached on a network-level failure (server unreachable, offline, CORS) —
     // HTTP error statuses are handled above, not here.
-    out.textContent = "Can't reach the server — check your connection and try again.";
+    out.textContent = "Can't reach the server — check your connection and try again." +
+      "\nYou can still enter your timetable manually below.";
   }
 });

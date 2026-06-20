@@ -149,11 +149,31 @@ function harvestTimetable() {
   return { educationLevel: appState.educationLevel || "", modules };
 }
 
-// Harvest -> appState.timetable -> persist (Drive or local), with a confirmation.
+// Return the first problem with the timetable as a friendly string, or null if OK.
+// Times are "HH:MM" (zero-padded 24h), so plain string comparison orders them correctly.
+function firstValidationError(tt) {
+  if (tt.modules.length === 0) return "Add at least one module before saving.";
+  for (let i = 0; i < tt.modules.length; i++) {
+    const m = tt.modules[i];
+    const label = `Module ${i + 1}`;
+    if (!m.code && !m.name) return `${label}: enter a code or name.`;
+    if (m.slots.length === 0) return `${label}: add at least one slot.`;
+    for (let j = 0; j < m.slots.length; j++) {
+      const s = m.slots[j];
+      const where = `${label}, slot ${j + 1}`;
+      if (!s.start || !s.end) return `${where}: set a start and end time.`;
+      if (s.start >= s.end) return `${where}: end time must be after the start time.`;
+    }
+  }
+  return null;
+}
+
+// Validate -> appState.timetable -> persist (Drive or local), with a confirmation.
 async function saveTimetable() {
   const timetable = harvestTimetable();
-  if (timetable.modules.length === 0) {
-    editorStatusEl.textContent = "Add at least one module before saving.";
+  const error = firstValidationError(timetable);
+  if (error) {
+    editorStatusEl.textContent = error;
     return;
   }
   appState.timetable = timetable;
