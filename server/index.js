@@ -92,12 +92,7 @@ app.post("/parse-timetable", async (req, res) => {
         { text: buildPrompt(educationLevel) },
       ],
       config: {
-        responseMimeType: "application/json",
-        // EXPERIMENT (2026-06-18): thinkingBudget 0 disables Gemini's internal
-        // reasoning — fastest, but earlier testing showed it hurts accuracy.
-        // Trying it to see if it lets dense parses finish instead of timing out.
-        // Revert by removing this line to restore default (full) thinking.
-        thinkingConfig: { thinkingBudget: 0 },
+        responseMimeType: "application/json"
       },
     });
 
