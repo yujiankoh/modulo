@@ -50,9 +50,13 @@ function downscaleToDataURL(file, maxSide = 2000, quality = 0.9) {
 const imageInput = document.getElementById("timetableImage");
 const previewEl = document.getElementById("timetablePreview");
 
+// Set by "Add another week" so the next image pick parses + appends, instead of
+// just previewing and waiting for a Parse click.
+let appendOnNextPick = false;
+
 imageInput.addEventListener("change", async () => {
   const file = imageInput.files[0];
-  if (!file) return;
+  if (!file) { appendOnNextPick = false; return; }
 
   const dataUrl = await downscaleToDataURL(file);   // shrink before preview + parse
   previewEl.src = dataUrl;             // a data URL works directly as an <img> source
@@ -65,7 +69,16 @@ imageInput.addEventListener("change", async () => {
   selectedImage = { base64, mimeType };
 
   document.getElementById("parseOutput").textContent =
-    `Image ready (downscaled ${mimeType}, ~${Math.round(base64.length / 1024)} KB). Parsing is the next step.`;
+    `Image ready (downscaled ${mimeType}, ~${Math.round(base64.length / 1024)} KB).`;
+
+  // If "Add another week" started this pick, parse + append straight away.
+  if (appendOnNextPick) {
+    appendOnNextPick = false;
+    const modules = await parseSelectedImage();
+    if (!modules) return;
+    const merged = mergeModules(appState.timetable?.modules || [], modules);
+    await saveTimetableModules(merged, `Added another week — ${merged.length} module(s) total:`);
+  }
 });
 
 // Parse button: sends the image to the deployed proxy, which calls Gemini and
@@ -84,13 +97,15 @@ function parseErrorMessage(status) {
   }
 }
 
-document.getElementById("parseBtn").addEventListener("click", async () => {
-  if (!appState.educationLevel) { alert("Choose your education level first."); return; }
-  if (!selectedImage) { alert("Choose a timetable image first."); return; }
-
+// Send the selected image to the proxy. On success returns the parsed modules
+// array; on any failure it shows the message itself and returns null. Shared by
+// both the Parse (replace) and Add-another-week (append) buttons.
+async function parseSelectedImage() {
   const out = document.getElementById("parseOutput");
-  out.textContent = "Parsing… (can take a few seconds)";
+  if (!appState.educationLevel) { alert("Choose your education level first."); return null; }
+  if (!selectedImage) { alert("Choose a timetable image first."); return null; }
 
+  out.textContent = "Parsing… (can take a few seconds)";
   try {
     const res = await fetch(PROXY_URL, {
       method: "POST",
@@ -101,25 +116,69 @@ document.getElementById("parseBtn").addEventListener("click", async () => {
         educationLevel: appState.educationLevel,
       }),
     });
-    // fetch() does NOT throw on HTTP errors (429/503/504/...), so check res.ok
-    // and map the status to a clear message.
+    // fetch() does NOT throw on HTTP errors (429/503/504/...), so check res.ok.
     if (!res.ok) {
       out.textContent = parseErrorMessage(res.status) +
         "\nYou can still enter your timetable manually below.";
-      return;
+      return null;
     }
     const data = await res.json();
-
-    // store the parsed result in state (same v2 shape the manual editor saves)
-    appState.timetable = { educationLevel: appState.educationLevel || "", modules: data.modules };
-    await persist();                                  // save it (Drive or local)
-    render();
-    out.textContent = `Parsed ${data.modules.length} module(s):\n` +
-      JSON.stringify(data.modules, null, 2);
+    return data.modules || [];
   } catch (err) {
-    // Only reached on a network-level failure (server unreachable, offline, CORS) —
-    // HTTP error statuses are handled above, not here.
+    // Only reached on a network-level failure (server unreachable, offline, CORS).
     out.textContent = "Can't reach the server — check your connection and try again." +
       "\nYou can still enter your timetable manually below.";
+    return null;
   }
+}
+
+// Two slots are the same if every field matches (incl. week). Used to skip
+// duplicates when the same timetable is uploaded twice by accident.
+function sameSlot(a, b) {
+  return a.day === b.day && a.start === b.start && a.end === b.end &&
+    a.location === b.location && a.sessionType === b.sessionType &&
+    a.classNo === b.classNo && a.week === b.week;
+}
+
+// Merge incoming modules into existing ones, matching by code+name so the same
+// subject across odd/even images becomes ONE module holding both weeks' slots.
+// Exact-duplicate slots are skipped (re-uploading the same image adds nothing).
+function mergeModules(existing, incoming) {
+  const result = existing.map((m) => ({ ...m, slots: [...m.slots] })); // clone, don't mutate state
+  for (const inc of incoming) {
+    let match = result.find((m) => m.code === inc.code && m.name === inc.name);
+    if (!match) {
+      match = { ...inc, slots: [] };
+      result.push(match);
+    }
+    for (const slot of inc.slots) {
+      if (!match.slots.some((s) => sameSlot(s, slot))) {
+        match.slots.push(slot);   // add only if not already present
+      }
+    }
+  }
+  return result;
+}
+
+async function saveTimetableModules(modules, message) {
+  appState.timetable = { educationLevel: appState.educationLevel || "", modules };
+  await persist();
+  render();
+  document.getElementById("parseOutput").textContent =
+    `${message}\n` + JSON.stringify(modules, null, 2);
+}
+
+// Parse → REPLACE the timetable (the normal, single-image flow).
+document.getElementById("parseBtn").addEventListener("click", async () => {
+  const modules = await parseSelectedImage();
+  if (!modules) return;
+  await saveTimetableModules(modules, `Parsed ${modules.length} module(s):`);
+});
+
+// Add another week → prompt for a NEW image; the picker's change handler then
+// parses + appends it. (It does NOT re-parse the already-selected image.)
+document.getElementById("addWeekBtn").addEventListener("click", () => {
+  appendOnNextPick = true;
+  imageInput.value = "";   // reset so re-picking even the same filename still fires "change"
+  imageInput.click();      // open the file dialog
 });
