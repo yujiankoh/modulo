@@ -13,11 +13,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -38,6 +40,7 @@ import androidx.compose.ui.unit.sp
 import com.example.modulo.AppViewModel
 import com.example.modulo.R
 import com.example.modulo.R.drawable
+import com.example.modulo.SortOption
 import com.example.modulo.Task
 import java.text.SimpleDateFormat
 import java.util.Locale
@@ -47,12 +50,31 @@ fun AllTaskPage(
     viewModel: AppViewModel,
 ) {
     val appData by viewModel.appData.collectAsState()
-    val uncompletedTasks = appData.tasks.filter { !it.done }.sortedBy { it.due }
-    val completedTasks = appData.tasks.filter { it.done }.sortedByDescending { it.due }
 
     var isCompletedSectionExpanded by remember { mutableStateOf(false) }
 
     var deletedTask by remember { mutableStateOf<Task?>(null) }
+
+    var currentSort by remember { mutableStateOf(SortOption.DUE_DATE) }
+    var activeModuleFilter by remember { mutableStateOf<String?>(null) }
+
+    val moduleCodes = remember {
+        appData.tasks.map { it.module }.filter { it.isNotBlank() }.distinct()
+    }
+
+    var filteredTasks = appData.tasks
+    if (activeModuleFilter != null) {
+        filteredTasks = filteredTasks.filter { it.module == activeModuleFilter }
+    }
+
+    filteredTasks = when (currentSort) {
+        SortOption.DUE_DATE -> filteredTasks.sortedBy { it.due }
+        SortOption.MODULE_CODE -> filteredTasks.sortedBy { it.module }
+        SortOption.TYPE -> filteredTasks.sortedBy { it.type }
+    }
+
+    val uncompletedTasks = filteredTasks.filter { !it.done }.sortedBy { it.due }
+    val completedTasks = filteredTasks.filter { it.done }.sortedByDescending { it.due }
 
     Column(
         modifier = Modifier
@@ -63,6 +85,46 @@ fun AllTaskPage(
                 })
             }
     ) {
+        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
+            Text("Sort By:", style = MaterialTheme.typography.labelMedium)
+
+            // Horizontally scrolling row for Sort buttons
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(SortOption.entries.toTypedArray()) { option ->
+                    FilterChip(
+                        selected = currentSort == option,
+                        onClick = { currentSort = option },
+                        label = { Text(option.displayName) }
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            if (moduleCodes.isNotEmpty()) {
+                Text("Filter Module:", style = MaterialTheme.typography.labelMedium)
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+
+                    item {
+                        FilterChip(
+                            selected = activeModuleFilter == null,
+                            onClick = { activeModuleFilter = null },
+                            label = { Text("All") }
+                        )
+                    }
+
+                    // Generate a button for every module code the user has tasks for
+                    items(moduleCodes) { moduleCode ->
+                        FilterChip(
+                            selected = activeModuleFilter == moduleCode,
+                            onClick = { activeModuleFilter = moduleCode },
+                            label = { Text(moduleCode) }
+                        )
+                    }
+                }
+            }
+        }
+
         LazyColumn(
             modifier = Modifier
                 .fillMaxWidth()

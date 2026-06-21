@@ -18,6 +18,15 @@ enum class StartupState{
 }
 
 /**
+ * This enum class encapsulates the sorting option of tasks
+ */
+enum class SortOption(val displayName: String) {
+    DUE_DATE("Due Date"),
+    MODULE_CODE("Module Code"),
+    TYPE("Task Type")
+}
+
+/**
  * This data class encapsulates the information of a task
  */
 @Serializable
