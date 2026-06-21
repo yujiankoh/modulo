@@ -7,7 +7,7 @@ import kotlinx.serialization.json.Json
  * This enum class encapsulates the states of syncing
  */
 enum class SyncState{
-    UNSYNCED, SYNCING, SYNCED
+    OFFLINE, UNSYNCED, SYNCING, SYNCED
 }
 
 /**
@@ -98,4 +98,11 @@ data class ParsingData(
 val syncJsonParser = Json {
     ignoreUnknownKeys = true
     encodeDefaults = true
+}
+
+sealed interface TimetableState {
+    object Idle : TimetableState
+    object Processing : TimetableState
+    data class ReviewData(val timetable: Timetable) : TimetableState
+    data class Error(val message: String) : TimetableState
 }

@@ -15,6 +15,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.example.modulo.helpers.AuthenticationHelper
 import com.example.modulo.helpers.LocalSaveHelper
+import com.example.modulo.helpers.NetworkHelper
 import com.example.modulo.helpers.NetworkResult
 import com.example.modulo.helpers.SyncingHelper
 import kotlinx.coroutines.Job
@@ -23,6 +24,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import java.time.Instant
 
 private const val TAG = "ViewModel"
 
@@ -54,13 +56,12 @@ class AppViewModel(
     private val _isDriveSyncEnabled = MutableStateFlow(false)
     val isDriveSyncEnabled = _isDriveSyncEnabled.asStateFlow()
 
-    // TODO: load based on last write
     // Stores the app data, load based on local save
     private val _appData = MutableStateFlow(localSaveHelper.loadData())
     val appData = _appData.asStateFlow()
 
     // Stores the current syncing progress
-    private val _syncState = MutableStateFlow(SyncState.SYNCED)
+    private val _syncState = MutableStateFlow(SyncState.OFFLINE)
     val syncState = _syncState.asStateFlow()
 
     // Stores the current startup state
@@ -71,12 +72,66 @@ class AppViewModel(
     private val _timetableState = MutableStateFlow<TimetableState>(TimetableState.Idle)
     val timetableState = _timetableState.asStateFlow()
 
+    // Keep track of connection to internet
+    private val networkMonitor = NetworkHelper(application)
+    private val _hasInternet = MutableStateFlow(false)
+
     // Only sync after a moment of inactivity
     private var delaySync: Job? = null
 
     // Functions for startup
     init {
         startUpChecks()
+        autoSync()
+    }
+
+    private suspend fun attemptSilentSignIn(onComplete: () -> Unit = {}) {
+            val credentialManager = CredentialManager.create(getApplication())
+
+            AuthenticationHelper.silentSignIn(
+                context = getApplication(),
+                credentialManager = credentialManager,
+                onSuccess = { email ->
+                    setUserEmail(email)
+                    syncingHelper = SyncingHelper.getSyncService(getApplication(), email)
+
+                    viewModelScope.launch {
+                        resolveConflict(syncingHelper!!)
+                        onComplete()
+                    }
+                },
+                onFailure = {
+                    _startupState.value = StartupState.AUTHENTICATE
+                }
+            )
+    }
+
+    private suspend fun resolveConflict(helper: SyncingHelper) {
+        val cloudData = helper.downloadAppData()
+        val localData = _appData.value
+
+        if (cloudData != null) {
+            // Parse timestamps, defaulting to the start of time if missing
+            val cloudTime = cloudData.updatedAt?.let { Instant.parse(it) } ?: Instant.MIN
+            val localTime = localData.updatedAt?.let { Instant.parse(it) } ?: Instant.MIN
+
+            if (cloudTime.isAfter(localTime)) {
+                // Cloud is newer, overwrite local
+                _appData.value = cloudData
+                localSaveHelper.saveData(cloudData)
+                Log.d(TAG, "Cloud data is newer. Downloaded from Drive.")
+            } else if (localTime.isAfter(cloudTime)) {
+                // Local is newer, upload to Cloud
+                Log.d(TAG, "Local data is newer. Uploading to Drive.")
+                triggerDriveSync()
+            } else {
+                // Exactly the same, do nothing
+                Log.d(TAG, "Data is completely in sync.")
+            }
+        } else {
+            // No cloud data exists yet, push local up
+            triggerDriveSync()
+        }
     }
 
     private fun startUpChecks() {
@@ -96,18 +151,17 @@ class AppViewModel(
                     // User selected sync, go to Silent Sign-in
                     _isDriveSyncEnabled.value = true
 
-                    val credentialManager = CredentialManager.create(getApplication())
+                    if (!networkMonitor.isConnected()) {
+                        Log.d(TAG, "App launched offline. Bypassing Google Sign-In.")
+                        _syncState.value = SyncState.OFFLINE
+                        _startupState.value = StartupState.READY
+                        return@launch
+                    }
 
-                    AuthenticationHelper.silentSignIn(
-                        context = getApplication(),
-                        credentialManager = credentialManager,
-                        onSuccess = { email ->
-                            setUserEmail(email)
-                            syncingHelper = SyncingHelper.getSyncService(getApplication(), email)
+                    attemptSilentSignIn(
+                        onComplete = {
+                            _syncState.value = SyncState.SYNCED
                             _startupState.value = StartupState.READY
-                        },
-                        onFailure = {
-                            _startupState.value = StartupState.AUTHENTICATE
                         }
                     )
                 }
@@ -119,6 +173,29 @@ class AppViewModel(
                 null -> {
                     // Completed tutorial but user did not select, go to Sign-in
                     _startupState.value = StartupState.SIGN_IN
+                }
+            }
+        }
+    }
+
+    private fun autoSync() {
+        viewModelScope.launch {
+            networkMonitor.isConnected.collect { hasInternet ->
+                _hasInternet.value = hasInternet
+
+                if (!isDriveSyncEnabled.value) return@collect
+
+                if (hasInternet) {
+                    if (syncingHelper == null) {
+                        Log.d(TAG, "Internet reconnected, silent sign in")
+                        attemptSilentSignIn()
+                    } else {
+                        resolveConflict(syncingHelper!!)
+                    }
+                } else {
+                    // Internet lost
+                    _syncState.value = SyncState.OFFLINE
+                    delaySync?.cancel()
                 }
             }
         }
@@ -142,6 +219,7 @@ class AppViewModel(
 
             if (!enabled) {
                 _startupState.value = StartupState.READY
+                _syncState.value = SyncState.OFFLINE
             }
         }
     }
@@ -198,10 +276,10 @@ class AppViewModel(
 
     // function that both updates local save and Google Drive
     private fun updateData(updateFunction: (AppData) -> AppData) {
-        _appData.value = updateFunction(_appData.value)
+        _appData.value = updateFunction(_appData.value).copy(updatedAt = Instant.now().toString())
         localSaveHelper.saveData(_appData.value)
 
-        if (isDriveSyncEnabled.value) {
+        if (_isDriveSyncEnabled.value && _hasInternet.value) {
             // Reset state to UNSYNCED while user is interacting
             _syncState.value = SyncState.UNSYNCED
 
@@ -215,6 +293,8 @@ class AppViewModel(
     }
 
     private suspend fun triggerDriveSync() {
+        if (!_hasInternet.value || !_isDriveSyncEnabled.value) return
+
         _syncState.value = SyncState.SYNCING
 
         val success = syncingHelper?.uploadAppData(_appData.value) == true
@@ -292,11 +372,4 @@ class AppViewModel(
         }
         _timetableState.value = TimetableState.Idle
     }
-}
-
-sealed interface TimetableState {
-    object Idle : TimetableState
-    object Processing : TimetableState
-    data class ReviewData(val timetable: Timetable) : TimetableState
-    data class Error(val message: String) : TimetableState
 }

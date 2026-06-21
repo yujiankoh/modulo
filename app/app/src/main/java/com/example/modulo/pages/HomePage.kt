@@ -45,6 +45,7 @@ fun HomePage(
     val timetableState by viewModel.timetableState.collectAsState()
 
     val statusText = when (syncState) {
+        SyncState.OFFLINE -> "Device is Offline"
         SyncState.UNSYNCED -> "Unsynced changes..."
         SyncState.SYNCING -> "Syncing to Drive..."
         SyncState.SYNCED -> "All changes synced"
