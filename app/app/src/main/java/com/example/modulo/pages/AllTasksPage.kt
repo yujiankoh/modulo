@@ -34,6 +34,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.modulo.AppViewModel
 import com.example.modulo.R
 import com.example.modulo.R.drawable
@@ -209,8 +210,6 @@ fun TaskCard(
                     }
                 }
 
-                //Spacer(modifier = Modifier.height(4.dp))
-
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -219,22 +218,29 @@ fun TaskCard(
                     Row {
                         Text(
                             text = task.module,
+                            fontSize = 12.sp,
+                            lineHeight = 18.sp,
                             modifier = Modifier
                                 .border(width = 1.dp, color = MaterialTheme.colorScheme.outline, shape = RoundedCornerShape(4.dp))
                                 .padding(horizontal = 8.dp, vertical = 4.dp)
                         )
                         Spacer(Modifier.padding(4.dp))
                         Text(
-                            text = task.type,
+                            text = task.type.replaceFirstChar { it.uppercase() },
+                            fontSize = 12.sp,
+                            lineHeight = 18.sp,
                             modifier = Modifier
                                 .border(width = 1.dp, color = MaterialTheme.colorScheme.outline, shape = RoundedCornerShape(4.dp))
                                 .padding(horizontal = 8.dp, vertical = 4.dp)
                         )
                     }
-                    Text(
-                        text = "Due: $dueText",
-                        modifier = Modifier.padding(end = 8.dp)
-                    )
+
+                    if (dueText.isNotEmpty()) {
+                        Text(
+                            text = if (dueText == "Overdue") "$dueText!" else "Due: $dueText",
+                            modifier = Modifier.padding(end = 8.dp)
+                        )
+                    }
                 }
             }
         }

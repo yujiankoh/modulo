@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
@@ -34,9 +35,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -58,6 +63,8 @@ fun CalendarPage(
 
     var currentMonth by remember { mutableStateOf(YearMonth.now()) }
     var selectedDate by remember { mutableStateOf<LocalDate?>(null) }
+
+    val tasks = appData.tasks.sortedBy { task ->  task.done }
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
 
@@ -109,7 +116,7 @@ fun CalendarPage(
         val offset = firstDayOfMonth.dayOfWeek.value - 1
 
         selectedDate?.let { date ->
-            val selectedTasks = appData.tasks.filter { task ->
+            val selectedTasks = tasks.filter { task ->
                 try {
                     task.due.isNotEmpty() && LocalDate.parse(task.due) == date
                 } catch (e: Exception) {
@@ -140,7 +147,7 @@ fun CalendarPage(
                             if (dayIndex in 0 until daysInMonth) {
                                 val date = currentMonth.atDay(dayIndex + 1)
 
-                                val dayTasks = appData.tasks.filter { task ->
+                                val dayTasks = tasks.filter { task ->
                                     try {
                                         task.due.isNotEmpty() && LocalDate.parse(task.due) == date
                                     } catch (e: Exception) {
@@ -208,6 +215,7 @@ fun DayCell(
                 lineHeight = 12.sp,
                 overflow = TextOverflow.Ellipsis,
                 color = MaterialTheme.colorScheme.onPrimaryContainer,
+                textDecoration = if (task.done) TextDecoration.LineThrough else TextDecoration.None,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 2.dp)
@@ -239,11 +247,17 @@ fun ViewCalendarCell(
 ) {
     var deletedTask by remember { mutableStateOf<Task?>(null) }
 
+    val windowInfo = LocalWindowInfo.current
+    val density = LocalDensity.current
+
+    val screenHeight = with(density) { windowInfo.containerSize.height.toDp() }
+
     Dialog(onDismissRequest = onDismiss) {
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(16.dp)
+                .heightIn(max = screenHeight * 0.6f),
             shape = RoundedCornerShape(16.dp),
             elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
         ) {
