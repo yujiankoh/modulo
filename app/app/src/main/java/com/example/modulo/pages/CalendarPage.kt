@@ -100,7 +100,7 @@ fun CalendarPage(
                     modifier = Modifier.weight(1f),
                     textAlign = TextAlign.Center,
                     fontWeight = FontWeight.Bold,
-                    color = Color.Gray
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
         }
@@ -184,7 +184,7 @@ fun DayCell(
             .fillMaxSize()
             .padding(2.dp)
             .background(
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                color = MaterialTheme.colorScheme.surfaceContainer,
                 shape = RoundedCornerShape(8.dp)
             )
             .padding(4.dp)
@@ -259,7 +259,10 @@ fun ViewCalendarCell(
                 .padding(16.dp)
                 .heightIn(max = screenHeight * 0.6f),
             shape = RoundedCornerShape(16.dp),
-            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            ),
         ) {
             Column(
                 modifier = Modifier

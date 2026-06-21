@@ -225,7 +225,7 @@ fun TaskCard(
     val cardColour = if (showDelete) {
         MaterialTheme.colorScheme.error
     } else {
-        MaterialTheme.colorScheme.surfaceVariant
+        MaterialTheme.colorScheme.surfaceContainerHigh
     }
 
     Card(
@@ -283,7 +283,7 @@ fun TaskCard(
                             fontSize = 12.sp,
                             lineHeight = 18.sp,
                             modifier = Modifier
-                                .border(width = 1.dp, color = MaterialTheme.colorScheme.outline, shape = RoundedCornerShape(4.dp))
+                                .border(width = 1.dp, color = if (showDelete) MaterialTheme.colorScheme.onError else MaterialTheme.colorScheme.outline, shape = RoundedCornerShape(4.dp))
                                 .padding(horizontal = 8.dp, vertical = 4.dp)
                         )
                         Spacer(Modifier.padding(4.dp))
@@ -292,7 +292,7 @@ fun TaskCard(
                             fontSize = 12.sp,
                             lineHeight = 18.sp,
                             modifier = Modifier
-                                .border(width = 1.dp, color = MaterialTheme.colorScheme.outline, shape = RoundedCornerShape(4.dp))
+                                .border(width = 1.dp, color = if (showDelete) MaterialTheme.colorScheme.onError else MaterialTheme.colorScheme.outline, shape = RoundedCornerShape(4.dp))
                                 .padding(horizontal = 8.dp, vertical = 4.dp)
                         )
                     }
