@@ -26,6 +26,7 @@ breaks even though the file transfers fine.
   "tasks": [
     {
       "id": 1717059306606,
+      "module": "CS1101S",
       "title": "CS2040S tutorial",
       "due": "2026-06-10",
       "type": "tutorial",
@@ -66,6 +67,7 @@ breaks even though the file transfers fine.
 | Field       | Type              | Required | Description |
 |-------------|-------------------|----------|-------------|
 | `id`        | number            | yes      | Unique id (web uses `Date.now()`). |
+| `module`    | string            | yes      | The Module `code`, or Module `name` for Primary, Secondary and JC. |
 | `title`     | string            | yes      | Task name. |
 | `due`       | string (`YYYY-MM-DD`) \| `""` | yes | Due date, empty if none. |
 | `type`      | string (enum)     | yes      | One of: `assignment`, `tutorial`, `quiz`, `exam`. |
@@ -230,4 +232,5 @@ data class Slot(
 | 1       | 2026-05-30 | Initial schema: `tasks`, provisional `timetable`, time fields. |
 | 2       | 2026-06-03 | Added `educationLevel`. Finalized the level-aware `timetable` structure: `slots` now use `sessionType` + `classNo` + `teacher` (replacing the provisional `type`). |
 | 2       | 2026-06-16 | Dropped the unused `teacher` field from `Slot` — the proxy never emitted it and we decided not to capture teacher info; `location` is the room/venue only. `schemaVersion` stays 2. Ling Song informed. |
-| 2       | 2026-06-18 | Added `week` (`all`/`odd`/`even`, default `all`) to `Slot` for alternating-week timetables. Additive + defaulted, so old files still load; `schemaVersion` stays 2. **Ling Song: add `val week: String = "all"` to the Kotlin `Slot`.** |
+| 2       | 2026-06-18 | Added `week` (`all`/`odd`/`even`, default `all`) to `Slot` for alternating-week timetables. Additive + defaulted, so old files still load; `schemaVersion` stays 2.`Slot`.** |
+| 2       | 2026-06-18 | Added `module` to Task |
