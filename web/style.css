@@ -1,2 +1,88 @@
 body { font-family: system-ui, sans-serif; padding: 2rem; }
 button { padding: 0.6rem 1rem; font-size: 1rem; cursor: pointer; }
+
+/* --- Phase 6: timetable calendar grid --- */
+#timetableCalendar {
+  display: grid;
+  grid-template-columns: 56px repeat(5, 1fr);  /* time gutter + 5 day columns */
+  border: 1px solid #e7e3da;
+  border-radius: 12px;
+  overflow: hidden;
+  margin: 8px 0 28px;           /* bottom gap so the next button doesn't crowd 19:00 */
+  background: #fff;
+}
+
+/* header strip above the grid */
+#timetableViewHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 20px;
+}
+.cal-header-left { display: flex; align-items: center; gap: 10px; }
+.cal-title { font-size: 20px; font-weight: 600; color: #2b2820; }
+.cal-week-btn {
+  padding: 4px 12px;
+  font-size: 12px;
+  border: 1px solid #d9d4c8;
+  border-radius: 999px;
+  background: #fff;
+  color: #6b665c;
+}
+.cal-week-btn.is-active { background: #2b2820; border-color: #2b2820; color: #fff; }
+.cal-reupload {
+  padding: 7px 16px;
+  font-size: 13px;
+  border: 1px solid #d9d4c8;
+  border-radius: 999px;
+  background: #fff;
+  color: #2b2820;
+}
+
+/* current-day highlight */
+.cal-dayhead--today { background: #faf6ee; }
+.cal-col--today {
+  background: repeating-linear-gradient(
+    to bottom, #faf6ee 0, #faf6ee 63px, #efe9dc 63px, #efe9dc 64px
+  );
+}
+.cal-corner { border-bottom: 1px solid #e7e3da; }
+.cal-dayhead {
+  padding: 10px 12px;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: #6b665c;
+  border-bottom: 1px solid #e7e3da;
+  border-left: 1px solid #f0ece3;
+}
+.cal-gutter { position: relative; }
+.cal-hour {
+  position: absolute;
+  right: 6px;
+  transform: translateY(-50%);   /* centre the label on its hour line */
+  font-size: 11px;
+  color: #9a948a;
+}
+.cal-col {
+  position: relative;
+  border-left: 1px solid #f0ece3;
+  /* a faint line every hour (HOUR_PX = 64px in timetableView.js) */
+  background: repeating-linear-gradient(
+    to bottom, #fff 0, #fff 63px, #f0ece3 63px, #f0ece3 64px
+  );
+}
+.cal-block {
+  position: absolute;
+  left: 0;                      /* full day-column width */
+  right: 0;
+  box-sizing: border-box;       /* padding/border counts inside left/right, no overflow */
+  padding: 3px 8px;
+  line-height: 1.2;             /* tighter so 30-min blocks fit two lines */
+  background: #fff;
+  border: 1px solid #d9d4c8;
+  border-radius: 8px;
+  overflow: hidden;             /* clip text in very short blocks */
+}
+.cal-block-title { font-size: 12px; font-weight: 600; color: #2b2820; }
+.cal-block-sub { font-size: 11px; color: #8a847a; }

@@ -36,11 +36,15 @@
 ## 🛠️ Timetable AI feature — remaining work
 
 ### A. Robustness
-- [ ] **Image downscaling before upload** (`web/app.js`): cap longest side **~1600–2000px** before
-      base64 (not lower — dense secondary grids have tiny text). → lighter/faster parses, fewer
-      timeouts. After picking the cap, **verify accuracy on the dense MGS grid**. The right speed
-      lever (vs thinking budget).
-- [ ] **Error UX — a clear message for EACH failure** (map from status/error in `web/app.js`'s parse handler):
+- [x] **Image downscaling before upload** (2026-06-18, `web/timetable.js` `downscaleToDataURL`):
+      caps longest side at **2000px** and re-encodes JPEG q0.9 before base64. Confirmed effective —
+      MGS grid drops to ~136 KB. ⏳ *Accuracy* re-check on the dense MGS grid still pending (blocked by
+      Gemini 503/504 flakiness — do it on a healthy day / before the demo).
+- [x] **Error UX — a clear message for EACH failure** (2026-06-18). Proxy now forwards the real
+      upstream status (`err.status`; AbortError→504) instead of collapsing to 500, plus a global
+      Express error handler for middleware failures (413/400). Web `parseErrorMessage(status)` maps
+      each code; the `catch` handles "can't reach server". **Validated live** against a real `503`
+      ("busy") and the offline path. Mapping:
 
       | Error | What happened | Message to show |
       |-------|---------------|-----------------|
@@ -51,7 +55,20 @@
       | `400` | Missing / invalid image | "Couldn't read that image — pick a clearer timetable photo." |
       | other 5xx | Server/parse error | "Something went wrong reading the timetable — try again or another photo." |
 
-- [ ] **(Optional) Auto-retry with backoff** in the proxy on transient `503`/`504` so blips don't surface.
+- [ ] **⭐ Reliability — recurring Gemini `503`/`504` (FUTURE, deferred 2026-06-18).** Free-tier is
+      best-effort; under load Gemini sheds requests (`503` "high demand") or times out (`504`). Seen
+      repeatedly on 2026-06-18 — it's capacity, not our code. These are **transient** (same request
+      often succeeds seconds later). Mitigation ladder, cheapest first:
+      1. **Retry with exponential backoff in the proxy** (recommended first) — on `503`/`504`/`AbortError`
+         only, retry up to ~3× with 1s→2s→4s waits, server-side so the user never sees the blip. **Never**
+         retry `429` (quota) or `400` (bad image). No new key/dep/cost; benefits web + app. Per-attempt
+         3-min timeout still applies, so cap attempts.
+      2. **Model fallback within Gemini** — on persistent failure, try a second Gemini model (own quota).
+      3. **Demo safety net** — warm the proxy beforehand + keep a pre-parsed result on hand so a live
+         `503` can't tank the 29 Jun demo.
+      4. **Heavier levers if it stays painful** — enable **billing** (paid tier = better availability,
+         fewer `503`s too, ~a cent/parse) or add a **second provider** (Claude/OpenAI vision) as a true
+         fallback (new key/SDK/prompt — likely overkill for a free student project).
 - [ ] Wake-on-demand before a demo (free Render sleeps after ~15 min idle → 30–50s cold start).
 
 ### B. Accuracy & schema
@@ -60,12 +77,21 @@
       ⚠️ The proxy prompt change needs **commit + push** to take effect on Render.
 - [x] **Schema field names aligned.** Proxy + web + Kotlin all use `sessionType` + `classNo`
       (the old `type` mismatch was already resolved in schema v2). Nothing to rename.
-- [ ] **Test all 5 education levels.** Only *university* + *secondary* tried. Get real
-      *primary / jc / poly* samples and tune per-level prompts. (Quota-heavy — see §1; spread across days.)
+- [x] **Tested 4/5 education levels (2026-06-18).** ✅ university, JC, poly, secondary (MGS) all
+      parse accurately — `location` is room-only (teacher-removal holds), per-level `sessionType`/`code`
+      correct, and downscaling didn't hurt the dense MGS grid. ⏳ **primary** still untested (no sample yet).
+- [x] **Odd/even week support (2026-06-18).** Added `slot.week` (all/odd/even) to schema + editor +
+      display; prompt detects Odd/Even Week titles + per-cell labels; **"Add another week"** parse-and-append
+      with exact-duplicate dedup for the two-image sec/JC case; `extractJson` hardened the proxy's JSON
+      parsing. Verified on uni (per-cell labels) + JC (two images).
 
 ### C. UX / features
-- [ ] **Manual-correction screen** — top feature gap; lets users fix the ~10% the parser misses. Turns 90% → 100% correct.
-- [ ] **Display the timetable in real UI** (calendar/dashboard) with module colour-coding (currently raw JSON dump).
+- [x] **Manual-correction / entry screen (Phase 5, done 2026-06-18).** Level-aware editable module/slot
+      cards (incl. the `week` dropdown); corrects a parse *and* enters one from scratch when parsing fails;
+      validation + parse-failure nudge; saves schema-v2 via `persist()`.
+- [~] **Display the timetable in real UI (Phase 6 — NEXT).** A read-only list display exists now
+      (auto-refreshes via the `modulo:datachanged` event). Phase 6 turns it into a weekly **calendar grid**
+      with **module colour-coding** + an **odd/even toggle** (the two-timetable view).
 
 ### D. Hand-off to Ling Song (app side)
 - [ ] Give Ling Song the live URL + fill `<the-render-url>` placeholders in `docs/timetable-parsing-app-guide.md`.
@@ -81,7 +107,28 @@
 - [ ] Task management: filtering + sorting (delete already done on web).
 - [ ] Productivity / mood board on the calendar.
 - [ ] Notes & file sync via Drive.
-- [ ] Onboarding / setup tutorial.
+- [ ] Onboarding / setup tutorial. ← see Handbook below.
+
+---
+
+## 🔮 Future feature — Handbook (added 2026-06-18)
+
+A **handbook** is the container for a user's data, created on first use. As part of that
+onboarding the user picks their **education level** (primary/secondary/jc/poly/university).
+
+- **Education level is set once, at handbook creation, then LOCKED (immutable).** The UI must
+  not let them change it afterward.
+- **Why immutable:** education level drives the timetable schema/parsing rules *and* the
+  level-aware manual-editor fields (whether a module has a `code`, which `sessionType` options
+  apply). Changing it mid-stream would invalidate already-stored timetable data and mismatch
+  the per-level UI.
+- **Migration note:** the current `#eduLevel` dropdown in the Timetable section
+  (`web/timetable.js`) is a **temporary stand-in** — fine for now. Eventually move level
+  selection into handbook onboarding and render it read-only. New code should *read*
+  `appState.educationLevel` but never offer to change it once set. The level-aware editor
+  (`web/timetableEditor.js`) needs no change — it just reads a now-fixed level.
+- **Scope:** future (likely post-MS2); not needed for the manual-editor work now. Ties into the
+  "Onboarding / setup tutorial" item above.
 
 ---
 

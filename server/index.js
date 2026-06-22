@@ -20,6 +20,10 @@ Each "day" must be one of MON, TUE, WED, THU, FRI, SAT, SUN.
 For "sessionType" use one of: lecture, tutorial, lab, recitation, seminar, sectional, lesson.
 Map labels: LEC->lecture, TUT->tutorial, LAB->lab, REC->recitation, SEC->sectional, SEM->seminar.
 Put any class/group number (the "1" in "LEC [1]", or "31B" in "TUT [31B]") in "classNo".
+For "week", capture whether a session runs every week or only on alternating weeks:
+- Default to "all" (runs every week) unless the image clearly shows an odd/even split.
+- If the WHOLE timetable is headed for one week (e.g. a title like "Odd Week" or "Even Week"), set "week" to "odd" or "even" for EVERY session accordingly.
+- If a single cell is labelled for specific weeks: "Even Weeks" (or a list of only even week numbers) -> "even"; "Odd Weeks" (or a list of only odd week numbers, e.g. "Weeks 3, 5, 7, 9, 11") -> "odd"; a continuous range (e.g. "Weeks 3-13"), "every week", or no week label -> "all".
 Set "name" only if the subject/module title is actually visible in the image; otherwise "".
 Do NOT include non-academic blocks such as flag-raising, assembly, recess, break, lunch, morning reading, dismissal, or administrative periods — only capture actual lessons/classes.
 Only include information actually visible in the image — never invent anything.`;
@@ -70,12 +74,33 @@ Return JSON in exactly this shape:
           "end": "10:00",
           "location": "string",
           "sessionType": "string",
-          "classNo": "string"
+          "classNo": "string",
+          "week": "all"
         }
       ]
     }
   ]
 }`;
+}
+
+// Pull the first balanced {...} JSON object out of a string, ignoring anything
+// before or after it (stray notes, repeated chunks, fences). Gemini with
+// responseMimeType JSON is usually clean, but not always — especially on large outputs.
+function extractJson(text) {
+  const start = text.indexOf("{");
+  if (start === -1) return text;            // no object found; let JSON.parse report it
+  let depth = 0, inStr = false, esc = false;
+  for (let i = start; i < text.length; i++) {
+    const c = text[i];
+    if (inStr) {
+      if (esc) esc = false;
+      else if (c === "\\") esc = true;
+      else if (c === '"') inStr = false;
+    } else if (c === '"') inStr = true;
+    else if (c === "{") depth++;
+    else if (c === "}" && --depth === 0) return text.slice(start, i + 1);
+  }
+  return text.slice(start);                 // unbalanced; let JSON.parse report it
 }
 
 app.post("/parse-timetable", async (req, res) => {
@@ -92,16 +117,36 @@ app.post("/parse-timetable", async (req, res) => {
         { text: buildPrompt(educationLevel) },
       ],
       config: {
-        responseMimeType: "application/json" // small thinking budget: faster than default, accurate enough; tune as needed
+        responseMimeType: "application/json"
       },
     });
 
-    const parsed = JSON.parse(response.text);
+    // Gemini occasionally appends stray text after the JSON; extract the JSON
+    // object first so a clean parse doesn't choke on trailing characters.
+    const parsed = JSON.parse(extractJson(response.text));
     res.json({ educationLevel, modules: parsed.modules || [] });
   } catch (err) {
     console.error("Parse error:", err);
-    res.status(500).json({ error: "Failed to parse timetable" });
+    // Forward the REAL status code so the web can show a specific message instead
+    // of a generic failure. @google/genai puts the upstream HTTP code on err.status
+    // (e.g. 429 quota, 503 busy, 504 deadline). Our own 3-min client timeout surfaces
+    // as an AbortError, which we map to 504 (also a "too slow" case).
+    const status = err.name === "AbortError" ? 504 : (err.status || 500);
+    res.status(status).json({ error: "Failed to parse timetable" });
   }
+});
+
+// Global error handler — the final net for anything that slips past the routes,
+// most importantly errors thrown by middleware BEFORE the handler runs (e.g.
+// express.json rejecting a too-large or malformed body). The 4-arg signature
+// (err, req, res, next) is how Express recognizes an error handler, and it must
+// be registered last so it sits at the bottom of the middleware stack.
+app.use((err, req, res, next) => {
+  console.error("Unhandled error:", err);
+  if (res.headersSent) return next(err);   // response already started — let Express finish it
+  // body-parser sets err.status/statusCode (413 too large, 400 malformed JSON).
+  const status = err.status || err.statusCode || 500;
+  res.status(status).json({ error: "Request could not be processed" });
 });
 
 // Render provides the port via an environment variable; fall back to 3000 locally.
