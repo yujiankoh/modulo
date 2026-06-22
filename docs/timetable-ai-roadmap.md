@@ -77,12 +77,21 @@
       ⚠️ The proxy prompt change needs **commit + push** to take effect on Render.
 - [x] **Schema field names aligned.** Proxy + web + Kotlin all use `sessionType` + `classNo`
       (the old `type` mismatch was already resolved in schema v2). Nothing to rename.
-- [ ] **Test all 5 education levels.** Only *university* + *secondary* tried. Get real
-      *primary / jc / poly* samples and tune per-level prompts. (Quota-heavy — see §1; spread across days.)
+- [x] **Tested 4/5 education levels (2026-06-18).** ✅ university, JC, poly, secondary (MGS) all
+      parse accurately — `location` is room-only (teacher-removal holds), per-level `sessionType`/`code`
+      correct, and downscaling didn't hurt the dense MGS grid. ⏳ **primary** still untested (no sample yet).
+- [x] **Odd/even week support (2026-06-18).** Added `slot.week` (all/odd/even) to schema + editor +
+      display; prompt detects Odd/Even Week titles + per-cell labels; **"Add another week"** parse-and-append
+      with exact-duplicate dedup for the two-image sec/JC case; `extractJson` hardened the proxy's JSON
+      parsing. Verified on uni (per-cell labels) + JC (two images).
 
 ### C. UX / features
-- [ ] **Manual-correction screen** — top feature gap; lets users fix the ~10% the parser misses. Turns 90% → 100% correct.
-- [ ] **Display the timetable in real UI** (calendar/dashboard) with module colour-coding (currently raw JSON dump).
+- [x] **Manual-correction / entry screen (Phase 5, done 2026-06-18).** Level-aware editable module/slot
+      cards (incl. the `week` dropdown); corrects a parse *and* enters one from scratch when parsing fails;
+      validation + parse-failure nudge; saves schema-v2 via `persist()`.
+- [~] **Display the timetable in real UI (Phase 6 — NEXT).** A read-only list display exists now
+      (auto-refreshes via the `modulo:datachanged` event). Phase 6 turns it into a weekly **calendar grid**
+      with **module colour-coding** + an **odd/even toggle** (the two-timetable view).
 
 ### D. Hand-off to Ling Song (app side)
 - [ ] Give Ling Song the live URL + fill `<the-render-url>` placeholders in `docs/timetable-parsing-app-guide.md`.
