@@ -53,6 +53,15 @@ const previewEl = document.getElementById("timetablePreview");
 // Set by "Add another week" so the next image pick parses + appends, instead of
 // just previewing and waiting for a Parse click.
 let appendOnNextPick = false;
+// Set by the calendar's "Re-upload timetable" button: next pick parses + replaces.
+let replaceOnNextPick = false;
+
+// Called by the calendar view's "Re-upload timetable" button.
+export function startReupload() {
+  replaceOnNextPick = true;
+  imageInput.value = "";   // reset so re-picking the same filename still fires "change"
+  imageInput.click();      // open the file dialog
+}
 
 imageInput.addEventListener("change", async () => {
   const file = imageInput.files[0];
@@ -71,13 +80,18 @@ imageInput.addEventListener("change", async () => {
   document.getElementById("parseOutput").textContent =
     `Image ready (downscaled ${mimeType}, ~${Math.round(base64.length / 1024)} KB).`;
 
-  // If "Add another week" started this pick, parse + append straight away.
+  // If a button started this pick, parse straight away: append or replace.
   if (appendOnNextPick) {
     appendOnNextPick = false;
     const modules = await parseSelectedImage();
     if (!modules) return;
     const merged = mergeModules(appState.timetable?.modules || [], modules);
     await saveTimetableModules(merged, `Added another week — ${merged.length} module(s) total:`);
+  } else if (replaceOnNextPick) {
+    replaceOnNextPick = false;
+    const modules = await parseSelectedImage();
+    if (!modules) return;
+    await saveTimetableModules(modules, `Parsed ${modules.length} module(s):`);
   }
 });
 
