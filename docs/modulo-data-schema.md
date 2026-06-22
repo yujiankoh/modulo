@@ -42,7 +42,7 @@ breaks even though the file transfers fine.
         "code": "CS2030S",
         "name": "",
         "slots": [
-          { "day": "MON", "start": "12:00", "end": "14:00", "location": "E-Learning", "sessionType": "lecture", "classNo": "1" }
+          { "day": "MON", "start": "12:00", "end": "14:00", "location": "E-Learning", "sessionType": "lecture", "classNo": "1", "week": "all" }
         ]
       }
     ]
@@ -190,6 +190,7 @@ data class ModuloData(
 @Serializable
 data class Task(
     val id: Long,
+    val module: String = "",       // module code, or name for primary/secondary/jc
     val title: String,
     val due: String = "",
     val type: String,              // assignment | tutorial | quiz | exam
@@ -232,5 +233,5 @@ data class Slot(
 | 1       | 2026-05-30 | Initial schema: `tasks`, provisional `timetable`, time fields. |
 | 2       | 2026-06-03 | Added `educationLevel`. Finalized the level-aware `timetable` structure: `slots` now use `sessionType` + `classNo` + `teacher` (replacing the provisional `type`). |
 | 2       | 2026-06-16 | Dropped the unused `teacher` field from `Slot` — the proxy never emitted it and we decided not to capture teacher info; `location` is the room/venue only. `schemaVersion` stays 2. Ling Song informed. |
-| 2       | 2026-06-18 | Added `week` (`all`/`odd`/`even`, default `all`) to `Slot` for alternating-week timetables. Additive + defaulted, so old files still load; `schemaVersion` stays 2.`Slot`.** |
-| 2       | 2026-06-18 | Added `module` to Task |
+| 2       | 2026-06-18 | Added `week` (`all`/`odd`/`even`, default `all`) to `Slot` for alternating-week timetables. Additive + defaulted, so old files still load; `schemaVersion` stays 2. |
+| 2       | 2026-06-18 | Added `module` to `Task` (the module code, or name for primary/secondary/jc, that the task belongs to). |
