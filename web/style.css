@@ -96,7 +96,6 @@ button { padding: 0.6rem 1rem; font-size: 1rem; cursor: pointer; }
   gap: 12px;
 }
 .tcal-header-left { position: relative; } /* anchor for the absolute picker popover */
-.tcal-eyebrow { font-size: 11px; letter-spacing: 0.15em; color: #9a948a; }
 .tcal-title { font-size: 34px; color: #2b2820; }
 .tcal-title em { font-style: italic; font-weight: 600; }
 
@@ -204,6 +203,9 @@ button { padding: 0.6rem 1rem; font-size: 1rem; cursor: pointer; }
   border-bottom: 1px solid #f0ece3;
 }
 .tcal-cell--blank { background: #faf8f3; }   /* faint fill for the leading blanks */
+/* today: inset outline (box-shadow doesn't take layout space, so the grid stays put) */
+.tcal-cell--today { box-shadow: inset 0 0 0 2px #2b2820; }
+.tcal-cell--today .tcal-date { font-weight: 700; }
 .tcal-date { font-size: 13px; color: #2b2820; }
 .tcal-pill {
   margin-top: 4px;
@@ -216,6 +218,7 @@ button { padding: 0.6rem 1rem; font-size: 1rem; cursor: pointer; }
   overflow: hidden;            /* ...and clip overflow... */
   text-overflow: ellipsis;     /* ...showing "…" when the title is too long */
 }
+.tcal-pill--done { text-decoration: line-through; color: #9a948a; background: #f3f0e9; }
 .tcal-more { margin-top: 4px; font-size: 11px; font-weight: 600; color: #6b665c; }
 .tcal-cell--has-tasks { cursor: pointer; }       /* signals the day is clickable */
 .tcal-cell--has-tasks:hover { background: #faf8f3; }

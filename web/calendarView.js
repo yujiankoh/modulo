@@ -1,5 +1,8 @@
 // calendarView.js — month-grid calendar showing tasks on their due dates (Phase 7).
-// Step 7.1: static current-month scaffold (Monday-first). Tasks + month nav come next.
+// Monday-first month grid; tasks as pills (capped, with "N more"); click a day for a
+// view-only popup; month nav via prev/next arrows + a month/year picker; today is
+// highlighted. Redraws on the modulo:datachanged event. (Phase 8 will add timetable
+// sessions onto these same date cells.)
 
 import { appState } from "./data.js";
 
@@ -74,10 +77,6 @@ function buildHeader() {
   const left = document.createElement("div");
   left.className = "tcal-header-left";
 
-  const eyebrow = document.createElement("div");
-  eyebrow.className = "tcal-eyebrow";
-  eyebrow.textContent = "CALENDAR";
-
   // title row: month + year are plain text; only the chevron is clickable
   const title = document.createElement("div");
   title.className = "tcal-title tcal-title-row";
@@ -102,7 +101,7 @@ function buildHeader() {
   // which would otherwise close the picker when its buttons rebuild themselves.
   pickerEl.addEventListener("click", (e) => e.stopPropagation());
 
-  left.append(eyebrow, title, pickerEl);
+  left.append(title, pickerEl);
 
   // --- right: previous / next month arrows ---
   const nav = document.createElement("div");
@@ -217,9 +216,13 @@ function renderGrid() {
   // --- one cell per day of the month ---
   const grouped = tasksByDate(appState.tasks || []);
   const total = daysInMonth(viewYear, viewMonth);
+  // today's parts, so we only highlight "today" when its real month is on screen
+  const isCurrentMonth =
+    viewYear === today.getFullYear() && viewMonth === today.getMonth();
   for (let d = 1; d <= total; d++) {
     const cell = document.createElement("div");
     cell.className = "tcal-cell";
+    if (isCurrentMonth && d === today.getDate()) cell.classList.add("tcal-cell--today");
 
     const num = document.createElement("div");
     num.className = "tcal-date";
@@ -230,7 +233,7 @@ function renderGrid() {
     const dayTasks = grouped[isoDate(viewYear, viewMonth, d)] || [];
     for (const t of dayTasks.slice(0, MAX_PILLS)) {
       const pill = document.createElement("div");
-      pill.className = "tcal-pill";
+      pill.className = "tcal-pill" + (t.done ? " tcal-pill--done" : "");
       pill.textContent = t.title;
       pill.title = t.title; // hover tooltip, in case the title is truncated
       cell.append(pill);
