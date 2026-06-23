@@ -22,6 +22,7 @@ breaks even though the file transfers fine.
 {
   "schemaVersion": 2,
   "educationLevel": "university",
+  "termStart": "2026-05-18",
   "updatedAt": "2026-06-03T09:35:06.606Z",
   "tasks": [
     {
@@ -58,6 +59,7 @@ breaks even though the file transfers fine.
 |------------------|-------------------|----------|-------------|
 | `schemaVersion`  | number            | yes      | The structure version. Currently `2`. Bump when the structure changes. |
 | `educationLevel` | string \| null    | yes      | The user's level: `primary`, `secondary`, `jc`, `poly`, `university`, or `null` if unset. Drives how the timetable parser reads the image. |
+| `termStart`      | string (`YYYY-MM-DD`) \| null | no | Week-1 Monday anchor for the dated weekly timetable view. `null` until the user sets it. Used to map the recurring weekly timetable onto real dates + derive odd/even week parity. Web-only for now; the app may ignore it. |
 | `updatedAt`      | string (ISO 8601) | yes      | When the whole state was last saved. Key field for sync + local-save reconciliation. |
 | `tasks`          | array of Task     | yes      | All of the user's tasks. May be empty (`[]`). |
 | `timetable`      | Timetable \| null | yes      | The parsed timetable, or `null` if none yet. |
@@ -164,6 +166,7 @@ finer-grained merging later. Do NOT build conflict resolution yet — last-write
 let appState = {
   schemaVersion: 2,
   educationLevel: null,   // "primary" | "secondary" | "jc" | "poly" | "university"
+  termStart: null,        // "YYYY-MM-DD" Week-1 Monday anchor, or null
   updatedAt: null,
   tasks: [],
   timetable: null,        // { educationLevel, modules: [...] }
@@ -182,6 +185,7 @@ import kotlinx.serialization.Serializable
 data class ModuloData(
     val schemaVersion: Int = 2,
     val educationLevel: String? = null,
+    val termStart: String? = null,     // "YYYY-MM-DD" Week-1 Monday anchor (web-only for now)
     val updatedAt: String? = null,
     val tasks: List<Task> = emptyList(),
     val timetable: Timetable? = null
@@ -235,3 +239,4 @@ data class Slot(
 | 2       | 2026-06-16 | Dropped the unused `teacher` field from `Slot` — the proxy never emitted it and we decided not to capture teacher info; `location` is the room/venue only. `schemaVersion` stays 2. Ling Song informed. |
 | 2       | 2026-06-18 | Added `week` (`all`/`odd`/`even`, default `all`) to `Slot` for alternating-week timetables. Additive + defaulted, so old files still load; `schemaVersion` stays 2. |
 | 2       | 2026-06-18 | Added `module` to `Task` (the module code, or name for primary/secondary/jc, that the task belongs to). |
+| 2       | 2026-06-23 | Added top-level `termStart` (`YYYY-MM-DD` Week-1 Monday, default `null`) for the dated weekly timetable view + odd/even parity (Phase 8). Additive + defaulted, so old files still load; `schemaVersion` stays 2. Web-only for now; app may ignore it. |

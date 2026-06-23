@@ -16,6 +16,7 @@ let storageMode = null;            // "drive" | "local" | null — private to th
 export let appState = {
   schemaVersion: 2,        // was 1 — we finalized the timetable structure + added educationLevel
   educationLevel: null,
+  termStart: null,         // "YYYY-MM-DD" Week-1 Monday anchor (Phase 8); null until set
   tasks: [],
   timetable: null,
   updatedAt: null,
@@ -59,6 +60,8 @@ export async function loadInitialData() {
     appState = saved;
     const eduEl = document.getElementById("eduLevel");
     if (appState.educationLevel) eduEl.value = appState.educationLevel;
+    const termEl = document.getElementById("termStart");
+    if (appState.termStart) termEl.value = appState.termStart;
     if (!appState.tasks) appState.tasks = [];
   }
   render();

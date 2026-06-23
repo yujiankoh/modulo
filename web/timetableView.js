@@ -48,6 +48,54 @@ function todayCode() {
   return ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"][new Date().getDay()];
 }
 
+// --- date helpers for the dated weekly view (Phase 8) ---
+
+// Parse a "YYYY-MM-DD" string into a local Date at midnight (no timezone surprises).
+function parseISODate(s) {
+  const [y, m, d] = s.split("-").map(Number);
+  return new Date(y, m - 1, d); // month is 0-indexed
+}
+
+// A date n days after the given one (handles month/year rollover via setDate).
+function addDays(date, n) {
+  const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  d.setDate(d.getDate() + n);
+  return d;
+}
+
+// The Monday on or before a given date (start of that date's week, Monday-first).
+function mondayOf(date) {
+  const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const dow = (d.getDay() + 6) % 7; // 0=Mon..6=Sun
+  return addDays(d, -dow);
+}
+
+// Whole days a − b, computed in UTC so daylight-saving shifts can't skew the count.
+function daysBetween(a, b) {
+  const ua = Date.UTC(a.getFullYear(), a.getMonth(), a.getDate());
+  const ub = Date.UTC(b.getFullYear(), b.getMonth(), b.getDate());
+  return Math.round((ua - ub) / 86400000); // ms per day
+}
+
+// The Week-1 Monday from appState.termStart (snapped to its Monday), or null if unset.
+function termMonday() {
+  return appState.termStart ? mondayOf(parseISODate(appState.termStart)) : null;
+}
+
+// For a viewed week (given its Monday): the Mon–Fri dates, and — if a term anchor is
+// set — the academic week number + odd/even parity. number/parity are null without it.
+function weekInfo(monday) {
+  const dates = [0, 1, 2, 3, 4].map((i) => addDays(monday, i)); // Mon..Fri
+  const term = termMonday();
+  let number = null, parity = null;
+  if (term) {
+    number = Math.floor(daysBetween(monday, term) / 7) + 1; // week 1 = the term Monday
+    parity = number % 2 === 1 ? "odd" : "even";
+  }
+  return { dates, number, parity };
+}
+
+let viewedMonday = mondayOf(new Date()); // which week the grid shows; defaults to this week
 let currentWeek = "odd"; // which week the toggle is showing (odd timetables only)
 
 const headerEl = document.getElementById("timetableViewHeader");
@@ -108,6 +156,13 @@ function addBlock(col, module, slot, startH) {
 }
 
 function renderCalendar() {
+  // TEMP (8.1 verify): log the viewed week's computed info; removed in 8.2.
+  const _wk = weekInfo(viewedMonday);
+  console.log("[timetable week]", {
+    number: _wk.number, parity: _wk.parity,
+    dates: _wk.dates.map((d) => d.toDateString()),
+  });
+
   const modules = appState.timetable?.modules || [];
   const alternating = hasAlternatingWeeks(modules);
   renderHeader(alternating);

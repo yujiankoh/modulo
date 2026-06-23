@@ -12,6 +12,13 @@ eduLevelEl.addEventListener("change", () => {
   persist();
 });
 
+// Term-start anchor (Week 1 Monday): save it so the weekly grid can show real dates.
+const termStartEl = document.getElementById("termStart");
+termStartEl.addEventListener("change", () => {
+  appState.termStart = termStartEl.value || null;
+  persist();
+});
+
 // Read an image file, downscale it so its longest side is <= maxSide, and return a
 // JPEG data URL. Phone photos are ~3500px/several MB; a timetable is just a grid of
 // text, so shrinking keeps it legible while making the upload + Gemini parse lighter
