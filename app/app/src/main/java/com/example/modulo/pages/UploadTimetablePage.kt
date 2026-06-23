@@ -10,6 +10,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.launch
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -39,7 +40,10 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -64,10 +68,20 @@ import java.io.ByteArrayOutputStream
 @Composable
 fun UploadTimetablePage(
     viewModel: AppViewModel,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onManualClick: () -> Unit,
 ) {
     val context = LocalContext.current
     var selectedEducation by remember { mutableStateOf("primary") }
+
+    var failCount by remember { mutableIntStateOf(0) }
+    val timetableState by viewModel.timetableState.collectAsState()
+
+    LaunchedEffect(timetableState) {
+        if (timetableState is TimetableState.Error) {
+            failCount++
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -87,6 +101,8 @@ fun UploadTimetablePage(
 
         UploadTimetable(
             context = context,
+            showManual = failCount >= 0,
+            onManual = onManualClick,
             onUploadTimetable = { imageBytes ->
                 viewModel.uploadTimetable(
                     imageBytes = imageBytes,
@@ -94,7 +110,7 @@ fun UploadTimetablePage(
                     educationLevel = selectedEducation
                 )
 
-                onBack();
+                onBack()
             }
         )
     }
@@ -103,10 +119,11 @@ fun UploadTimetablePage(
 @Composable
 fun UploadTimetable(
     context: Context,
+    showManual: Boolean,
+    onManual: () -> Unit,
     onUploadTimetable: (ByteArray) -> Unit
 ) {
     var imageUri by remember { mutableStateOf<Uri?>(null) }
-    var imageBitmap by remember { mutableStateOf<Bitmap?>(null) }
 
     val coroutineScope = rememberCoroutineScope()
 
@@ -115,14 +132,6 @@ fun UploadTimetable(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         imageUri = uri
-        imageBitmap = null
-    }
-
-    val cameraLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.TakePicturePreview()
-    ) { bitmap: Bitmap? ->
-        imageBitmap = bitmap
-        imageUri = null
     }
 
     Column(
@@ -140,70 +149,40 @@ fun UploadTimetable(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(300.dp)
-                .clip(RoundedCornerShape(12.dp)),
+                .clip(RoundedCornerShape(12.dp))
+                .clickable{ galleryLauncher.launch("image/*") },
             contentAlignment = Alignment.Center
         ) {
-            when {
+            if (imageUri != null) {
                 // If they picked from Gallery
-                imageUri != null -> {
-                    AsyncImage(
-                        model = imageUri,
-                        contentDescription = "Gallery Upload",
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
-                }
-
-                // If they took a photo
-                imageBitmap != null -> {
-                    Image(
-                        bitmap = imageBitmap!!.asImageBitmap(),
-                        contentDescription = "Camera Timetable",
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
-                }
-
+                AsyncImage(
+                    model = imageUri,
+                    contentDescription = "Gallery Upload",
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+            } else {
                 // Default empty
-                else -> {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(
-                            painter = painterResource(R.drawable.plus),
-                            contentDescription = "Upload",
-                            modifier = Modifier.size(48.dp),
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text("No image selected")
-                    }
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(
+                        painter = painterResource(R.drawable.plus),
+                        contentDescription = "Upload",
+                        modifier = Modifier.size(48.dp),
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("Tap to select an image")
                 }
             }
         }
 
         Spacer(modifier = Modifier.height(24.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            Button(
-                onClick = { galleryLauncher.launch("image/*") },
-            ) {
-                Text("Gallery")
-            }
-
-            Button(
-                onClick = { cameraLauncher.launch() },
-            ) {
-                Text("Camera")
-            }
-        }
 
         Spacer(modifier = Modifier.height(24.dp))
 
         Button(
             onClick = {
                 coroutineScope.launch(Dispatchers.IO) {
-                    val finalBitmap = imageBitmap ?: imageUri?.let { getBitmapFromUri(context, it) }
+                    val finalBitmap = imageUri?.let { getBitmapFromUri(context, it) }
 
                     if (finalBitmap != null) {
                         val stream = ByteArrayOutputStream()
@@ -216,9 +195,24 @@ fun UploadTimetable(
                     }
                 }
             },
-            enabled = imageUri != null || imageBitmap != null
+            enabled = imageUri != null
         ) {
             Text("Upload Timetable")
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(48.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            if (showManual) {
+                TextButton(onClick = onManual) {
+                    Text("Having trouble? Enter timetable manually")
+                }
+            }
         }
     }
 }

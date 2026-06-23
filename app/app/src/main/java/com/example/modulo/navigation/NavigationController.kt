@@ -57,6 +57,7 @@ import kotlinx.serialization.Serializable
 @Serializable object StudySession
 
 @Serializable object TimetableUpload;
+@Serializable object ManualTimetable;
 
 @Composable
 fun RootNavigation(
@@ -205,15 +206,18 @@ fun NavGraphBuilder.appNavigation(viewModel: AppViewModel) {
                 modifier = Modifier.padding(innerPadding)
             ) {
 
-                composable<Home> { HomePage(viewModel = viewModel, navController = navController) }
+                composable<Home> {
+                    HomePage(
+                        viewModel = viewModel,
+                        onUploadTimetable = { navController.navigate(TimetableUpload) }
+                    )
+                }
 
                 composable<AddTask> {
                     AddTaskPage(
                         viewModel = viewModel,
-                        navController = navController,
-                        onAddTask = {
-                            navController.popBackStack()
-                        }
+                        onUploadTimetable = { navController.navigate(TimetableUpload) },
+                        onAddTask = { navController.popBackStack() }
                     )
                 }
 
@@ -228,7 +232,8 @@ fun NavGraphBuilder.appNavigation(viewModel: AppViewModel) {
                         viewModel = viewModel,
                         onBack = {
                             navController.popBackStack()
-                        }
+                        },
+                        onManualClick = { navController.navigate(ManualTimetable) }
                     )
                 }
             }

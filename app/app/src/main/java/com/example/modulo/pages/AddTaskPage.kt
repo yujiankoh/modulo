@@ -47,7 +47,7 @@ import java.util.TimeZone
 @Composable
 fun AddTaskPage(
     viewModel: AppViewModel,
-    navController: NavController,
+    onUploadTimetable: () -> Unit,
     onAddTask: () -> Unit
 ) {
     // Collect info from the model
@@ -69,11 +69,7 @@ fun AddTaskPage(
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            MissingTimetableBanner (
-                onUploadClicked = {
-                    navController.navigate(TimetableUpload)
-                }
-            )
+            MissingTimetableBanner(onUploadClicked = onUploadTimetable)
         }
 
     } else {

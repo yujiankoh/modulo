@@ -36,7 +36,7 @@ import java.util.TimeZone
 @Composable
 fun HomePage(
     viewModel: AppViewModel,
-    navController: NavController
+    onUploadTimetable: () -> Unit
 ) {
     // Collect info from the model
     val appData by viewModel.appData.collectAsState()
@@ -90,11 +90,7 @@ fun HomePage(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         if (appData.timetable == null && timetableState is TimetableState.Idle) {
-            MissingTimetableBanner (
-                onUploadClicked = {
-                    navController.navigate(TimetableUpload)
-                }
-            )
+            MissingTimetableBanner (onUploadClicked = onUploadTimetable)
         }
 
         Spacer(modifier = Modifier.height(24.dp))
