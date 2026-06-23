@@ -85,6 +85,20 @@ class AppViewModel(
         autoSync()
     }
 
+    fun onAuthenticationSuccess(context: Context, email: String) {
+        setUserEmail(email)
+        saveSyncPreference(true)
+        syncingHelper = SyncingHelper.getSyncService(context, email)
+
+        viewModelScope.launch {
+            _syncState.value = SyncState.SYNCING
+            resolveConflict(syncingHelper!!)
+            _syncState.value = SyncState.SYNCED
+
+            _startupState.value = StartupState.READY
+        }
+    }
+
     private suspend fun attemptSilentSignIn(onComplete: () -> Unit = {}) {
             val credentialManager = CredentialManager.create(getApplication())
 
@@ -217,15 +231,12 @@ class AppViewModel(
             }
             _isDriveSyncEnabled.value = enabled
 
+            // If local save, go straight to home
             if (!enabled) {
                 _startupState.value = StartupState.READY
                 _syncState.value = SyncState.OFFLINE
             }
         }
-    }
-
-    fun navigateToHome() {
-        _startupState.value = StartupState.READY
     }
 
     fun signOut(context: Context) {
@@ -240,6 +251,7 @@ class AppViewModel(
 
     fun reAuthenticate() {
         _startupState.value = StartupState.AUTHENTICATE
+        saveSyncPreference(true)
     }
 
     // TODO: other functions to change appdata

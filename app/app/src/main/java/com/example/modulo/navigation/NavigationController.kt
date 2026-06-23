@@ -74,9 +74,7 @@ fun RootNavigation(
     val credentialManager = remember { CredentialManager.create(context) }
 
     val navigateToHomeAfterSync: (String) -> Unit = { email ->
-        val driveHelper = SyncingHelper.getSyncService(context, email)
-        viewModel.syncingHelper = driveHelper
-        viewModel.navigateToHome()
+        viewModel.onAuthenticationSuccess(context, email)
     }
 
     val driveAuthorizationLauncher = rememberLauncherForActivityResult(
