@@ -9,6 +9,11 @@ const MONTHS = [
   "January", "February", "March", "April", "May", "June",
   "July", "August", "September", "October", "November", "December",
 ];
+// Short labels for the month picker grid (Jan..Dec).
+const MONTH_ABBR = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+];
 
 // How many task pills to show in a cell before collapsing the rest into "N more".
 const MAX_PILLS = 3;
@@ -20,6 +25,12 @@ let viewMonth = today.getMonth(); // 0=Jan ... 11=Dec
 
 const headerEl = document.getElementById("taskCalendarHeader");
 const gridEl = document.getElementById("taskCalendarGrid");
+
+// Header pieces built once by buildHeader(); kept so updateTitle/renderPicker
+// can change them without rebuilding the whole header on every redraw.
+let titleMonthEl, titleYearEl, pickerEl;
+let pickerOpen = false;   // is the month/year picker showing?
+let pickerYear = viewYear; // which year the picker is currently browsing
 
 // How many blank cells go before day 1 = the Monday-first index of the 1st.
 // getDay() is 0=Sun..6=Sat; (n+6)%7 rotates it to 0=Mon..6=Sun.
@@ -54,21 +65,134 @@ function tasksByDate(tasks) {
   return map;
 }
 
-// The strip above the grid: eyebrow + "Month Year" title.
-function renderHeader() {
+// Build the header ONCE: eyebrow + clickable title (with chevron) + picker popover
+// on the left, prev/next month arrows on the right. updateTitle() refreshes the text.
+function buildHeader() {
   headerEl.innerHTML = "";
+
+  // --- left: eyebrow, title button (opens picker), and the picker popover ---
+  const left = document.createElement("div");
+  left.className = "tcal-header-left";
 
   const eyebrow = document.createElement("div");
   eyebrow.className = "tcal-eyebrow";
   eyebrow.textContent = "CALENDAR";
 
+  // title row: month + year are plain text; only the chevron is clickable
   const title = document.createElement("div");
-  title.className = "tcal-title";
-  const month = document.createElement("em"); // italic month, like the mockup
-  month.textContent = MONTHS[viewMonth];
-  title.append(month, " " + viewYear);
+  title.className = "tcal-title tcal-title-row";
+  titleMonthEl = document.createElement("em");   // italic month (filled in updateTitle)
+  titleYearEl = document.createElement("span");   // year (filled in updateTitle)
 
-  headerEl.append(eyebrow, title);
+  const chevronBtn = document.createElement("button");
+  chevronBtn.type = "button";
+  chevronBtn.className = "tcal-chevron-btn";
+  chevronBtn.setAttribute("aria-label", "Choose month and year");
+  const chevron = document.createElement("span");
+  chevron.className = "tcal-chevron"; // a CSS triangle, no text
+  chevronBtn.append(chevron);
+  chevronBtn.addEventListener("click", togglePicker);
+
+  title.append(titleMonthEl, titleYearEl, chevronBtn); // gap handles spacing
+
+  pickerEl = document.createElement("div");
+  pickerEl.className = "tcal-picker";
+  pickerEl.style.display = "none";
+  // Clicks inside the picker must not reach the document "click-away" listener,
+  // which would otherwise close the picker when its buttons rebuild themselves.
+  pickerEl.addEventListener("click", (e) => e.stopPropagation());
+
+  left.append(eyebrow, title, pickerEl);
+
+  // --- right: previous / next month arrows ---
+  const nav = document.createElement("div");
+  nav.className = "tcal-nav";
+  const prev = document.createElement("button");
+  prev.type = "button";
+  prev.className = "tcal-arrow";
+  prev.textContent = "‹";
+  prev.addEventListener("click", () => shiftMonth(-1));
+  const next = document.createElement("button");
+  next.type = "button";
+  next.className = "tcal-arrow";
+  next.textContent = "›";
+  next.addEventListener("click", () => shiftMonth(1));
+  nav.append(prev, next);
+
+  headerEl.append(left, nav);
+}
+
+// Refresh just the title text to the currently-shown month/year.
+function updateTitle() {
+  titleMonthEl.textContent = MONTHS[viewMonth];
+  titleYearEl.textContent = viewYear;
+}
+
+// Move the shown month by delta (-1 / +1). Date normalises out-of-range months,
+// so Dec→Jan and Jan→Dec roll the year over automatically.
+function shiftMonth(delta) {
+  const d = new Date(viewYear, viewMonth + delta, 1);
+  viewYear = d.getFullYear();
+  viewMonth = d.getMonth();
+  renderCalendar();
+}
+
+// --- month/year picker (opened by the title) ---
+function togglePicker() {
+  pickerOpen = !pickerOpen;
+  if (pickerOpen) {
+    pickerYear = viewYear; // start browsing on the shown year
+    renderPicker();
+    pickerEl.style.display = "block";
+  } else {
+    pickerEl.style.display = "none";
+  }
+}
+
+function closePicker() {
+  pickerOpen = false;
+  pickerEl.style.display = "none";
+}
+
+// Fill the picker: a "‹ year ›" stepper + a 3×4 grid of months.
+function renderPicker() {
+  pickerEl.innerHTML = "";
+
+  // year stepper row
+  const yearRow = document.createElement("div");
+  yearRow.className = "tcal-picker-year";
+  const yPrev = document.createElement("button");
+  yPrev.type = "button";
+  yPrev.textContent = "‹";
+  yPrev.addEventListener("click", () => { pickerYear--; renderPicker(); });
+  const yLabel = document.createElement("span");
+  yLabel.textContent = pickerYear;
+  const yNext = document.createElement("button");
+  yNext.type = "button";
+  yNext.textContent = "›";
+  yNext.addEventListener("click", () => { pickerYear++; renderPicker(); });
+  yearRow.append(yPrev, yLabel, yNext);
+
+  // month grid
+  const grid = document.createElement("div");
+  grid.className = "tcal-picker-months";
+  for (let i = 0; i < 12; i++) {
+    const mBtn = document.createElement("button");
+    mBtn.type = "button";
+    // highlight the month currently shown on the calendar
+    const isActive = i === viewMonth && pickerYear === viewYear;
+    mBtn.className = "tcal-picker-month" + (isActive ? " is-active" : "");
+    mBtn.textContent = MONTH_ABBR[i];
+    mBtn.addEventListener("click", () => {
+      viewMonth = i;
+      viewYear = pickerYear;
+      closePicker();
+      renderCalendar();
+    });
+    grid.append(mBtn);
+  }
+
+  pickerEl.append(yearRow, grid);
 }
 
 function renderGrid() {
@@ -130,7 +254,7 @@ function renderGrid() {
 }
 
 function renderCalendar() {
-  renderHeader();
+  updateTitle();
   renderGrid();
 }
 
@@ -176,9 +300,19 @@ popupEl.addEventListener("click", (e) => {
   if (e.target === popupEl) closeDayPopup(); // only the backdrop, not the card
 });
 document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape") closeDayPopup();
+  if (e.key === "Escape") { closeDayPopup(); closePicker(); }
 });
 
-// Redraw whenever tasks are saved/loaded (data.js fires this on persist/load).
+// Click anywhere outside the open picker (and not on the title that toggles it)
+// closes it — the usual "click away to dismiss" behaviour.
+document.addEventListener("click", (e) => {
+  if (!pickerOpen) return;
+  if (!pickerEl.contains(e.target) && !e.target.closest(".tcal-chevron-btn")) {
+    closePicker();
+  }
+});
+
+// Build the header once, then draw. Redraw whenever tasks change.
+buildHeader();
 window.addEventListener("modulo:datachanged", renderCalendar);
 renderCalendar();
