@@ -81,6 +81,17 @@
   <button id="addBtn">Add Task</button>
   <button id="reloadBtn">Reload from Drive</button>
   <ul id="taskList"></ul>
+
+  <!-- Phase 7.3: day popup — opened by clicking a calendar day; lists that day's tasks.
+       Hidden by default; calendarView.js toggles it and fills #dayPopupBody. -->
+  <div id="dayPopup" class="tcal-popup" style="display: none;">
+    <div class="tcal-popup-card">
+      <button id="dayPopupClose" class="tcal-popup-close" type="button">✕</button>
+      <h3 id="dayPopupTitle"></h3>
+      <div id="dayPopupBody"></div>
+    </div>
+  </div>
+
   <script type="module" src="main.js"></script>
 </body>
 </html>

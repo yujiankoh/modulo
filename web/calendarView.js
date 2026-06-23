@@ -10,7 +10,10 @@ const MONTHS = [
   "July", "August", "September", "October", "November", "December",
 ];
 
-// Which month the calendar is showing. Starts on today's month; nav changes it (7.3).
+// How many task pills to show in a cell before collapsing the rest into "N more".
+const MAX_PILLS = 3;
+
+// Which month the calendar is showing. Starts on today's month; nav changes it (7.4).
 const today = new Date();
 let viewYear = today.getFullYear();
 let viewMonth = today.getMonth(); // 0=Jan ... 11=Dec
@@ -99,14 +102,27 @@ function renderGrid() {
     num.textContent = d;
     cell.append(num);
 
-    // tasks due on this day → one pill each (neutral colour for now)
+    // tasks due on this day → up to MAX_PILLS pills, then an "N more" row
     const dayTasks = grouped[isoDate(viewYear, viewMonth, d)] || [];
-    for (const t of dayTasks) {
+    for (const t of dayTasks.slice(0, MAX_PILLS)) {
       const pill = document.createElement("div");
       pill.className = "tcal-pill";
       pill.textContent = t.title;
       pill.title = t.title; // hover tooltip, in case the title is truncated
       cell.append(pill);
+    }
+    if (dayTasks.length > MAX_PILLS) {
+      const more = document.createElement("div");
+      more.className = "tcal-more";
+      more.textContent = `${dayTasks.length - MAX_PILLS} more`;
+      cell.append(more);
+    }
+
+    // a day with tasks is clickable → opens the popup listing all of them
+    if (dayTasks.length > 0) {
+      const day = d; // capture this cell's day for the click handler
+      cell.classList.add("tcal-cell--has-tasks");
+      cell.addEventListener("click", () => openDayPopup(viewYear, viewMonth, day, dayTasks));
     }
 
     gridEl.append(cell);
@@ -117,6 +133,51 @@ function renderCalendar() {
   renderHeader();
   renderGrid();
 }
+
+// --- day popup: lists all tasks for one clicked day (view-only) ---
+const popupEl = document.getElementById("dayPopup");
+const popupTitleEl = document.getElementById("dayPopupTitle");
+const popupBodyEl = document.getElementById("dayPopupBody");
+
+function openDayPopup(year, month, day, tasks) {
+  // Friendly heading like "Monday, 8 June 2026".
+  popupTitleEl.textContent = new Date(year, month, day).toLocaleDateString("en-GB", {
+    weekday: "long", day: "numeric", month: "long", year: "numeric",
+  });
+
+  popupBodyEl.innerHTML = "";
+  for (const t of tasks) {
+    const row = document.createElement("div");
+    row.className = "tcal-popup-task";
+
+    const title = document.createElement("div");
+    title.className = "tcal-popup-task-title";
+    title.textContent = t.title;
+    if (t.done) title.style.textDecoration = "line-through";
+
+    const meta = document.createElement("div");
+    meta.className = "tcal-popup-task-meta";
+    meta.textContent = t.type + (t.done ? " · done" : "");
+
+    row.append(title, meta);
+    popupBodyEl.append(row);
+  }
+
+  popupEl.style.display = "flex"; // CSS centres the card when shown
+}
+
+function closeDayPopup() {
+  popupEl.style.display = "none";
+}
+
+// Close via the ✕ button, clicking the dim backdrop, or pressing Esc.
+document.getElementById("dayPopupClose").addEventListener("click", closeDayPopup);
+popupEl.addEventListener("click", (e) => {
+  if (e.target === popupEl) closeDayPopup(); // only the backdrop, not the card
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") closeDayPopup();
+});
 
 // Redraw whenever tasks are saved/loaded (data.js fires this on persist/load).
 window.addEventListener("modulo:datachanged", renderCalendar);
