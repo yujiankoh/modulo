@@ -17,6 +17,8 @@ export let appState = {
   schemaVersion: 2,        // was 1 — we finalized the timetable structure + added educationLevel
   educationLevel: null,
   termStart: null,         // "YYYY-MM-DD" Week-1 Monday anchor (Phase 8); null until set
+  termEnd: null,           // "YYYY-MM-DD" last day of term; weeks past it are "outside term"
+  breaks: [],              // [{ start, end }] date ranges of recess/holiday (non-academic) weeks
   tasks: [],
   timetable: null,
   updatedAt: null,
@@ -62,7 +64,10 @@ export async function loadInitialData() {
     if (appState.educationLevel) eduEl.value = appState.educationLevel;
     const termEl = document.getElementById("termStart");
     if (appState.termStart) termEl.value = appState.termStart;
+    const termEndEl = document.getElementById("termEnd");
+    if (appState.termEnd) termEndEl.value = appState.termEnd;
     if (!appState.tasks) appState.tasks = [];
+    if (!appState.breaks) appState.breaks = []; // default for files saved before Phase 8
   }
   render();
   window.dispatchEvent(new Event("modulo:datachanged"));

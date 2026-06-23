@@ -39,9 +39,20 @@
   <!-- Read-only display of the saved timetable; refreshed on save/parse/load. -->
   <div id="timetableDisplay"></div>
 
-  <!-- Phase 8: term anchor (Week 1 Monday) — lets the weekly grid show real dates. -->
+  <!-- Phase 8: term setup (INTERIM — moves into the handbook, Phase 13). Lets the weekly
+       grid show real dates + week numbers and skip recess/holiday weeks. -->
   <label for="termStart">Term start (Week 1 Monday):</label>
   <input id="termStart" type="date" />
+  <br />
+  <label for="termEnd">Term end:</label>
+  <input id="termEnd" type="date" />
+  <br />
+  <label for="breakStart">Recess / holiday from:</label>
+  <input id="breakStart" type="date" />
+  <label for="breakEnd">to:</label>
+  <input id="breakEnd" type="date" />
+  <button id="addBreakBtn" type="button">Add break</button>
+  <div id="breakList"></div>
 
   <!-- Phase 6: weekly calendar grid view of the timetable. -->
   <div id="timetableViewHeader"></div>

@@ -19,6 +19,53 @@ termStartEl.addEventListener("change", () => {
   persist();
 });
 
+// Term end: weeks past it are "outside term" (no week number, no classes).
+const termEndEl = document.getElementById("termEnd");
+termEndEl.addEventListener("change", () => {
+  appState.termEnd = termEndEl.value || null;
+  persist();
+});
+
+// Recess / holiday breaks: a list of { start, end } date ranges. Stored on appState.breaks;
+// each is a removable chip. Weeks overlapping a range are skipped in academic numbering.
+const breakStartEl = document.getElementById("breakStart");
+const breakEndEl = document.getElementById("breakEnd");
+const breakListEl = document.getElementById("breakList");
+
+document.getElementById("addBreakBtn").addEventListener("click", () => {
+  const start = breakStartEl.value, end = breakEndEl.value;
+  if (!start || !end) { alert("Pick both a start and end date for the break."); return; }
+  if (end < start) { alert("The break's end can't be before its start."); return; } // ISO strings compare chronologically
+  if (!appState.breaks) appState.breaks = [];
+  appState.breaks.push({ start, end });
+  breakStartEl.value = "";
+  breakEndEl.value = "";
+  persist();
+});
+
+function renderBreakList() {
+  breakListEl.innerHTML = "";
+  const breaks = (appState.breaks || []).slice()
+    .sort((a, b) => a.start.localeCompare(b.start)); // sort a copy, earliest first
+  for (const b of breaks) {
+    const chip = document.createElement("span");
+    chip.className = "break-chip";
+    chip.textContent = `${b.start} → ${b.end}`;
+    const rm = document.createElement("button");
+    rm.type = "button";
+    rm.textContent = "✕";
+    rm.addEventListener("click", () => {
+      appState.breaks = (appState.breaks || [])
+        .filter((x) => !(x.start === b.start && x.end === b.end));
+      persist();
+    });
+    chip.append(rm);
+    breakListEl.append(chip);
+  }
+}
+// Redraw the chips whenever state changes (incl. after initial load + add/remove).
+window.addEventListener("modulo:datachanged", renderBreakList);
+
 // Read an image file, downscale it so its longest side is <= maxSide, and return a
 // JPEG data URL. Phone photos are ~3500px/several MB; a timetable is just a grid of
 // text, so shrinking keeps it legible while making the upload + Gemini parse lighter
