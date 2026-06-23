@@ -118,3 +118,14 @@ button { padding: 0.6rem 1rem; font-size: 1rem; cursor: pointer; }
 }
 .tcal-cell--blank { background: #faf8f3; }   /* faint fill for the leading blanks */
 .tcal-date { font-size: 13px; color: #2b2820; }
+.tcal-pill {
+  margin-top: 4px;
+  padding: 2px 6px;
+  font-size: 11px;
+  color: #2b2820;
+  background: #efe9dc;          /* neutral; per-module colours come with the module field */
+  border-radius: 4px;
+  white-space: nowrap;          /* keep each pill on one line... */
+  overflow: hidden;            /* ...and clip overflow... */
+  text-overflow: ellipsis;     /* ...showing "…" when the title is too long */
+}
