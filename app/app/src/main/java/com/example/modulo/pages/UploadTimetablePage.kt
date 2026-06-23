@@ -35,6 +35,7 @@ import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -55,9 +56,11 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.example.modulo.AppViewModel
+import com.example.modulo.EducationLevel
 import com.example.modulo.R
 import com.example.modulo.TimetableState
 import kotlinx.coroutines.Dispatchers
@@ -72,7 +75,7 @@ fun UploadTimetablePage(
     onManualClick: () -> Unit,
 ) {
     val context = LocalContext.current
-    var selectedEducation by remember { mutableStateOf("primary") }
+    var selectedEducation by remember { mutableStateOf(EducationLevel.UNIVERSITY) }
 
     var failCount by remember { mutableIntStateOf(0) }
     val timetableState by viewModel.timetableState.collectAsState()
@@ -89,7 +92,26 @@ fun UploadTimetablePage(
             .wrapContentSize(Alignment.Center),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("There is no timetable detected for this semester, please upload one")
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp, vertical = 20.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = onBack) {
+                Icon(
+                    painter = painterResource(R.drawable.arrow_left),
+                    contentDescription = "Go Back"
+                )
+            }
+
+            Text(
+                text = "Upload Timetable",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            )
+        }
+
         Spacer(modifier = Modifier.height(8.dp))
 
         EducationDropDownMenu(
@@ -107,7 +129,7 @@ fun UploadTimetablePage(
                 viewModel.uploadTimetable(
                     imageBytes = imageBytes,
                     mimeType = "image/jpeg",
-                    educationLevel = selectedEducation
+                    educationLevel = selectedEducation.json
                 )
 
                 onBack()
@@ -220,18 +242,18 @@ fun UploadTimetable(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EducationDropDownMenu(
-    selectedEdu: String,
-    onEduSelected: (String) -> Unit
+    selectedEdu: EducationLevel,
+    onEduSelected: (EducationLevel) -> Unit
 ) {
     var isExpanded by remember { mutableStateOf(false) }
-    val educationLevels = arrayOf("primary", "secondary", "jc", "poly", "university")
+    // val educationLevels = arrayOf("primary", "secondary", "jc", "poly", "university")
 
     ExposedDropdownMenuBox(
         expanded = isExpanded,
         onExpandedChange = { isExpanded = !isExpanded }
     ) {
         OutlinedTextField(
-            value = selectedEdu.replaceFirstChar { it.uppercase() },
+            value = selectedEdu.displayName,
             onValueChange = {},
             readOnly = true,
             label = { Text("Education Level") },
@@ -243,9 +265,9 @@ fun EducationDropDownMenu(
             expanded = isExpanded,
             onDismissRequest = { isExpanded = false }
         ) {
-            educationLevels.forEach { item ->
+           EducationLevel.entries.forEach { item ->
                 DropdownMenuItem(
-                    text = { Text(text = item.replaceFirstChar { it.uppercase() }) },
+                    text = { Text(text = item.displayName) },
                     onClick = {
                         onEduSelected(item)
                         isExpanded = false

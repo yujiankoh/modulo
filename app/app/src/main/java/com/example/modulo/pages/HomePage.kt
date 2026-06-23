@@ -36,7 +36,8 @@ import java.util.TimeZone
 @Composable
 fun HomePage(
     viewModel: AppViewModel,
-    onUploadTimetable: () -> Unit
+    onUploadTimetable: () -> Unit,
+    onSettingsClick: () -> Unit,
 ) {
     // Collect info from the model
     val appData by viewModel.appData.collectAsState()
@@ -143,8 +144,15 @@ fun HomePage(
             }
         }
 
-        if (isDriveSyncEnabled) {
-            Text(text = statusText)
+
+        Text(text = statusText)
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Button(
+            onClick = onSettingsClick
+        ) {
+            Text("Settings")
         }
 
         Spacer(modifier = Modifier.height(48.dp))

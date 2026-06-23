@@ -5,9 +5,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -36,6 +34,8 @@ import com.example.modulo.pages.AuthenticatePage
 import com.example.modulo.pages.CalendarPage
 import com.example.modulo.pages.HomePage
 import com.example.modulo.pages.LoadingPage
+import com.example.modulo.pages.ManualTimetablePage
+import com.example.modulo.pages.SettingsPage
 import com.example.modulo.pages.SignInPage
 import com.example.modulo.pages.TimetableStateOverlay
 import com.example.modulo.pages.TutorialPage
@@ -56,8 +56,9 @@ import kotlinx.serialization.Serializable
 @Serializable object AllTasks
 @Serializable object StudySession
 
-@Serializable object TimetableUpload;
-@Serializable object ManualTimetable;
+@Serializable object TimetableUpload
+@Serializable object ManualTimetable
+@Serializable object Settings
 
 @Composable
 fun RootNavigation(
@@ -143,7 +144,11 @@ fun RootNavigation(
                 onAuthentication = triggerSignIn
             )
 
-            appNavigation(viewModel)
+            appNavigation(
+                viewModel = viewModel,
+                onNavigateToSettings = { navController.navigate(Settings) },
+                onNavigateToTimetableUpload = { navController.navigate(TimetableUpload) }
+            )
         }
 
         TimetableStateOverlay(
@@ -190,10 +195,32 @@ fun NavGraphBuilder.startupNavigation(
                 }
             )
         }
+
+        composable<TimetableUpload> {
+            UploadTimetablePage(
+                viewModel = viewModel,
+                onBack = { navController.popBackStack() },
+                onManualClick = { navController.navigate(ManualTimetable) }
+            )
+        }
+
+        composable<ManualTimetable> { ManualTimetablePage() }
+
+        composable<Settings> {
+            SettingsPage (
+                viewModel = viewModel,
+                onNavigateToAuth = { navController.navigate(Authenticate) },
+                onBack = { navController.popBackStack() },
+            )
+        }
     }
 }
 
-fun NavGraphBuilder.appNavigation(viewModel: AppViewModel) {
+fun NavGraphBuilder.appNavigation(
+    viewModel: AppViewModel,
+    onNavigateToSettings: () -> Unit,
+    onNavigateToTimetableUpload: () -> Unit
+) {
     composable<AppGraph> {
         val navController = rememberNavController()
 
@@ -209,14 +236,15 @@ fun NavGraphBuilder.appNavigation(viewModel: AppViewModel) {
                 composable<Home> {
                     HomePage(
                         viewModel = viewModel,
-                        onUploadTimetable = { navController.navigate(TimetableUpload) }
+                        onUploadTimetable = onNavigateToTimetableUpload,
+                        onSettingsClick = onNavigateToSettings
                     )
                 }
 
                 composable<AddTask> {
                     AddTaskPage(
                         viewModel = viewModel,
-                        onUploadTimetable = { navController.navigate(TimetableUpload) },
+                        onUploadTimetable = onNavigateToTimetableUpload,
                         onAddTask = { navController.popBackStack() }
                     )
                 }
@@ -226,16 +254,6 @@ fun NavGraphBuilder.appNavigation(viewModel: AppViewModel) {
                 composable<AllTasks> { AllTaskPage(viewModel = viewModel) }
 
                 composable<StudySession> { Text("Study Session Page") }
-
-                composable<TimetableUpload> {
-                    UploadTimetablePage(
-                        viewModel = viewModel,
-                        onBack = {
-                            navController.popBackStack()
-                        },
-                        onManualClick = { navController.navigate(ManualTimetable) }
-                    )
-                }
             }
 
         }

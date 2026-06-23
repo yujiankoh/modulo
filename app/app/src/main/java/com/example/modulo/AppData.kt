@@ -26,6 +26,14 @@ enum class SortOption(val displayName: String) {
     TYPE("Task Type")
 }
 
+enum class EducationLevel(val json: String, val displayName: String) {
+    PRIMARY("primary", "Primary"),
+    SECONDARY("secondary", "Secondary"),
+    JC("jc", "JC"),
+    POLY("poly", "Polytechnic"),
+    UNIVERSITY("university", "University");
+}
+
 /**
  * This data class encapsulates the information of a task
  */
