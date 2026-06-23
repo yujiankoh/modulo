@@ -86,3 +86,35 @@ button { padding: 0.6rem 1rem; font-size: 1rem; cursor: pointer; }
 }
 .cal-block-title { font-size: 12px; font-weight: 600; color: #2b2820; }
 .cal-block-sub { font-size: 11px; color: #8a847a; }
+
+/* --- Phase 7: task calendar (month grid) --- */
+#taskCalendarHeader { margin-top: 28px; }
+.tcal-eyebrow { font-size: 11px; letter-spacing: 0.15em; color: #9a948a; }
+.tcal-title { font-size: 34px; color: #2b2820; }
+.tcal-title em { font-style: italic; font-weight: 600; }
+
+#taskCalendarGrid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);  /* MON..SUN */
+  border: 1px solid #e7e3da;
+  border-radius: 12px;
+  overflow: hidden;
+  margin: 12px 0 28px;
+  background: #fff;
+}
+.tcal-weekday {
+  padding: 10px 12px;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: #6b665c;
+  border-bottom: 1px solid #e7e3da;
+  border-left: 1px solid #f0ece3;
+}
+.tcal-cell {
+  min-height: 96px;
+  padding: 8px 10px;
+  border-left: 1px solid #f0ece3;
+  border-bottom: 1px solid #f0ece3;
+}
+.tcal-cell--blank { background: #faf8f3; }   /* faint fill for the leading blanks */
+.tcal-date { font-size: 13px; color: #2b2820; }
