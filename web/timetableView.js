@@ -70,11 +70,10 @@ function mondayOf(date) {
   return addDays(d, -dow);
 }
 
-// Whole days a − b, computed in UTC so daylight-saving shifts can't skew the count.
+// Whole days a − b. Both are local-midnight dates and SG has no daylight saving,
+// so a plain subtraction is exact; Math.round just guards against float dust.
 function daysBetween(a, b) {
-  const ua = Date.UTC(a.getFullYear(), a.getMonth(), a.getDate());
-  const ub = Date.UTC(b.getFullYear(), b.getMonth(), b.getDate());
-  return Math.round((ua - ub) / 86400000); // ms per day
+  return Math.round((a - b) / 86400000); // ms per day
 }
 
 // The Week-1 Monday from appState.termStart (snapped to its Monday), or null if unset.
