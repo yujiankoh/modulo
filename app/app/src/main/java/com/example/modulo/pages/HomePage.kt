@@ -149,9 +149,7 @@ fun HomePage(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        Button(
-            onClick = onSettingsClick
-        ) {
+        Button( onClick = onSettingsClick ) {
             Text("Settings")
         }
 

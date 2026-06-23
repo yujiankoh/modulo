@@ -59,6 +59,7 @@ import kotlinx.serialization.Serializable
 @Serializable object TimetableUpload
 @Serializable object ManualTimetable
 @Serializable object Settings
+@Serializable object Timetable
 
 @Composable
 fun RootNavigation(
@@ -103,11 +104,6 @@ fun RootNavigation(
     }
 
     LaunchedEffect(startupState) {
-        if (startupState == StartupState.READY) {
-            navController.navigate(AppGraph) {
-                popUpTo(StartupGraph) { inclusive = true }
-            }
-        }
         when (startupState) {
             StartupState.TUTORIAL -> {
                 navController.navigate(Tutorial) {
@@ -209,8 +205,8 @@ fun NavGraphBuilder.startupNavigation(
         composable<Settings> {
             SettingsPage (
                 viewModel = viewModel,
-                onNavigateToAuth = { navController.navigate(Authenticate) },
                 onBack = { navController.popBackStack() },
+                onNavigateToTimetable = { navController.navigate(Timetable) },
             )
         }
     }

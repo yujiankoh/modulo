@@ -228,6 +228,20 @@ class AppViewModel(
         _startupState.value = StartupState.READY
     }
 
+    fun signOut(context: Context) {
+        viewModelScope.launch {
+            AuthenticationHelper.signOut(context)
+
+            setUserEmail("")
+            saveSyncPreference(false)
+            syncingHelper = null
+        }
+    }
+
+    fun reAuthenticate() {
+        _startupState.value = StartupState.AUTHENTICATE
+    }
+
     // TODO: other functions to change appdata
     fun addTask(module: Module?, title: String, type: String, deadline: String, isCompleted: Boolean) {
         val currentTime = System.currentTimeMillis()

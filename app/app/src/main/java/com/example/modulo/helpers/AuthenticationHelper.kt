@@ -7,6 +7,7 @@ import android.util.Log
 import android.widget.Toast
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.IntentSenderRequest
+import androidx.credentials.ClearCredentialStateRequest
 import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
@@ -224,6 +225,15 @@ object AuthenticationHelper {
         } catch (e: Exception) {
             Log.e(TAG, "Unexpected error during silent sign-in", e)
             onFailure()
+        }
+    }
+
+    suspend fun signOut(context: Context) {
+        try {
+            val credentialManager = CredentialManager.create(context)
+            credentialManager.clearCredentialState(ClearCredentialStateRequest())
+        } catch (e: Exception) {
+            Log.e(TAG, "Sign out failed", e)
         }
     }
 }

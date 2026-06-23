@@ -79,6 +79,7 @@ data class Slot(
     val location: String = "",
     val sessionType: String = "",
     val classNo: String = "",
+    val week: String = "all"
 )
 
 /**
