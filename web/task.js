@@ -55,11 +55,47 @@ const comparators = {
 };
 
 // getVisibleTasks() returns the tasks to DISPLAY — derived from appState.tasks without
-// mutating it. This is the one place Phase 9's filtering (9.3) and sorting plug in.
-// .slice() makes a NEW array of the same task objects, so .sort() reorders the copy and
-// never touches the real appState.tasks.
+// mutating it. It reads the three filter dropdowns + the sort, applies them to the tasks,
+// and returns the result. Each .filter() returns a NEW array, so the original is never
+// touched — that's why we no longer need an explicit .slice() before .sort().
 function getVisibleTasks() {
-  return (appState.tasks || []).slice().sort(comparators[sortBy]);
+  const status = document.getElementById("taskFilterStatus").value;  // all | active | done
+  const type   = document.getElementById("taskFilterType").value;    // all | <type>
+  const module = document.getElementById("taskFilterModule").value;  // all | <module>
+
+  return (appState.tasks || [])
+    .filter((t) => status === "all" || (status === "done" ? t.done : !t.done))
+    .filter((t) => type === "all" || t.type === type)
+    .filter((t) => module === "all" || t.module === module)
+    .sort(comparators[sortBy]);
+}
+
+// Fill one filter <select> with an "all" option + one option per distinct value, keeping
+// the user's current pick if it still exists (otherwise fall back to "all").
+function populateFilter(select, values, allLabel) {
+  const current = select.value || "all";   // remember what was chosen
+  select.innerHTML = "";                    // clear out the old options
+  const allOpt = document.createElement("option");
+  allOpt.value = "all";
+  allOpt.textContent = allLabel;
+  select.append(allOpt);
+  for (const v of values) {
+    const opt = document.createElement("option");
+    opt.value = v;
+    opt.textContent = v;
+    select.append(opt);
+  }
+  select.value = values.includes(current) ? current : "all";  // restore, or reset to "all"
+}
+
+// Rebuild the Type + Module dropdowns from whatever tasks currently exist. new Set(...)
+// removes duplicates; [...set] turns it back into an array; .filter(Boolean) drops blanks.
+function refreshFilterOptions() {
+  const tasks = appState.tasks || [];
+  const types = [...new Set(tasks.map((t) => t.type).filter(Boolean))].sort();
+  const modules = [...new Set(tasks.map((t) => t.module).filter(Boolean))].sort();
+  populateFilter(document.getElementById("taskFilterType"), types, "All types");
+  populateFilter(document.getElementById("taskFilterModule"), modules, "All modules");
 }
 
 // Draw the current tasks into #taskList.
@@ -67,9 +103,15 @@ function renderTasks() {
   const list = document.getElementById("taskList");
   list.innerHTML = ""; // wipe the list, then rebuild it from the derived view
 
+  refreshFilterOptions(); // keep the Type/Module dropdowns in sync with current tasks
+
   const visible = getVisibleTasks();
   if (visible.length === 0) {
-    list.innerHTML = "<li>No tasks yet.</li>";
+    // Distinguish "you have no tasks" from "filters hid them all".
+    const hasAnyTasks = (appState.tasks || []).length > 0;
+    list.innerHTML = hasAnyTasks
+      ? "<li>No tasks match your filters.</li>"
+      : "<li>No tasks yet.</li>";
     return;
   }
 
@@ -138,6 +180,12 @@ document.getElementById("addBtn").addEventListener("click", () => {
 document.getElementById("taskSort").addEventListener("change", (e) => {
   sortBy = e.target.value;
   renderTasks();
+});
+
+// Step 9.3: redraw whenever any filter changes. The filters' values are read straight
+// from the dropdowns inside getVisibleTasks(), so there's no state variable to update.
+["taskFilterStatus", "taskFilterType", "taskFilterModule"].forEach((id) => {
+  document.getElementById(id).addEventListener("change", renderTasks);
 });
 
 // Redraw whenever state is saved/loaded, then draw once now.
