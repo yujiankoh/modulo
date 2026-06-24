@@ -36,17 +36,26 @@ async function deleteTask(id) {
   await persist();
 }
 
+// getVisibleTasks() returns the tasks to DISPLAY — derived from appState.tasks without
+// mutating it. This is the one place Phase 9's filtering (9.3) and sorting (9.2) plug in.
+// For now it just returns a shallow copy: .slice() makes a NEW array of the same task
+// objects, so a later .sort() reorders the copy and never touches the real appState.tasks.
+function getVisibleTasks() {
+  return (appState.tasks || []).slice();
+}
+
 // Draw the current tasks into #taskList.
 function renderTasks() {
   const list = document.getElementById("taskList");
-  list.innerHTML = ""; // wipe the list, then rebuild it from appState
+  list.innerHTML = ""; // wipe the list, then rebuild it from the derived view
 
-  if (!appState.tasks || appState.tasks.length === 0) {
+  const visible = getVisibleTasks();
+  if (visible.length === 0) {
     list.innerHTML = "<li>No tasks yet.</li>";
     return;
   }
 
-  appState.tasks.forEach((task) => {
+  visible.forEach((task) => {
     const li = document.createElement("li");
     const moduleLabel = task.module ? `${task.module} · ` : "";   // show module if set
     li.textContent = `${moduleLabel}${task.title} — ${task.type} — due ${task.due || "no date"} `;
