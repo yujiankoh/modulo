@@ -1,7 +1,7 @@
 // timetable.js — pick a timetable photo, downscale it, send it to the proxy to parse.
 // Depends on data.js for shared state + save + redraw.
 
-import { appState, persist, render } from "./data.js";
+import { appState, persist } from "./data.js";
 
 let selectedImage = null;   // will hold { base64, mimeType } once an image is chosen
 
@@ -230,8 +230,7 @@ function mergeModules(existing, incoming) {
 
 async function saveTimetableModules(modules, message) {
   appState.timetable = { educationLevel: appState.educationLevel || "", modules };
-  await persist();
-  render();
+  await persist();   // fires modulo:datachanged → the timetable views redraw themselves
   document.getElementById("parseOutput").textContent =
     `${message}\n` + JSON.stringify(modules, null, 2);
 }

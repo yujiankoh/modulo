@@ -9,6 +9,7 @@ import "./timetable.js"; // side-effect import: runs timetable's event wiring
 import "./timetableEditor.js"; // side-effect import: runs the manual editor's wiring
 import "./timetableView.js"; // side-effect import: renders the calendar grid
 import "./calendarView.js"; // side-effect import: renders the task month-calendar
+import "./task.js"; // side-effect import: task list UI + add/toggle/delete + Add button
 
 // Runs after the page + Google's library have finished loading.
 window.onload = () => {
