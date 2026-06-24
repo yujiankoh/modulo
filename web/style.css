@@ -308,6 +308,18 @@ button { padding: 0.6rem 1rem; font-size: 1rem; cursor: pointer; }
 
 /* Step 9.4: bucketed task list — group headers, rows, and the relative-date pill.
    Layout only; the mockup's polish (cards, colours, fonts) lands in Phase 12. */
+/* UI upgrade (layout): task toolbar — actions left, filters/sort right. */
+.task-toolbar {
+  display: flex;
+  justify-content: space-between;   /* push actions + controls to opposite ends */
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;                  /* wrap instead of overflowing on narrow screens */
+  margin: 8px 0 12px;
+}
+.task-actions { display: flex; gap: 8px; }
+.task-controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
 #taskList { list-style: none; padding: 0; }
 .task-group {
   margin-top: 14px;
@@ -318,11 +330,15 @@ button { padding: 0.6rem 1rem; font-size: 1rem; cursor: pointer; }
 .task-row {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 0;
+  gap: 10px;
+  padding: 8px 0;
   border-top: 1px solid #f0ece3;
 }
-.task-row > span:first-child { flex: 1; }   /* title text takes the slack; pill/buttons sit right */
+.task-check { width: 16px; height: 16px; flex: none; }  /* checkbox, fixed size */
+.task-main { flex: 1; }                                  /* title block takes the slack */
+.task-title { font-size: 14px; color: #2b2820; }
+.task-meta { font-size: 12px; color: #8a847a; margin-top: 2px; }  /* "module · type" line */
+.task-del { padding: 2px 10px; font-size: 12px; }
 .task-pill {
   font-size: 12px;
   color: #6b6459;

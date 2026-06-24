@@ -85,33 +85,32 @@
   <hr />
   <h2>Tasks</h2>
 
-  <!-- Step 9.0: tasks are added through a pop-up form, opened by this button.
-       The fields used to sit inline here; they now live in #taskModal below. -->
-  <button id="openAddTask">+ Add Task</button>
-  <button id="reloadBtn">Reload from Drive</button>
+  <!-- UI upgrade (layout): toolbar — actions on the LEFT, filters + sort on the RIGHT
+       (mirrors the mockup). The Add-Task form still lives in #taskModal below. -->
+  <div class="task-toolbar">
+    <div class="task-actions">
+      <button id="openAddTask">+ Add Task</button>
+      <button id="reloadBtn">Reload from Drive</button>
+    </div>
 
-  <!-- Step 9.3: filter controls. Status is a fixed list; Type + Module are filled from
-       your current tasks by task.js (refreshFilterOptions). -->
-  <label for="taskFilterStatus">Show:</label>
-  <select id="taskFilterStatus">
-    <option value="all">All</option>
-    <option value="active">Active</option>
-    <option value="done">Done</option>
-  </select>
-
-  <label for="taskFilterType">Type:</label>
-  <select id="taskFilterType"><option value="all">All types</option></select>
-
-  <label for="taskFilterModule">Module:</label>
-  <select id="taskFilterModule"><option value="all">All modules</option></select>
-
-  <!-- Step 9.2: sort control for the task list. task.js reads this on change. -->
-  <label for="taskSort">Sort by:</label>
-  <select id="taskSort">
-    <option value="due">Due date</option>
-    <option value="type">Type</option>
-    <option value="newest">Newest</option>
-  </select>
+    <!-- Filters + sort. No labels: each select's default option names it (All modules /
+         All types / All tasks), so they read as standalone controls like the mockup.
+         ids/values unchanged, so task.js keeps working. -->
+    <div class="task-controls">
+      <select id="taskFilterModule"><option value="all">All modules</option></select>
+      <select id="taskFilterType"><option value="all">All types</option></select>
+      <select id="taskFilterStatus">
+        <option value="all">All tasks</option>
+        <option value="active">Active</option>
+        <option value="done">Done</option>
+      </select>
+      <select id="taskSort">
+        <option value="due">Due date</option>
+        <option value="type">Type</option>
+        <option value="newest">Newest</option>
+      </select>
+    </div>
+  </div>
 
   <ul id="taskList"></ul>
 

@@ -145,29 +145,41 @@ function dueLabel(task) {
   });
 }
 
-// Build one task's <li> row (text + due pill + Done/Delete buttons).
+// Build one task's <li> row: checkbox + title/meta block + due pill + Delete (mockup layout).
 function renderTaskRow(task) {
   const li = document.createElement("li");
   li.className = "task-row";
-  if (task.done) li.style.textDecoration = "line-through";
 
-  const moduleLabel = task.module ? `${task.module} · ` : "";   // show module if set
-  const text = document.createElement("span");
-  text.textContent = `${moduleLabel}${task.title} — ${task.type}`;
+  // Done is now a checkbox (replaces the old Done/Undo button). Ticking it toggles done.
+  const checkbox = document.createElement("input");
+  checkbox.type = "checkbox";
+  checkbox.className = "task-check";
+  checkbox.checked = task.done;
+  checkbox.addEventListener("change", () => toggleTask(task.id));
 
+  // Middle block: title on top, "module · type" beneath it.
+  const main = document.createElement("div");
+  main.className = "task-main";
+  const title = document.createElement("div");
+  title.className = "task-title";
+  title.textContent = task.title;
+  if (task.done) title.style.textDecoration = "line-through";
+  const meta = document.createElement("div");
+  meta.className = "task-meta";
+  meta.textContent = task.module ? `${task.module} · ${task.type}` : task.type;
+  main.append(title, meta);
+
+  // Right side: the relative-date pill + a Delete button.
   const pill = document.createElement("span");
   pill.className = "task-pill";
   pill.textContent = dueLabel(task);
 
-  const toggleBtn = document.createElement("button");
-  toggleBtn.textContent = task.done ? "Undo" : "Done";
-  toggleBtn.addEventListener("click", () => toggleTask(task.id));
-
   const delBtn = document.createElement("button");
+  delBtn.className = "task-del";
   delBtn.textContent = "Delete";
   delBtn.addEventListener("click", () => deleteTask(task.id));
 
-  li.append(text, " ", pill, " ", toggleBtn, " ", delBtn);
+  li.append(checkbox, main, pill, delBtn);
   return li;
 }
 
