@@ -231,7 +231,13 @@ fun NavGraphBuilder.globalNavigation(
         )
     }
 
-    composable<Timetable> { TimetablePage() }
+    composable<Timetable> {
+        TimetablePage(
+            viewModel = viewModel,
+            onUploadTimetable = { navController.navigate(TimetableUpload) },
+            onBack = { navController.popBackStack() }
+        )
+    }
 }
 
 fun NavGraphBuilder.appNavigation(
