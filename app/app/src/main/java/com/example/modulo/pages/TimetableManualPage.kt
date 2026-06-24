@@ -158,7 +158,7 @@ fun TimetableManualPage(
             text = "Are you sure you want to manually save this timetable? This will override your current timetable, if any.",
             confirmText = "Save",
             onConfirm = {
-                val validFormModules = modules.filter { it.code.isNotBlank() }
+                val validFormModules = modules.filter { it.code.isNotBlank() || it.name.isNotBlank()}
 
                 val finalModules = validFormModules.map { formMod ->
                     Module(

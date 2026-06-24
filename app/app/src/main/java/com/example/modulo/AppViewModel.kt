@@ -100,24 +100,24 @@ class AppViewModel(
     }
 
     private suspend fun attemptSilentSignIn(onComplete: () -> Unit = {}) {
-            val credentialManager = CredentialManager.create(getApplication())
+        val credentialManager = CredentialManager.create(getApplication())
 
-            AuthenticationHelper.silentSignIn(
-                context = getApplication(),
-                credentialManager = credentialManager,
-                onSuccess = { email ->
-                    setUserEmail(email)
-                    syncingHelper = SyncingHelper.getSyncService(getApplication(), email)
+        AuthenticationHelper.silentSignIn(
+            context = getApplication(),
+            credentialManager = credentialManager,
+            onSuccess = { email ->
+                setUserEmail(email)
+                syncingHelper = SyncingHelper.getSyncService(getApplication(), email)
 
-                    viewModelScope.launch {
-                        resolveConflict(syncingHelper!!)
-                        onComplete()
-                    }
-                },
-                onFailure = {
-                    _startupState.value = StartupState.AUTHENTICATE
+                viewModelScope.launch {
+                    resolveConflict(syncingHelper!!)
+                    onComplete()
                 }
-            )
+            },
+            onFailure = {
+                _startupState.value = StartupState.AUTHENTICATE
+            }
+        )
     }
 
     private suspend fun resolveConflict(helper: SyncingHelper) {
@@ -251,7 +251,6 @@ class AppViewModel(
 
     fun reAuthenticate() {
         _startupState.value = StartupState.AUTHENTICATE
-        saveSyncPreference(true)
     }
 
     // TODO: other functions to change appdata
