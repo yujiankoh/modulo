@@ -27,7 +27,6 @@ import androidx.navigation.compose.rememberNavController
 import com.example.modulo.AppViewModel
 import com.example.modulo.StartupState
 import com.example.modulo.helpers.AuthenticationHelper
-import com.example.modulo.helpers.SyncingHelper
 import com.example.modulo.pages.AddTaskPage
 import com.example.modulo.pages.AllTaskPage
 import com.example.modulo.pages.AuthenticatePage
@@ -37,6 +36,7 @@ import com.example.modulo.pages.LoadingPage
 import com.example.modulo.pages.ManualTimetablePage
 import com.example.modulo.pages.SettingsPage
 import com.example.modulo.pages.SignInPage
+import com.example.modulo.pages.TimetablePage
 import com.example.modulo.pages.TimetableStateOverlay
 import com.example.modulo.pages.TutorialPage
 import com.example.modulo.pages.UploadTimetablePage
@@ -81,10 +81,10 @@ fun RootNavigation(
         contract = ActivityResultContracts.StartIntentSenderForResult()
     ) { result ->
         AuthenticationHelper.onDrivePermission(
-            context,
-            result,
-            viewModel.getUserEmail(),
-            navigateToHomeAfterSync
+            activity = context,
+            result = result,
+            email = viewModel.getUserEmail(),
+            onSuccess = navigateToHomeAfterSync
         )
     }
 
@@ -138,6 +138,11 @@ fun RootNavigation(
                 onAuthentication = triggerSignIn
             )
 
+            globalNavigation(
+                navController = navController,
+                viewModel = viewModel,
+            )
+
             appNavigation(
                 viewModel = viewModel,
                 onNavigateToSettings = { navController.navigate(Settings) },
@@ -189,25 +194,32 @@ fun NavGraphBuilder.startupNavigation(
                 }
             )
         }
-
-        composable<TimetableUpload> {
-            UploadTimetablePage(
-                viewModel = viewModel,
-                onBack = { navController.popBackStack() },
-                onManualClick = { navController.navigate(ManualTimetable) }
-            )
-        }
-
-        composable<ManualTimetable> { ManualTimetablePage() }
-
-        composable<Settings> {
-            SettingsPage (
-                viewModel = viewModel,
-                onBack = { navController.popBackStack() },
-                onNavigateToTimetable = { navController.navigate(Timetable) },
-            )
-        }
     }
+}
+
+fun NavGraphBuilder.globalNavigation(
+    navController: NavHostController,
+    viewModel: AppViewModel,
+) {
+    composable<TimetableUpload> {
+        UploadTimetablePage(
+            viewModel = viewModel,
+            onBack = { navController.popBackStack() },
+            onManualClick = { navController.navigate(ManualTimetable) }
+        )
+    }
+
+    composable<ManualTimetable> { ManualTimetablePage() }
+
+    composable<Settings> {
+        SettingsPage (
+            viewModel = viewModel,
+            onBack = { navController.popBackStack() },
+            onNavigateToTimetable = { navController.navigate(Timetable) },
+        )
+    }
+
+    composable<Timetable> { TimetablePage() }
 }
 
 fun NavGraphBuilder.appNavigation(
