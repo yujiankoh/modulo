@@ -36,12 +36,30 @@ async function deleteTask(id) {
   await persist();
 }
 
+// Current sort mode, chosen by the #taskSort dropdown. Default: earliest due date first.
+let sortBy = "due";
+
+// A comparator is a function (a, b) => number that .sort() calls to order two items:
+//   negative → a comes first, positive → b comes first, 0 → keep their order.
+const comparators = {
+  // Earliest due date first. Tasks with no date sink to the bottom (return +1/-1).
+  due: (a, b) => {
+    if (!a.due) return 1;
+    if (!b.due) return -1;
+    return a.due.localeCompare(b.due);   // ISO "YYYY-MM-DD" strings compare correctly
+  },
+  // Group by type, alphabetically.
+  type: (a, b) => a.type.localeCompare(b.type),
+  // Most recently created first (createdAt is an ISO timestamp; b-vs-a = descending).
+  newest: (a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""),
+};
+
 // getVisibleTasks() returns the tasks to DISPLAY — derived from appState.tasks without
-// mutating it. This is the one place Phase 9's filtering (9.3) and sorting (9.2) plug in.
-// For now it just returns a shallow copy: .slice() makes a NEW array of the same task
-// objects, so a later .sort() reorders the copy and never touches the real appState.tasks.
+// mutating it. This is the one place Phase 9's filtering (9.3) and sorting plug in.
+// .slice() makes a NEW array of the same task objects, so .sort() reorders the copy and
+// never touches the real appState.tasks.
 function getVisibleTasks() {
-  return (appState.tasks || []).slice();
+  return (appState.tasks || []).slice().sort(comparators[sortBy]);
 }
 
 // Draw the current tasks into #taskList.
@@ -114,6 +132,12 @@ document.getElementById("addBtn").addEventListener("click", () => {
   document.getElementById("taskDue").value = "";
   document.getElementById("taskType").value = "assignment";
   closeTaskModal();
+});
+
+// Step 9.2: when the user picks a different sort, remember it and redraw.
+document.getElementById("taskSort").addEventListener("change", (e) => {
+  sortBy = e.target.value;
+  renderTasks();
 });
 
 // Redraw whenever state is saved/loaded, then draw once now.

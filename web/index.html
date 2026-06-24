@@ -89,6 +89,15 @@
        The fields used to sit inline here; they now live in #taskModal below. -->
   <button id="openAddTask">+ Add Task</button>
   <button id="reloadBtn">Reload from Drive</button>
+
+  <!-- Step 9.2: sort control for the task list. task.js reads this on change. -->
+  <label for="taskSort">Sort by:</label>
+  <select id="taskSort">
+    <option value="due">Due date</option>
+    <option value="type">Type</option>
+    <option value="newest">Newest</option>
+  </select>
+
   <ul id="taskList"></ul>
 
   <!-- Add Task modal. Reuses the .tcal-popup overlay/card styles (dim backdrop +
