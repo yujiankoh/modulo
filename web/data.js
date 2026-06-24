@@ -21,6 +21,7 @@ export let appState = {
   termEnd: null,           // "YYYY-MM-DD" last day of term; weeks past it are "outside term"
   breaks: [],              // [{ start, end }] date ranges of recess/holiday (non-academic) weeks
   tasks: [],
+  studySessions: [],       // Phase 10: recorded focus/study sessions (see modulo-data-schema.md)
   timetable: null,
   updatedAt: null,
 };
@@ -74,6 +75,7 @@ export async function loadInitialData() {
     if (appState.termEnd) termEndEl.value = appState.termEnd;
     if (!appState.tasks) appState.tasks = [];
     if (!appState.breaks) appState.breaks = []; // default for files saved before Phase 8
+    if (!appState.studySessions) appState.studySessions = []; // default for files saved before Phase 10
   }
   // Announce the load; every view (task list, calendar, timetable) redraws from this.
   window.dispatchEvent(new Event("modulo:datachanged"));
