@@ -297,3 +297,11 @@ button { padding: 0.6rem 1rem; font-size: 1rem; cursor: pointer; }
 .tcal-popup-task { padding: 8px 0; border-top: 1px solid #f0ece3; }
 .tcal-popup-task-title { font-size: 14px; color: #2b2820; }
 .tcal-popup-task-meta { font-size: 12px; color: #8a847a; margin-top: 2px; }
+
+/* Step 9.0: Add Task modal form rows — label stacked above its input. Layout only;
+   visual polish (fonts/colours) comes in Phase 12. */
+.task-field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
+.task-field > span { font-size: 12px; color: #8a847a; }
+.task-field > input,
+.task-field > select { padding: 6px 8px; font-size: 14px; }
+.task-modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
