@@ -62,6 +62,19 @@ button { padding: 0.6rem 1rem; font-size: 1rem; cursor: pointer; }
 .tt-dayhead-code { font-size: 11px; letter-spacing: 0.08em; color: #6b665c; }
 .tt-dayhead-date { font-size: 18px; color: #2b2820; margin-top: 2px; }
 
+/* Phase 8.4: week navigation (replaces the manual odd/even toggle in the dated view) */
+.tt-nav { display: inline-flex; align-items: center; gap: 6px; margin-left: 12px; }
+.tt-arrow, .tt-thisweek {
+  padding: 6px 12px;
+  font-size: 14px;
+  border: 1px solid #d9d4c8;
+  border-radius: 8px;
+  background: #fff;
+  color: #2b2820;
+  cursor: pointer;
+}
+.tt-arrow:disabled { opacity: 0.4; cursor: default; } /* greyed out at the term bounds */
+
 /* recess/holiday week chips (interim term-setup editor) */
 #breakList { margin-top: 6px; }
 .break-chip {

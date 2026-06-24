@@ -1,6 +1,8 @@
-// timetableView.js — read-only weekly calendar grid for the timetable (Phase 6).
-// Scaffold + session blocks + odd/even toggle + "Re-upload" + current-day highlight.
-// Real dates come in a later phase (Step 3 of the plan).
+// timetableView.js — weekly calendar grid for the timetable.
+// Dated week view (Phase 8): real Mon–Fri dates + week number from a term anchor,
+// week navigation, term bounds + recess/holiday weeks, parity-driven odd/even slots,
+// and a date-accurate today highlight. Falls back to a plain undated grid (with the
+// manual odd/even toggle) when no term start is set.
 
 import { appState } from "./data.js";
 import { startReupload } from "./timetable.js";
@@ -43,9 +45,13 @@ function hasAlternatingWeeks(modules) {
     (m.slots || []).some((s) => s.week === "odd" || s.week === "even"));
 }
 
-// Today's weekday as a MON..SUN code (for the current-day column highlight).
-function todayCode() {
-  return ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"][new Date().getDay()];
+// Is the given date today? Used for the current-day column highlight — date-accurate,
+// so only the real "today" column lights up (and only when that week is on screen).
+function isToday(date) {
+  const now = new Date();
+  return date.getFullYear() === now.getFullYear()
+    && date.getMonth() === now.getMonth()
+    && date.getDate() === now.getDate();
 }
 
 // --- date helpers for the dated weekly view (Phase 8) ---
@@ -130,7 +136,23 @@ function formatWeekRange(start, end) {
 }
 
 let viewedMonday = mondayOf(new Date()); // which week the grid shows; defaults to this week
-let currentWeek = "odd"; // which week the toggle is showing (odd timetables only)
+let currentWeek = "odd"; // manual toggle's week (only used when no term anchor)
+
+// Move the shown week by delta (-1 prev, +1 next), clamped within the term when set.
+function shiftWeek(delta) {
+  const candidate = addDays(viewedMonday, delta * 7);
+  const start = termMonday(), end = termEndMonday();
+  if (start && candidate < start) return; // don't step before Week 1
+  if (end && candidate > end) return;     // don't step past term end
+  viewedMonday = candidate;
+  renderCalendar();
+}
+
+// Jump back to the week containing today.
+function goThisWeek() {
+  viewedMonday = mondayOf(new Date());
+  renderCalendar();
+}
 
 const headerEl = document.getElementById("timetableViewHeader");
 const calEl = document.getElementById("timetableCalendar");
@@ -165,15 +187,46 @@ function renderHeader(showToggle, wk) {
   }
   left.append(titleBlock);
 
-  if (showToggle) {
-    for (const w of ["odd", "even"]) {
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "cal-week-btn" + (w === currentWeek ? " is-active" : "");
-      btn.textContent = w === "odd" ? "Odd week" : "Even week";
-      btn.addEventListener("click", () => { currentWeek = w; renderCalendar(); });
-      left.append(btn);
+  if (wk.status === "none") {
+    // no term anchor → keep the manual odd/even toggle (no dates to derive parity from)
+    if (showToggle) {
+      for (const w of ["odd", "even"]) {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "cal-week-btn" + (w === currentWeek ? " is-active" : "");
+        btn.textContent = w === "odd" ? "Odd week" : "Even week";
+        btn.addEventListener("click", () => { currentWeek = w; renderCalendar(); });
+        left.append(btn);
+      }
     }
+  } else {
+    // dated view → week navigation (the week itself determines odd/even parity)
+    const nav = document.createElement("div");
+    nav.className = "tt-nav";
+    const start = termMonday(), end = termEndMonday();
+
+    const prev = document.createElement("button");
+    prev.type = "button";
+    prev.className = "tt-arrow";
+    prev.textContent = "‹";
+    prev.disabled = !!start && addDays(viewedMonday, -7) < start; // can't go before Week 1
+    prev.addEventListener("click", () => shiftWeek(-1));
+
+    const thisWk = document.createElement("button");
+    thisWk.type = "button";
+    thisWk.className = "tt-thisweek";
+    thisWk.textContent = "This week";
+    thisWk.addEventListener("click", goThisWeek);
+
+    const next = document.createElement("button");
+    next.type = "button";
+    next.className = "tt-arrow";
+    next.textContent = "›";
+    next.disabled = !!end && addDays(viewedMonday, 7) > end; // can't go past term end
+    next.addEventListener("click", () => shiftWeek(1));
+
+    nav.append(prev, thisWk, next);
+    left.append(nav);
   }
 
   const reupload = document.createElement("button");
@@ -221,7 +274,8 @@ function renderCalendar() {
   const { startH, endH } = gridRange(modules);
   // +16 tail so the bottom hour label isn't clipped by the container's overflow:hidden
   const bodyHeight = (endH - startH) * HOUR_PX + 16;
-  const today = todayCode();
+  // which column (0–4) is today, or -1 if today isn't in the shown week
+  const todayIdx = wk.dates.findIndex(isToday);
 
   // --- header row: empty corner + one cell per day ---
   const corner = document.createElement("div");
@@ -230,7 +284,7 @@ function renderCalendar() {
   for (let i = 0; i < DAYS.length; i++) {
     const day = DAYS[i];
     const head = document.createElement("div");
-    head.className = "cal-dayhead" + (day === today ? " cal-dayhead--today" : "");
+    head.className = "cal-dayhead" + (i === todayIdx ? " cal-dayhead--today" : "");
     if (wk.status !== "none") {
       // dated view: weekday code on top, the real date number below
       const code = document.createElement("div");
@@ -263,9 +317,10 @@ function renderCalendar() {
 
   // --- body row: one column per day, kept in `cols` so blocks find theirs ---
   const cols = {};
-  for (const day of DAYS) {
+  for (let i = 0; i < DAYS.length; i++) {
+    const day = DAYS[i];
     const col = document.createElement("div");
-    col.className = "cal-col" + (day === today ? " cal-col--today" : "");
+    col.className = "cal-col" + (i === todayIdx ? " cal-col--today" : "");
     col.style.height = bodyHeight + "px";
     col.dataset.day = day;
     calEl.append(col);
@@ -274,10 +329,12 @@ function renderCalendar() {
 
   // --- place the session blocks (none on recess/break or outside-term weeks) ---
   if (wk.status !== "break" && wk.status !== "outside") {
+    // dated view: the week's own parity filters odd/even slots; undated: the manual toggle
+    const weekParity = wk.parity || currentWeek;
     for (const m of modules) {
       for (const slot of m.slots || []) {
-        // when alternating, hide the OTHER week's slots; "all" slots always show
-        if (alternating && slot.week && slot.week !== "all" && slot.week !== currentWeek) continue;
+        // hide the OTHER week's slots; "all" slots always show
+        if (alternating && slot.week && slot.week !== "all" && slot.week !== weekParity) continue;
         const col = cols[slot.day];        // undefined for SAT/SUN — not shown yet
         if (col) addBlock(col, m, slot, startH);
       }
