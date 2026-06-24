@@ -85,17 +85,76 @@
   <hr />
   <h2>Tasks</h2>
 
-  <input id="taskTitle" type="text" placeholder="Task title (e.g. CS1101S tutorial)" />
-  <input id="taskDue" type="date" />
-  <select id="taskType">
-    <option value="assignment">Assignment</option>
-    <option value="tutorial">Tutorial</option>
-    <option value="quiz">Quiz</option>
-    <option value="exam">Exam</option>
-  </select>
-  <button id="addBtn">Add Task</button>
-  <button id="reloadBtn">Reload from Drive</button>
+  <!-- UI upgrade (layout): toolbar — actions on the LEFT, filters + sort on the RIGHT
+       (mirrors the mockup). The Add-Task form still lives in #taskModal below. -->
+  <div class="task-toolbar">
+    <div class="task-actions">
+      <button id="openAddTask">+ Add Task</button>
+      <button id="reloadBtn">Reload from Drive</button>
+    </div>
+
+    <!-- Filters + sort. No labels: each select's default option names it (All modules /
+         All types / All tasks), so they read as standalone controls like the mockup.
+         ids/values unchanged, so task.js keeps working. -->
+    <div class="task-controls">
+      <select id="taskFilterModule"><option value="all">All modules</option></select>
+      <select id="taskFilterType"><option value="all">All types</option></select>
+      <select id="taskFilterStatus">
+        <option value="all">All tasks</option>
+        <option value="active">Active</option>
+        <option value="done">Done</option>
+      </select>
+      <select id="taskSort">
+        <option value="due">Due date</option>
+        <option value="type">Type</option>
+        <option value="newest">Newest</option>
+      </select>
+    </div>
+  </div>
+
   <ul id="taskList"></ul>
+
+  <!-- Add Task modal. Reuses the .tcal-popup overlay/card styles (dim backdrop +
+       centred card + ✕). Hidden by default; task.js toggles display and reads these
+       fields on Save. -->
+  <div id="taskModal" class="tcal-popup" style="display: none;">
+    <div class="tcal-popup-card">
+      <button id="taskModalClose" class="tcal-popup-close" type="button">✕</button>
+      <h3>Add a task</h3>
+
+      <label class="task-field">
+        <span>Title</span>
+        <input id="taskTitle" type="text" placeholder="e.g. CS2030S Lab 4" />
+      </label>
+
+      <label class="task-field">
+        <span>Module/Subject</span>
+        <input id="taskModule" type="text" placeholder="e.g. CS2030S (optional)" />
+      </label>
+
+      <label class="task-field">
+        <span>Due date</span>
+        <input id="taskDue" type="date" />
+      </label>
+
+      <label class="task-field">
+        <span>Type</span>
+        <select id="taskType">
+          <option value="assignment">Assignment</option>
+          <option value="tutorial">Tutorial</option>
+          <option value="quiz">Quiz</option>
+          <option value="exam">Exam</option>
+          <option value="reading">Reading</option>
+          <option value="other">Other</option>
+        </select>
+      </label>
+
+      <div class="task-modal-actions">
+        <button id="cancelAddTask" type="button">Cancel</button>
+        <button id="addBtn" type="button">Add Task</button>
+      </div>
+    </div>
+  </div>
 
   <!-- Phase 7.3: day popup — opened by clicking a calendar day; lists that day's tasks.
        Hidden by default; calendarView.js toggles it and fills #dayPopupBody. -->
