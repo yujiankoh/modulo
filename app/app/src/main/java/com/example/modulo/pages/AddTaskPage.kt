@@ -40,6 +40,10 @@ import com.example.modulo.Module
 import com.example.modulo.TimetableState
 import com.example.modulo.navigation.TimetableUpload
 import java.text.SimpleDateFormat
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
@@ -61,7 +65,7 @@ fun AddTaskPage(
     val inputTitle = rememberTextFieldState()
     var selectedModule by remember { mutableStateOf(initialModule) }
     var selectedTaskType by remember { mutableStateOf("assignment") }
-    var selectedDeadline by remember { mutableStateOf("") }
+    var selectedDeadline by remember { mutableStateOf<LocalDate?>(null) }
 
     if (appData.timetable == null && timetableState is TimetableState.Idle) {
         Column(
@@ -102,7 +106,8 @@ fun AddTaskPage(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            DeadlinePicker(
+            DatePickerMenu(
+                label = "Deadline",
                 selectedDate = selectedDeadline,
                 onDateSelected = { selectedDeadline = it }
             )
@@ -115,17 +120,17 @@ fun AddTaskPage(
                         selectedModule,
                         inputTitle.text.toString(),
                         selectedTaskType,
-                        selectedDeadline,
+                        selectedDeadline?.toString() ?: "",
                         false
                     )
 
                     // Clear input fields
                     inputTitle.edit { replace(0, length, "") }
-                    selectedDeadline = ""
+                    selectedDeadline = null
 
                     onAddTask()
                 },
-                enabled = inputTitle.text.isNotBlank() && selectedDeadline.isNotBlank() && selectedModule != null
+                enabled = inputTitle.text.isNotBlank() && selectedDeadline != null && selectedModule != null
             ) {
                 Text("Add Task")
             }
@@ -233,12 +238,18 @@ fun TaskTypeDropDownMenu(
 }
 
 @Composable
-fun DeadlinePicker(
-    selectedDate: String,
-    onDateSelected: (String) -> Unit,
+fun DatePickerMenu(
+    label: String,
+    selectedDate: LocalDate?,
+    onDateSelected: (LocalDate?) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     var showCalendar by remember { mutableStateOf(false) }
-    val datePickerState = rememberDatePickerState()
+    val datePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = selectedDate?.atStartOfDay(ZoneOffset.UTC)?.toInstant()?.toEpochMilli()
+    )
+
+    val displayFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
 
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
@@ -250,12 +261,13 @@ fun DeadlinePicker(
     }
 
     OutlinedTextField(
-        value = formatDate(selectedDate),
+        value = selectedDate?.format(displayFormatter) ?: "",
         onValueChange = { },
-        label = { Text("Deadline") },
+        label = { Text(label) },
         placeholder = { Text("DD/MM/YYYY") },
         readOnly = true,
         interactionSource = interactionSource,
+        modifier = modifier
     )
 
     if (showCalendar) {
@@ -266,11 +278,11 @@ fun DeadlinePicker(
                     onClick = {
                         showCalendar = false
                         datePickerState.selectedDateMillis?.let { millis ->
-                            val formatter = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-                                .apply {
-                                    timeZone = TimeZone.getTimeZone("UTC")
-                                }
-                            onDateSelected(formatter.format(Date(millis)))
+                            // Convert milliseconds to LocalDate
+                            val localDate = Instant.ofEpochMilli(millis)
+                                .atZone(ZoneOffset.UTC)
+                                .toLocalDate()
+                            onDateSelected(localDate)
                         }
                     }
                 ) {
