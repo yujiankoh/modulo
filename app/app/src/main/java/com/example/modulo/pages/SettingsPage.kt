@@ -63,10 +63,7 @@ fun SettingsPage(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = onBack) {
-                    Icon(
-                        painter = painterResource(R.drawable.arrow_left),
-                        contentDescription = "Go Back"
-                    )
+                    Icon(painter = painterResource(R.drawable.arrow_left), contentDescription = "Go Back")
                 }
 
                 Text(

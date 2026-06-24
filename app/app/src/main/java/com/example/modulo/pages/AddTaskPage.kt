@@ -82,7 +82,7 @@ fun AddTaskPage(
         ) {
             OutlinedTextField(
                 state = inputTitle,
-                label = { Text("Title") }
+                label = { Text("Title") },
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -210,6 +210,7 @@ fun TaskTypeDropDownMenu(
             onValueChange = {},
             readOnly = true,
             label = { Text("Task Type") },
+            singleLine = true,
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isExpanded) },
             modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
         )

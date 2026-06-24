@@ -24,7 +24,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
 import com.example.modulo.AppViewModel
+import com.example.modulo.EducationLevel
 import com.example.modulo.StartupState
 import com.example.modulo.helpers.AuthenticationHelper
 import com.example.modulo.pages.AddTaskPage
@@ -33,7 +35,7 @@ import com.example.modulo.pages.AuthenticatePage
 import com.example.modulo.pages.CalendarPage
 import com.example.modulo.pages.HomePage
 import com.example.modulo.pages.LoadingPage
-import com.example.modulo.pages.ManualTimetablePage
+import com.example.modulo.pages.TimetableManualPage
 import com.example.modulo.pages.SettingsPage
 import com.example.modulo.pages.SignInPage
 import com.example.modulo.pages.TimetablePage
@@ -57,7 +59,7 @@ import kotlinx.serialization.Serializable
 @Serializable object StudySession
 
 @Serializable object TimetableUpload
-@Serializable object ManualTimetable
+@Serializable data class TimetableManual(val educationLevel: EducationLevel)
 @Serializable object Settings
 @Serializable object Timetable
 
@@ -205,11 +207,21 @@ fun NavGraphBuilder.globalNavigation(
         UploadTimetablePage(
             viewModel = viewModel,
             onBack = { navController.popBackStack() },
-            onManualClick = { navController.navigate(ManualTimetable) }
+            onManualClick = { educationLevel ->
+                navController.navigate(TimetableManual(educationLevel))
+            }
         )
     }
 
-    composable<ManualTimetable> { ManualTimetablePage() }
+    composable<TimetableManual> { backStackEntry ->
+        val args = backStackEntry.toRoute<TimetableManual>()
+
+        TimetableManualPage(
+            viewModel = viewModel,
+            onBack = { navController.popBackStack() },
+            currEducationLevel = args.educationLevel
+        )
+    }
 
     composable<Settings> {
         SettingsPage (

@@ -36,6 +36,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -69,7 +70,7 @@ import java.io.ByteArrayOutputStream
 fun UploadTimetablePage(
     viewModel: AppViewModel,
     onBack: () -> Unit,
-    onManualClick: () -> Unit,
+    onManualClick: (EducationLevel) -> Unit,
 ) {
     val context = LocalContext.current
     var selectedEducation by remember { mutableStateOf(EducationLevel.UNIVERSITY) }
@@ -83,63 +84,77 @@ fun UploadTimetablePage(
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .wrapContentSize(Alignment.Center),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp, vertical = 20.dp),
-            verticalAlignment = Alignment.CenterVertically
+    Scaffold { paddingValues ->
+        Column(
+            modifier =  Modifier
+                .fillMaxSize()
+                .padding(paddingValues),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            IconButton(onClick = onBack) {
-                Icon(
-                    painter = painterResource(R.drawable.arrow_left),
-                    contentDescription = "Go Back"
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 20.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = onBack) {
+                    Icon(
+                        painter = painterResource(R.drawable.arrow_left),
+                        contentDescription = "Go Back"
+                    )
+                }
+
+                Text(
+                    text = "Upload Timetable",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
                 )
             }
 
-            Text(
-                text = "Upload Timetable",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
+            Spacer(modifier = Modifier.height(16.dp))
+
+            EducationDropDownMenu(
+                selectedEdu = selectedEducation,
+                onEduSelected = {selectedEducation = it}
             )
-        }
 
-        Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-        EducationDropDownMenu(
-            selectedEdu = selectedEducation,
-            onEduSelected = {selectedEducation = it}
-        )
+            UploadTimetable(
+                context = context,
+                onUploadTimetable = { imageBytes ->
+                    viewModel.uploadTimetable(
+                        imageBytes = imageBytes,
+                        mimeType = "image/jpeg",
+                        educationLevel = selectedEducation.json
+                    )
 
-        Spacer(modifier = Modifier.height(8.dp))
+                    onBack()
+                }
+            )
 
-        UploadTimetable(
-            context = context,
-            showManual = failCount >= 0,
-            onManual = onManualClick,
-            onUploadTimetable = { imageBytes ->
-                viewModel.uploadTimetable(
-                    imageBytes = imageBytes,
-                    mimeType = "image/jpeg",
-                    educationLevel = selectedEducation.json
-                )
+            Spacer(modifier = Modifier.height(16.dp))
 
-                onBack()
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                if (failCount >= 0) {
+                    TextButton(onClick = { onManualClick(selectedEducation) } ) {
+                        Text("Having trouble? Enter timetable manually")
+                    }
+                }
             }
-        )
+        }
     }
+
 }
 
 @Composable
 fun UploadTimetable(
     context: Context,
-    showManual: Boolean,
-    onManual: () -> Unit,
     onUploadTimetable: (ByteArray) -> Unit
 ) {
     var imageUri by remember { mutableStateOf<Uri?>(null) }
@@ -155,7 +170,7 @@ fun UploadTimetable(
 
     Column(
         modifier = Modifier
-            .fillMaxSize()
+            .fillMaxWidth()
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top
@@ -218,21 +233,6 @@ fun UploadTimetable(
         ) {
             Text("Upload Timetable")
         }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(48.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            if (showManual) {
-                TextButton(onClick = onManual) {
-                    Text("Having trouble? Enter timetable manually")
-                }
-            }
-        }
     }
 }
 
@@ -243,7 +243,6 @@ fun EducationDropDownMenu(
     onEduSelected: (EducationLevel) -> Unit
 ) {
     var isExpanded by remember { mutableStateOf(false) }
-    // val educationLevels = arrayOf("primary", "secondary", "jc", "poly", "university")
 
     ExposedDropdownMenuBox(
         expanded = isExpanded,
