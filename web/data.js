@@ -1,4 +1,5 @@
-// data.js — MODULO's in-memory state + how it's saved/loaded + task logic + render.
+// data.js — MODULO's in-memory state + how it's saved/loaded (the storage layer).
+// Task logic + the task-list UI live in task.js; views redraw via modulo:datachanged.
 // Depends on auth (token), drive (Drive read/write), ui (status line).
 
 import { ensureToken } from "./auth.js";
@@ -16,6 +17,9 @@ let storageMode = null;            // "drive" | "local" | null — private to th
 export let appState = {
   schemaVersion: 2,        // was 1 — we finalized the timetable structure + added educationLevel
   educationLevel: null,
+  termStart: null,         // "YYYY-MM-DD" Week-1 Monday anchor (Phase 8); null until set
+  termEnd: null,           // "YYYY-MM-DD" last day of term; weeks past it are "outside term"
+  breaks: [],              // [{ start, end }] date ranges of recess/holiday (non-academic) weeks
   tasks: [],
   timetable: null,
   updatedAt: null,
@@ -30,6 +34,11 @@ export function setStorageMode(mode) {
 // What mode (if any) the user picked last time. main.js uses this on boot.
 export function getSavedMode() {
   return localStorage.getItem(MODE_KEY);
+}
+
+// The active in-memory mode ("drive" | "local" | null). task.js reads it to guard actions.
+export function getStorageMode() {
+  return storageMode;
 }
 
 // Save the WHOLE current state (stamping the time first).
@@ -59,85 +68,18 @@ export async function loadInitialData() {
     appState = saved;
     const eduEl = document.getElementById("eduLevel");
     if (appState.educationLevel) eduEl.value = appState.educationLevel;
+    const termEl = document.getElementById("termStart");
+    if (appState.termStart) termEl.value = appState.termStart;
+    const termEndEl = document.getElementById("termEnd");
+    if (appState.termEnd) termEndEl.value = appState.termEnd;
     if (!appState.tasks) appState.tasks = [];
+    if (!appState.breaks) appState.breaks = []; // default for files saved before Phase 8
   }
-  render();
+  // Announce the load; every view (task list, calendar, timetable) redraws from this.
   window.dispatchEvent(new Event("modulo:datachanged"));
 }
 
-// Each action changes memory, saves, then re-draws. Private to this module —
-// the buttons that call them are wired below.
-async function addTask(title, due, type) {
-  const now = new Date().toISOString();
-  appState.tasks.push({
-    id: Date.now(),
-    title,
-    due,
-    type,
-    done: false,
-    createdAt: now,
-    updatedAt: now,   // updated whenever the task changes
-  });
-  await persist();
-  render();
-}
-
-// Toggle a task's completion status.
-async function toggleTask(id) {
-  const task = appState.tasks.find((t) => t.id === id);
-  if (task) {
-    task.done = !task.done;
-    task.updatedAt = new Date().toISOString();   // stamp the change
-  }
-  await persist();
-  render();
-}
-
-async function deleteTask(id) {
-  appState.tasks = appState.tasks.filter((t) => t.id !== id); // keep all EXCEPT this id
-  await persist();
-  render();
-}
-
-// Show the current state onto the page.
-export function render() {
-  const list = document.getElementById("taskList");
-  list.innerHTML = ""; // wipe the list, then rebuild it from appState
-
-  if (appState.tasks.length === 0) {
-    list.innerHTML = "<li>No tasks yet.</li>";
-    return;
-  }
-
-  appState.tasks.forEach((task) => {
-    const li = document.createElement("li");
-    li.textContent = `${task.title} — ${task.type} — due ${task.due || "no date"} `;
-    if (task.done) li.style.textDecoration = "line-through";
-
-    const toggleBtn = document.createElement("button");
-    toggleBtn.textContent = task.done ? "Undo" : "Done";
-    toggleBtn.addEventListener("click", () => toggleTask(task.id));
-
-    const delBtn = document.createElement("button");
-    delBtn.textContent = "Delete";
-    delBtn.addEventListener("click", () => deleteTask(task.id));
-
-    li.append(" ", toggleBtn, " ", delBtn);
-    list.append(li);
-  });
-}
-
-// Wire the task UI buttons (this module owns them).
-document.getElementById("addBtn").addEventListener("click", () => {
-  if (!storageMode) { alert("Choose Google Drive or local mode first."); return; }
-  const title = document.getElementById("taskTitle").value.trim();
-  const due = document.getElementById("taskDue").value;
-  const type = document.getElementById("taskType").value;
-  if (!title) { alert("Enter a task title."); return; }
-  addTask(title, due, type);
-  document.getElementById("taskTitle").value = ""; // clear the input
-});
-
+// "Reload from Drive" — a storage action, so it stays here (task UI lives in task.js).
 document.getElementById("reloadBtn").addEventListener("click", () => {
   if (!storageMode) { alert("Choose Google Drive or local mode first."); return; }
   loadInitialData();

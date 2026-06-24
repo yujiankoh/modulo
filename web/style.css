@@ -43,8 +43,9 @@ button { padding: 0.6rem 1rem; font-size: 1rem; cursor: pointer; }
 /* current-day highlight */
 .cal-dayhead--today { background: #faf6ee; }
 .cal-col--today {
+  /* hour line at the TOP of each 64px band so it aligns with on-the-hour card tops */
   background: repeating-linear-gradient(
-    to bottom, #faf6ee 0, #faf6ee 63px, #efe9dc 63px, #efe9dc 64px
+    to bottom, #efe9dc 0, #efe9dc 1px, #faf6ee 1px, #faf6ee 64px
   );
 }
 .cal-corner { border-bottom: 1px solid #e7e3da; }
@@ -56,6 +57,44 @@ button { padding: 0.6rem 1rem; font-size: 1rem; cursor: pointer; }
   border-bottom: 1px solid #e7e3da;
   border-left: 1px solid #f0ece3;
 }
+/* Phase 8: dated weekly view — week eyebrow + two-line day headers (code + date) */
+.tt-eyebrow { font-size: 11px; letter-spacing: 0.12em; color: #9a948a; margin-bottom: 2px; }
+.tt-dayhead-code { font-size: 11px; letter-spacing: 0.08em; color: #6b665c; }
+.tt-dayhead-date { font-size: 18px; color: #2b2820; margin-top: 2px; }
+
+/* Phase 8.4: week navigation (replaces the manual odd/even toggle in the dated view) */
+.tt-nav { display: inline-flex; align-items: center; gap: 6px; margin-left: 12px; }
+.tt-arrow, .tt-thisweek {
+  padding: 6px 12px;
+  font-size: 14px;
+  border: 1px solid #d9d4c8;
+  border-radius: 8px;
+  background: #fff;
+  color: #2b2820;
+  cursor: pointer;
+}
+.tt-arrow:disabled { opacity: 0.4; cursor: default; } /* greyed out at the term bounds */
+
+/* recess/holiday week chips (interim term-setup editor) */
+#breakList { margin-top: 6px; }
+.break-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 6px 6px 0;
+  padding: 3px 6px 3px 10px;
+  font-size: 12px;
+  background: #efe9dc;
+  border-radius: 999px;
+}
+.break-chip button {
+  padding: 0 4px;
+  border: none;
+  background: transparent;
+  font-size: 12px;
+  color: #6b665c;
+  cursor: pointer;
+}
 .cal-gutter { position: relative; }
 .cal-hour {
   position: absolute;
@@ -64,12 +103,14 @@ button { padding: 0.6rem 1rem; font-size: 1rem; cursor: pointer; }
   font-size: 11px;
   color: #9a948a;
 }
+.cal-hour--first { transform: none; }  /* top-aligned so it clears the header border */
 .cal-col {
   position: relative;
   border-left: 1px solid #f0ece3;
-  /* a faint line every hour (HOUR_PX = 64px in timetableView.js) */
+  /* faint hour line at the TOP of each band (HOUR_PX = 64px in timetableView.js),
+     so on-the-hour card tops sit exactly on the line */
   background: repeating-linear-gradient(
-    to bottom, #fff 0, #fff 63px, #f0ece3 63px, #f0ece3 64px
+    to bottom, #f0ece3 0, #f0ece3 1px, #fff 1px, #fff 64px
   );
 }
 .cal-block {
