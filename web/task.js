@@ -98,7 +98,80 @@ function refreshFilterOptions() {
   populateFilter(document.getElementById("taskFilterModule"), modules, "All modules");
 }
 
-// Draw the current tasks into #taskList.
+// --- Dates: which bucket a task falls in + the relative "due" pill -------------
+
+// Today at local midnight — the fixed reference point for whole-day comparisons.
+function startOfToday() {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+// Whole days from today to a "YYYY-MM-DD" due date: 0 = today, +1 = tomorrow,
+// negative = overdue. Parsing at local midnight (T00:00:00) avoids time-of-day drift.
+function daysUntil(due) {
+  const d = new Date(due + "T00:00:00");
+  return Math.round((d - startOfToday()) / 86400000); // 86,400,000 ms per day
+}
+
+// The buckets, in display order. Each task lands in exactly one (see bucketOf).
+const BUCKETS = [
+  { key: "overdue",   label: "OVERDUE" },
+  { key: "thisWeek",  label: "DUE THIS WEEK" },
+  { key: "later",     label: "LATER" },
+  { key: "completed", label: "COMPLETED" },
+];
+
+// Decide a task's bucket. Done wins first; then the due date decides the rest.
+function bucketOf(task) {
+  if (task.done) return "completed";
+  if (!task.due) return "later";          // no date → Later
+  const d = daysUntil(task.due);
+  if (d < 0) return "overdue";
+  if (d <= 7) return "thisWeek";
+  return "later";
+}
+
+// Text for the right-hand pill: friendly relative words near today, else a date.
+function dueLabel(task) {
+  if (task.done) return "Done";
+  if (!task.due) return "No date";
+  const d = daysUntil(task.due);
+  if (d === 0) return "Today";
+  if (d === 1) return "Tomorrow";
+  if (d === -1) return "Yesterday";
+  return new Date(task.due + "T00:00:00").toLocaleDateString("en-GB", {
+    weekday: "short", day: "2-digit", month: "short",  // e.g. "Fri 30 May"
+  });
+}
+
+// Build one task's <li> row (text + due pill + Done/Delete buttons).
+function renderTaskRow(task) {
+  const li = document.createElement("li");
+  li.className = "task-row";
+  if (task.done) li.style.textDecoration = "line-through";
+
+  const moduleLabel = task.module ? `${task.module} · ` : "";   // show module if set
+  const text = document.createElement("span");
+  text.textContent = `${moduleLabel}${task.title} — ${task.type}`;
+
+  const pill = document.createElement("span");
+  pill.className = "task-pill";
+  pill.textContent = dueLabel(task);
+
+  const toggleBtn = document.createElement("button");
+  toggleBtn.textContent = task.done ? "Undo" : "Done";
+  toggleBtn.addEventListener("click", () => toggleTask(task.id));
+
+  const delBtn = document.createElement("button");
+  delBtn.textContent = "Delete";
+  delBtn.addEventListener("click", () => deleteTask(task.id));
+
+  li.append(text, " ", pill, " ", toggleBtn, " ", delBtn);
+  return li;
+}
+
+// Draw the current tasks into #taskList, grouped into buckets with a header per group.
 function renderTasks() {
   const list = document.getElementById("taskList");
   list.innerHTML = ""; // wipe the list, then rebuild it from the derived view
@@ -115,23 +188,19 @@ function renderTasks() {
     return;
   }
 
-  visible.forEach((task) => {
-    const li = document.createElement("li");
-    const moduleLabel = task.module ? `${task.module} · ` : "";   // show module if set
-    li.textContent = `${moduleLabel}${task.title} — ${task.type} — due ${task.due || "no date"} `;
-    if (task.done) li.style.textDecoration = "line-through";
+  // For each bucket in order, render its header + rows (skip empty buckets). The tasks
+  // are already filtered + sorted; we only partition them — the sort holds within a group.
+  for (const bucket of BUCKETS) {
+    const inBucket = visible.filter((t) => bucketOf(t) === bucket.key);
+    if (inBucket.length === 0) continue;
 
-    const toggleBtn = document.createElement("button");
-    toggleBtn.textContent = task.done ? "Undo" : "Done";
-    toggleBtn.addEventListener("click", () => toggleTask(task.id));
+    const header = document.createElement("li");
+    header.className = "task-group";
+    header.textContent = `${bucket.label} · ${inBucket.length}`;
+    list.append(header);
 
-    const delBtn = document.createElement("button");
-    delBtn.textContent = "Delete";
-    delBtn.addEventListener("click", () => deleteTask(task.id));
-
-    li.append(" ", toggleBtn, " ", delBtn);
-    list.append(li);
-  });
+    for (const task of inBucket) list.append(renderTaskRow(task));
+  }
 }
 
 // --- Add Task modal: open / close / save -------------------------------------

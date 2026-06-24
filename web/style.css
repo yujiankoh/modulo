@@ -305,3 +305,29 @@ button { padding: 0.6rem 1rem; font-size: 1rem; cursor: pointer; }
 .task-field > input,
 .task-field > select { padding: 6px 8px; font-size: 14px; }
 .task-modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
+
+/* Step 9.4: bucketed task list — group headers, rows, and the relative-date pill.
+   Layout only; the mockup's polish (cards, colours, fonts) lands in Phase 12. */
+#taskList { list-style: none; padding: 0; }
+.task-group {
+  margin-top: 14px;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: #8a847a;          /* muted, uppercase-style section label */
+}
+.task-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  border-top: 1px solid #f0ece3;
+}
+.task-row > span:first-child { flex: 1; }   /* title text takes the slack; pill/buttons sit right */
+.task-pill {
+  font-size: 12px;
+  color: #6b6459;
+  background: #f0ece3;
+  padding: 2px 8px;
+  border-radius: 999px;     /* fully rounded "pill" */
+  white-space: nowrap;
+}
