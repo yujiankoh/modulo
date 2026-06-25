@@ -215,7 +215,8 @@ function renderTasksDue() {
     main.append(title, meta);
 
     const pill = document.createElement("span");
-    pill.className = "dash-task-pill";
+    // Soonest tasks (due today/tomorrow) get the blue accent pill; others stay neutral.
+    pill.className = "dash-task-pill" + (daysUntil(t.due) <= 1 ? " dash-task-pill--soon" : "");
     pill.textContent = dueLabel(t.due);
 
     li.append(main, pill);
