@@ -11,7 +11,7 @@
   --pill-bg: #eef1f8;     /* neutral due-date pills */
 }
 
-body { font-family: system-ui, sans-serif; padding: 2rem; }
+body { font-family: "Inter", system-ui, sans-serif; padding: 2rem; }
 /* Base button: white, bordered, rounded. .btn-primary (blue) overrides this; the close
    ✕ / chevron buttons set their own transparent style. */
 button {
@@ -462,7 +462,7 @@ select {
 /* === Phase 12: SPA shell (STRUCTURE ONLY — mockup colours/fonts come in step 12.4) === */
 /* The old `body { padding: 2rem }` centred a single column; the shell wants the sidebar
    flush to the edge and full height, so we zero body padding and pad #main instead. */
-body { padding: 0; background: var(--bg); color: var(--text); }
+body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
 #app {
   display: grid;
   grid-template-columns: 248px 1fr;  /* fixed sidebar + flexible main */
@@ -474,10 +474,8 @@ body { padding: 0; background: var(--bg); color: var(--text); }
   display: flex;
   flex-direction: column;
   background: var(--surface);
-  margin: 12px;
   padding: 18px 14px;
-  border-radius: 16px;
-  box-shadow: 0 1px 3px rgba(20, 30, 60, 0.06);
+  border-right: 1px solid var(--border);  /* flush full-height white panel, no rounded card */
 }
 .brand { font-weight: 700; letter-spacing: 2px; margin: 4px 8px 18px; color: var(--text); }
 #nav { display: flex; flex-direction: column; gap: 2px; flex: 1; }  /* fill the height */
@@ -551,7 +549,7 @@ body { padding: 0; background: var(--bg); color: var(--text); }
   box-shadow: 0 1px 3px rgba(20, 30, 60, 0.05);
 }
 .dash-panel-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
-.dash-panel-head h3 { margin: 0; font-size: 15px; color: var(--text); }
+.dash-panel-head h3 { margin: 0; font-size: 15px; font-weight: 600; color: var(--text); }
 .dash-panel-head a { font-size: 12px; color: var(--primary); text-decoration: none; }
 .dash-panel-head a:hover { text-decoration: underline; }
 .dash-list { list-style: none; padding: 0; margin: 0; }
@@ -578,6 +576,10 @@ body { padding: 0; background: var(--bg); color: var(--text); }
 }
 /* soonest tasks (today/tomorrow) — blue accent pill */
 .dash-task-pill--soon { color: var(--primary); background: var(--primary-soft); font-weight: 600; }
+/* checkbox + bold title + module colour dot (modelled on the mockup) */
+.dash-check { width: 16px; height: 16px; flex: none; accent-color: var(--primary); cursor: pointer; }
+.dash-task-title { font-weight: 600; font-size: 14px; color: var(--text); }
+.task-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
 
 /* Dashboard Modules section (cards → detail modal) */
 .dash-modules-head { display: flex; align-items: baseline; gap: 10px; margin: 26px 0 12px; }

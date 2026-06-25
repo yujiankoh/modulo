@@ -8,6 +8,7 @@
 import { appState, persist } from "./data.js";
 import { currentWeekInfo, totalTeachingWeeks } from "./timetableView.js";
 import { moduleColor } from "./sidebar.js"; // shared module-colour palette
+import { toggleTask } from "./task.js"; // complete a task from the due-soon checkbox
 
 // --- shared helpers (also used by the schedule + tasks panels in 12.3c) ---
 
@@ -207,12 +208,27 @@ function renderTasksDue() {
     const li = document.createElement("li");
     li.className = "dash-task";
 
+    // Checkbox completes the task (these are all not-done). Toggling persists → this list
+    // redraws and the now-done task drops off.
+    const check = document.createElement("input");
+    check.type = "checkbox";
+    check.className = "dash-check";
+    check.addEventListener("change", () => toggleTask(t.id));
+
     const main = document.createElement("div");
     const title = document.createElement("div");
+    title.className = "dash-task-title";
     title.textContent = t.title;
+
     const meta = document.createElement("div");
     meta.className = "dash-task-meta";
-    meta.textContent = t.module ? `${t.module} · ${t.type}` : t.type;
+    if (t.module) {
+      const dot = document.createElement("span");
+      dot.className = "task-dot";
+      dot.style.background = moduleColor(t.module);
+      meta.append(dot);
+    }
+    meta.append(document.createTextNode(t.module ? `${t.module} · ${t.type}` : t.type));
     main.append(title, meta);
 
     const pill = document.createElement("span");
@@ -220,7 +236,7 @@ function renderTasksDue() {
     pill.className = "dash-task-pill" + (daysUntil(t.due) <= 1 ? " dash-task-pill--soon" : "");
     pill.textContent = dueLabel(t.due);
 
-    li.append(main, pill);
+    li.append(check, main, pill);
     list.append(li);
   }
 }

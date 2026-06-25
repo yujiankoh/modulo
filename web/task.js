@@ -21,8 +21,9 @@ async function addTask(title, module, due, type) {
   await persist();
 }
 
-// Toggle a task's completion status.
-async function toggleTask(id) {
+// Toggle a task's completion status. Exported so the dashboard's due-soon checkboxes
+// can complete a task too (it persists → both views redraw).
+export async function toggleTask(id) {
   const task = appState.tasks.find((t) => t.id === id);
   if (task) {
     task.done = !task.done;
