@@ -380,12 +380,13 @@ body { padding: 0; }
 .view { display: none; }
 .view.is-active { display: block; }
 
-/* Top bar: status link pushed left, + Add Task pushed right (space-between). */
+/* Top bar: status + Add Task grouped together on the RIGHT (flex-end), so the bar reads
+   as an intentional action cluster rather than two items flung to opposite edges. */
 #topbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  justify-content: flex-end;
+  gap: 16px;
   padding-bottom: 16px;
   margin-bottom: 16px;
   border-bottom: 1px solid #e7e3da;
