@@ -5,6 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import java.util.UUID
 import kotlin.math.abs
 
 /**
@@ -39,9 +40,6 @@ enum class EducationLevel(val json: String, val displayName: String) {
     UNIVERSITY("university", "University");
 }
 
-/**
- * This data class encapsulates the information of a task
- */
 @Serializable
 data class Task(
     val id: Long,
@@ -54,18 +52,12 @@ data class Task(
     val updatedAt: String? = null
 )
 
-/**
- * This data class encapsulates the information of a timetable
- */
 @Serializable
 data class Timetable(
     val educationLevel: String,
     val modules: List<Module> = emptyList()
 )
 
-/**
- * This data class encapsulates the information of a module
- */
 @Serializable
 data class Module(
     val code: String,
@@ -73,9 +65,6 @@ data class Module(
     val slots: List<Slot> = emptyList()
 )
 
-/**
- * This data class encapsulates the information of a module slot in the timetable
- */
 @Serializable
 data class Slot(
     val day: String,
@@ -87,6 +76,22 @@ data class Slot(
     val week: String = "all"
 )
 
+@Serializable
+data class Break(
+    val start: String,
+    val end: String
+)
+
+@Serializable
+data class StudySession(
+    val id: String = UUID.randomUUID().toString(),
+    val start: String,
+    val end: String,
+    val durationMins: Int,
+    val rating: Int? = null,
+    val createdAt: String? = null
+)
+
 /**
  * This data class encapsulates all the information that needs to be saved
  */
@@ -96,8 +101,10 @@ data class AppData(
     val educationLevel: String? = null,
     val termStart: String? = null,
     val termEnd: String? = null,
+    val breaks: List<Break> = emptyList(),
     val updatedAt: String? = null,
     val tasks: List<Task> = emptyList(),
+    val studySessions: List<StudySession> = emptyList(),
     val timetable: Timetable? = null
 )
 /**

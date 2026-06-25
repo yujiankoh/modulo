@@ -37,6 +37,7 @@ import com.example.modulo.pages.LoadingPage
 import com.example.modulo.pages.TimetableManualPage
 import com.example.modulo.pages.SettingsPage
 import com.example.modulo.pages.SignInPage
+import com.example.modulo.pages.StudySessionPage
 import com.example.modulo.pages.TimetablePage
 import com.example.modulo.pages.TimetableStateOverlay
 import com.example.modulo.pages.TutorialPage
@@ -276,7 +277,7 @@ fun NavGraphBuilder.appNavigation(
 
                 composable<AllTasks> { AllTaskPage(viewModel = viewModel) }
 
-                composable<StudySession> { Text("Study Session Page") }
+                composable<StudySession> { StudySessionPage(viewModel = viewModel) }
             }
 
         }
