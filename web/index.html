@@ -30,8 +30,20 @@
         <a class="nav-link" href="#tasks">All Tasks</a>
         <a class="nav-link" href="#timetable">Timetable</a>
         <a class="nav-link" href="#study">Study Session</a>
+        <!-- Modules list (12.4d): sidebar.js fills this with the distinct modules from the
+             timetable + tasks, each with a colour dot. Empty until there are any. -->
+        <div id="moduleNav" class="module-nav"></div>
         <a class="nav-link nav-link--bottom" href="#settings">Settings</a>
       </nav>
+
+      <!-- Account chip (12.4d): shows the storage mode; links to Settings. sidebar.js fills it. -->
+      <a id="accountChip" class="account-chip" href="#settings">
+        <span class="account-avatar">M</span>
+        <span class="account-info">
+          <span class="account-name" id="accountMode">Not connected</span>
+          <span class="account-sub" id="accountSub">Tap to connect</span>
+        </span>
+      </a>
     </aside>
 
     <!-- ---- Main area: persistent top bar + the swappable views ---- -->
@@ -177,18 +189,20 @@
       <!-- STUDY SESSION (Phase 10): count-up stopwatch + totals + recent sessions. -->
       <section id="view-study" class="view">
         <h2>Study Session</h2>
-        <div id="timerDisplay">00:00:00</div>
-        <div id="timerControls">
-          <button id="timerStart" type="button">Start</button>
-          <button id="timerPause" type="button">Pause</button>
-          <button id="timerStop" type="button">Stop &amp; Save</button>
-        </div>
+        <div class="card study-card">
+          <div id="timerDisplay">00:00:00</div>
+          <div id="timerControls">
+            <button id="timerStart" type="button">Start</button>
+            <button id="timerPause" type="button">Pause</button>
+            <button id="timerStop" class="btn-primary" type="button">Stop &amp; Save</button>
+          </div>
 
-        <!-- Study-time totals: derived live from studySessions on redraw. -->
-        <div id="timerTotals">
-          <span>Today: <strong id="totalToday">0m</strong></span>
-          <span>This week: <strong id="totalWeek">0m</strong></span>
-          <span>Total: <strong id="totalAll">0m</strong></span>
+          <!-- Study-time totals: derived live from studySessions on redraw. -->
+          <div id="timerTotals">
+            <span>Today: <strong id="totalToday">0m</strong></span>
+            <span>This week: <strong id="totalWeek">0m</strong></span>
+            <span>Total: <strong id="totalAll">0m</strong></span>
+          </div>
         </div>
 
         <!-- Recent recorded sessions (newest first; capped for a light DOM). -->
@@ -202,9 +216,11 @@
       <section id="view-settings" class="view">
         <h2>Settings</h2>
         <!-- The connection status now shows in the top bar (#status moved there). -->
-        <button id="connectBtn">Connect Google Drive</button>
-        <button id="localBtn">Use this device only</button>
-        <button id="reloadBtn">Reload from Drive</button>
+        <div class="card settings-card">
+          <button id="connectBtn">Connect Google Drive</button>
+          <button id="localBtn">Use this device only</button>
+          <button id="reloadBtn">Reload from Drive</button>
+        </div>
       </section>
 
     </main>

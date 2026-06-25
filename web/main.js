@@ -12,6 +12,7 @@ import "./calendarView.js"; // side-effect import: renders the task month-calend
 import "./task.js"; // side-effect import: task list UI + add/toggle/delete + Add button
 import "./studyTimer.js"; // side-effect import: study-timer engine + controls (Phase 10)
 import "./dashboard.js"; // side-effect import: Dashboard landing view (Phase 12.3)
+import "./sidebar.js"; // side-effect import: sidebar modules list + account chip (Phase 12.4d)
 import "./router.js"; // side-effect import: SPA view-switcher + hash routing (Phase 12)
 
 // Runs after the page + Google's library have finished loading.
