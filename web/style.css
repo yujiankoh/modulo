@@ -1,3 +1,16 @@
+/* === Design tokens (Phase 12.4): the blue scheme. Change a value here and the whole
+   app follows. Used via var(--name) throughout the stylesheet. === */
+:root {
+  --bg: #eceffb;          /* app background (soft periwinkle) */
+  --surface: #ffffff;     /* cards + sidebar */
+  --primary: #2f6bf6;     /* buttons, active states, the filled stat card */
+  --primary-soft: #e6edfe;/* active nav pill + accent pill backgrounds */
+  --text: #20263a;        /* headings / near-navy body text */
+  --text-muted: #8890a4;  /* secondary text */
+  --border: #e7eaf3;      /* card + divider borders */
+  --pill-bg: #eef1f8;     /* neutral due-date pills */
+}
+
 body { font-family: system-ui, sans-serif; padding: 2rem; }
 button { padding: 0.6rem 1rem; font-size: 1rem; cursor: pointer; }
 
@@ -353,27 +366,34 @@ button { padding: 0.6rem 1rem; font-size: 1rem; cursor: pointer; }
 /* === Phase 12: SPA shell (STRUCTURE ONLY — mockup colours/fonts come in step 12.4) === */
 /* The old `body { padding: 2rem }` centred a single column; the shell wants the sidebar
    flush to the edge and full height, so we zero body padding and pad #main instead. */
-body { padding: 0; }
+body { padding: 0; background: var(--bg); color: var(--text); }
 #app {
   display: grid;
-  grid-template-columns: 220px 1fr;  /* fixed sidebar + flexible main */
+  grid-template-columns: 248px 1fr;  /* fixed sidebar + flexible main */
   min-height: 100vh;
 }
+/* Sidebar = a white rounded card floating on the periwinkle bg. flex column so Settings
+   (+ the account chip, 12.4d) can sit pinned at the bottom. */
 #sidebar {
-  border-right: 1px solid #e7e3da;
-  padding: 16px 12px;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  margin: 12px;
+  padding: 18px 14px;
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(20, 30, 60, 0.06);
 }
-.brand { font-weight: 700; letter-spacing: 2px; margin: 4px 8px 18px; }
-#nav { display: flex; flex-direction: column; gap: 2px; }
+.brand { font-weight: 700; letter-spacing: 2px; margin: 4px 8px 18px; color: var(--text); }
+#nav { display: flex; flex-direction: column; gap: 2px; flex: 1; }  /* fill the height */
 .nav-link {
   text-decoration: none;
-  color: #2b2820;
-  padding: 8px 10px;
-  border-radius: 8px;
+  color: var(--text);
+  padding: 9px 12px;
+  border-radius: 10px;
 }
-.nav-link:hover { background: #faf8f3; }
-.nav-link.is-active { background: #efe9dc; font-weight: 600; }  /* current view */
-.nav-link--bottom { margin-top: 24px; }                         /* push Settings down */
+.nav-link:hover { background: #f2f5fd; }
+.nav-link.is-active { background: var(--primary-soft); color: var(--primary); font-weight: 600; }  /* current view */
+.nav-link--bottom { margin-top: auto; }                         /* push Settings down */
 #main { padding: 24px 28px; }
 
 /* The router shows exactly one view: only `.view.is-active` is displayed. */
@@ -387,14 +407,18 @@ body { padding: 0; }
   align-items: center;
   justify-content: flex-end;
   gap: 16px;
-  padding-bottom: 16px;
-  margin-bottom: 16px;
-  border-bottom: 1px solid #e7e3da;
+  margin-bottom: 20px;
 }
-.topbar-status { font-size: 13px; color: #6b665c; text-decoration: none; }
+.topbar-status { font-size: 13px; color: var(--text-muted); text-decoration: none; }
 .topbar-status:hover { text-decoration: underline; }
-/* Minimal primary-button look; the mockup's orange/rounded polish lands in 12.4. */
-.btn-primary { border: 1px solid #d9d4c8; border-radius: 8px; background: #fff; }
+/* Primary action — filled blue (was the warm outlined placeholder). */
+.btn-primary {
+  border: none;
+  border-radius: 10px;
+  background: var(--primary);
+  color: #fff;
+  font-weight: 600;
+}
 
 /* Dashboard header (12.3a). Eyebrow = small uppercase muted line; greeting = the big
    heading; summary = a muted sub-line. Full visual polish in 12.4. */
