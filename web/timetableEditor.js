@@ -35,7 +35,6 @@ function levelConfig(level) {
 const editorEl = document.getElementById("timetableEditor");
 const moduleListEl = document.getElementById("moduleList");
 const editorStatusEl = document.getElementById("editorStatus");
-const timetableDisplayEl = document.getElementById("timetableDisplay");
 
 // --- small DOM helpers (build one form control) ---
 
@@ -210,49 +209,3 @@ document.getElementById("manualEntryBtn").addEventListener("click", openEditor);
 document.getElementById("closeEditorBtn").addEventListener("click", closeEditor);
 document.getElementById("addModuleBtn").addEventListener("click", () => addModule());
 document.getElementById("saveTimetableBtn").addEventListener("click", saveTimetable);
-
-// --- read-only timetable display (refreshes whenever data changes) ---
-
-function renderTimetable() {
-  timetableDisplayEl.innerHTML = "";
-  const modules = appState.timetable?.modules || [];
-  if (modules.length === 0) {
-    timetableDisplayEl.textContent = "No timetable yet — parse a photo or enter one manually.";
-    return;
-  }
-
-  const heading = document.createElement("h3");
-  heading.textContent = "Your timetable";
-  timetableDisplayEl.append(heading);
-
-  modules.forEach((m) => {
-    const block = document.createElement("div");
-    block.className = "tt-module";
-
-    const title = document.createElement("h4");
-    title.textContent = [m.code, m.name].filter(Boolean).join(" ") || "(unnamed)";
-    block.append(title);
-
-    const ul = document.createElement("ul");
-    (m.slots || []).forEach((s) => {
-      const li = document.createElement("li");
-      // join the non-empty parts with a separator, e.g. "MON · 09:00–10:00 · lesson · ML Rm1"
-      li.textContent = [
-        s.day,
-        s.start && s.end ? `${s.start}–${s.end}` : "",
-        s.sessionType,
-        s.week && s.week !== "all" ? `(${s.week})` : "",   // tag only odd/even
-        s.classNo ? `[${s.classNo}]` : "",
-        s.location,
-      ].filter(Boolean).join(" · ");
-      ul.append(li);
-    });
-    block.append(ul);
-    timetableDisplayEl.append(block);
-  });
-}
-
-// Re-render whenever data.js announces a change (save / parse / load)...
-window.addEventListener("modulo:datachanged", renderTimetable);
-// ...and once now, for the initial (likely empty) state.
-renderTimetable();

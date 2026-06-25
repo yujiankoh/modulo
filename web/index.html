@@ -145,7 +145,11 @@
 
       <!-- TIMETABLE (Phases 1–8): image parse, interim term setup, weekly grid, manual editor. -->
       <section id="view-timetable" class="view">
-        <h2>Timetable</h2>
+        <!-- Grid first: its header carries the title + week nav + Re-upload. -->
+        <div id="timetableViewHeader"></div>
+        <div id="timetableCalendar"></div>
+
+        <!-- Upload / parse controls (move into a modal in 12.5d). -->
         <input id="timetableImage" type="file" accept="image/*" />
         <br />
         <img id="timetablePreview" alt="preview" style="max-width: 400px; display: none;" />
@@ -153,13 +157,6 @@
         <button id="parseBtn">Parse timetable</button>
         <button id="addWeekBtn">Add another week</button>
         <pre id="parseOutput"></pre>
-
-        <!-- Read-only display of the saved timetable; refreshed on save/parse/load. -->
-        <div id="timetableDisplay"></div>
-
-        <!-- Phase 6: weekly calendar grid view of the timetable. -->
-        <div id="timetableViewHeader"></div>
-        <div id="timetableCalendar"></div>
 
         <!-- Manual timetable editor (Phase 5). JS fills #moduleList. -->
         <button id="manualEntryBtn">Enter / edit timetable manually</button>
