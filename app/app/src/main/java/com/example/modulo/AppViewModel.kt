@@ -25,6 +25,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.time.Instant
+import java.time.LocalDate
 
 private const val TAG = "ViewModel"
 
@@ -396,5 +397,17 @@ class AppViewModel(
             currentData.copy(educationLevel = timetable.educationLevel, timetable = timetable)
         }
         _timetableState.value = TimetableState.Idle
+    }
+
+    fun saveTermStart(date: LocalDate?) {
+        updateData { currentData ->
+            currentData.copy(termStart = date.toString())
+        }
+    }
+
+    fun saveTermEnd(date: LocalDate?) {
+        updateData { currentData ->
+            currentData.copy(termEnd = date.toString())
+        }
     }
 }

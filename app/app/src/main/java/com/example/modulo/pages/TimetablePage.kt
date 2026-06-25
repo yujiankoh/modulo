@@ -3,6 +3,7 @@ package com.example.modulo.pages
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -60,14 +61,42 @@ fun TimetablePage(
     val appData by viewModel.appData.collectAsState()
     val timetable = appData.timetable
 
-    var termStartDate by remember { mutableStateOf<LocalDate?>(null) }
-    var termEndDate by remember { mutableStateOf<LocalDate?>(null) }
+    var termStartDate by remember { mutableStateOf<LocalDate?>(if (appData.termStart == null) null else LocalDate.parse(appData.termStart)) }
+    var termEndDate by remember { mutableStateOf<LocalDate?>(if (appData.termEnd == null) null else LocalDate.parse(appData.termEnd)) }
+
+    // Rounded down to the earliest Monday and latest Friday
     val baseMonday = remember(termStartDate) {
-        termStartDate?.minusDays(termStartDate!!.dayOfWeek.value - 1L)
+        termStartDate?.let { start -> start.minusDays(start.dayOfWeek.value - 1L) }
+    }
+    val endFriday = remember(termEndDate) {
+        termEndDate?.let { date ->
+            val daysToFriday = (5 - date.dayOfWeek.value).let {
+                if (it < 0) it + 7 else it
+            }
+            date.plusDays(daysToFriday.toLong())
+        }
+    }
+
+    val today = LocalDate.now()
+    val isOutsideTerm = remember(baseMonday, endFriday) {
+        if (baseMonday != null && endFriday != null) {
+            today.isBefore(baseMonday) || today.isAfter(endFriday)
+        } else {
+            false
+        }
+    }
+
+    val totalWeeks = remember(baseMonday, endFriday) {
+        if (baseMonday != null && endFriday != null) {
+            val daysTotal = ChronoUnit.DAYS.between(baseMonday, endFriday)
+            ((daysTotal / 7) + 1).toInt()
+        } else {
+            1
+        }
     }
     val currentWeekNum = remember(baseMonday) {
         baseMonday?.let {
-            val daysPassed = ChronoUnit.DAYS.between(it, LocalDate.now())
+            val daysPassed = ChronoUnit.DAYS.between(it, today)
             if (daysPassed < 0) 1 else (daysPassed / 7).toInt() + 1
         } ?: 1
     }
@@ -110,7 +139,7 @@ fun TimetablePage(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(start = 8.dp, end = 8.dp, top = 20.dp, bottom = 0.dp),
+                    .padding(start = 8.dp, end = 8.dp, top = 20.dp, bottom = 8.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -141,7 +170,10 @@ fun TimetablePage(
                 DatePickerMenu(
                     selectedDate = termStartDate,
                     label = "Term Start",
-                    onDateSelected = { newDate -> termStartDate = newDate },
+                    onDateSelected = { newDate ->
+                        termStartDate = newDate
+                        viewModel.saveTermStart(newDate)
+                    },
                     modifier = Modifier.weight(1f)
                 )
 
@@ -150,7 +182,10 @@ fun TimetablePage(
                 DatePickerMenu(
                     selectedDate = termEndDate,
                     label = "Term End",
-                    onDateSelected = { newDate -> termEndDate = newDate },
+                    onDateSelected = { newDate ->
+                        termEndDate = newDate
+                        viewModel.saveTermEnd(newDate)
+                    },
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -162,71 +197,110 @@ fun TimetablePage(
             }
 
             if (termStartDate != null && baseMonday != null) {
-                val weekStart = baseMonday.plusWeeks(selectedWeekNum - 1L)
-                val weekEnd = weekStart.plusDays(4) // Friday
-                val formatter = DateTimeFormatter.ofPattern("dd MMM")
-
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(onClick = { if (selectedWeekNum > 1) selectedWeekNum-- }) {
-                        Icon(painter = painterResource(R.drawable.chevron_left), contentDescription = "Previous Week")
-                    }
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("Week $selectedWeekNum", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                if (isOutsideTerm) {
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxSize()
+                            .padding(32.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
                         Text(
-                            text = "${weekStart.format(formatter)} - ${weekEnd.format(formatter)}",
-                            style = MaterialTheme.typography.bodyMedium,
+                            text = "The term has not started yet",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
-                    IconButton(onClick = { selectedWeekNum++ }) {
-                        Icon(painter = painterResource(R.drawable.chevron_right), contentDescription = "Next Week")
+                } else {
+                    val weekStart = baseMonday.plusWeeks(selectedWeekNum - 1L)
+                    val weekEnd = weekStart.plusDays(4) // Friday
+                    val formatter = DateTimeFormatter.ofPattern("dd MMM")
+
+                    // Week Selector
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        IconButton(
+                            onClick = { if (selectedWeekNum > 1) selectedWeekNum-- },
+                            enabled = selectedWeekNum > 1
+                        ) {
+                            Icon(painter = painterResource(R.drawable.chevron_left), contentDescription = "Previous Week")
+                        }
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("Week $selectedWeekNum", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                            Text(
+                                text = "${weekStart.format(formatter)} - ${weekEnd.format(formatter)}",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        IconButton(
+                            onClick = { if (selectedWeekNum < totalWeeks) selectedWeekNum++ },
+                            enabled = selectedWeekNum < totalWeeks
+                        ) {
+                            Icon(painter = painterResource(R.drawable.chevron_right), contentDescription = "Next Week")
+                        }
                     }
                 }
             } else if (hasEvenOddSplit) {
+                // Even / Odd option
                 SecondaryTabRow(selectedTabIndex = if (manualTab == "odd") 0 else 1) {
                     Tab(selected = manualTab == "odd", onClick = { manualTab = "odd" }, text = { Text("Odd Week") })
                     Tab(selected = manualTab == "even", onClick = { manualTab = "even" }, text = { Text("Even Week") })
                 }
             }
 
-            val slotsToShow = allDisplaySlots.filter { it.week == "all" || it.week == activeWeekType }
-            val dayNames = listOf("MON", "TUE", "WED", "THU", "FRI")
-            val groupedSlots = slotsToShow.groupBy { it.day }
-                .toSortedMap(compareBy { dayNames.indexOf(it) })
+            if (!isOutsideTerm) {
+                val slotsToShow = allDisplaySlots.filter { it.week == "all" || it.week == activeWeekType }
+                val dayNames = listOf("MON", "TUE", "WED", "THU", "FRI")
+                val groupedSlots = slotsToShow.groupBy { it.day }
+                    .toSortedMap(compareBy { dayNames.indexOf(it) })
 
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                groupedSlots.forEach { (day, slotsForDay) ->
-                    item {
-                        val dayHeader = if (baseMonday != null) {
-                            val dayOffset = dayNames.indexOf(day).toLong()
-                            val targetDate = baseMonday.plusWeeks(selectedWeekNum - 1L).plusDays(dayOffset)
-                            "$day (${targetDate.format(DateTimeFormatter.ofPattern("dd MMM"))})"
-                        } else {
-                            day
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    groupedSlots.forEach { (day, slotsForDay) ->
+                        item {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 16.dp, bottom = 0.dp)
+                                ,
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = day,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary,
+                                )
+
+                                if (baseMonday != null) {
+                                    val dayOffset = dayNames.indexOf(day).toLong()
+                                    val targetDate = baseMonday.plusWeeks(selectedWeekNum - 1L).plusDays(dayOffset)
+
+                                    Text(
+                                        text = targetDate.format(DateTimeFormatter.ofPattern("dd MMM")),
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.primary,
+                                    )
+                                }
+                            }
                         }
 
-                        Text(
-                            text = dayHeader,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(bottom = 8.dp, top = 8.dp)
-                        )
-                    }
-
-                    items(slotsForDay.sortedBy { it.start }) { slot ->
-                        TimetableSlotCard(
-                            educationLevel = timetable.educationLevel,
-                            slot = slot
-                        )
+                        items(slotsForDay.sortedBy { it.start }) { slot ->
+                            TimetableSlotCard(
+                                educationLevel = timetable.educationLevel,
+                                slot = slot
+                            )
+                        }
                     }
                 }
             }

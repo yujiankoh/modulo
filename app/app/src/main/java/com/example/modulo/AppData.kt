@@ -93,6 +93,8 @@ data class Slot(
 data class AppData(
     val schemaVersion: Int = 2,
     val educationLevel: String? = null,
+    val termStart: String? = null,
+    val termEnd: String? = null,
     val updatedAt: String? = null,
     val tasks: List<Task> = emptyList(),
     val timetable: Timetable? = null
