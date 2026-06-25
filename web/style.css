@@ -578,3 +578,36 @@ body { padding: 0; background: var(--bg); color: var(--text); }
 }
 /* soonest tasks (today/tomorrow) — blue accent pill */
 .dash-task-pill--soon { color: var(--primary); background: var(--primary-soft); font-weight: 600; }
+
+/* Dashboard Modules section (cards → detail modal) */
+.dash-modules-head { display: flex; align-items: baseline; gap: 10px; margin: 26px 0 12px; }
+.dash-modules-head h3 { margin: 0; font-size: 18px; color: var(--text); }
+.dash-modules-count { font-size: 12px; color: var(--text-muted); }
+.dash-modules { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
+.module-card {
+  display: block;
+  text-align: left;
+  padding: 0;
+  overflow: hidden;
+  cursor: pointer;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 1px 3px rgba(20, 30, 60, 0.05);
+}
+.module-card:hover { border-color: #cfd6e8; }
+.module-card-head { padding: 14px 16px; color: #fff; }       /* background colour set inline */
+.module-card-code { font-size: 11px; letter-spacing: 0.06em; opacity: 0.9; }
+.module-card-name { font-size: 15px; font-weight: 600; margin-top: 2px; }
+.module-card-foot { display: flex; justify-content: space-between; padding: 10px 16px; font-size: 12px; color: var(--text-muted); }
+
+/* module detail modal */
+.module-modal-label { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); margin: 14px 0 6px; }
+.module-modal-placeholder { font-size: 13px; color: var(--text-muted); margin: 0; }
+
+/* "Manage" link in the Modules heading + the manage popup rows */
+.link-btn { margin-left: auto; border: none; background: transparent; color: var(--primary); font-size: 13px; padding: 0; }
+.link-btn:hover { text-decoration: underline; }
+.manage-row { padding: 8px 0; border-top: 1px solid var(--border); }
+.manage-row:first-child { border-top: none; }
+.manage-label { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--text); cursor: pointer; }

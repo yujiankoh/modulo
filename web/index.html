@@ -95,6 +95,14 @@
             <ul id="dashTasks" class="dash-list"></ul>
           </section>
         </div>
+
+        <!-- Modules (cards → click for the notes placeholder + that course's tasks). -->
+        <div class="dash-modules-head">
+          <h3>Modules</h3>
+          <span class="dash-modules-count" id="dashModulesCount"></span>
+          <button id="manageModulesBtn" class="link-btn" type="button">Manage</button>
+        </div>
+        <div id="dashModules" class="dash-modules"></div>
       </section>
 
       <!-- CALENDAR (Phase 7): month grid of tasks on their due dates. -->
@@ -231,6 +239,29 @@
        over whichever view is showing (Add-Task from Tasks, day popup from Calendar,
        rating from Study). Hidden by default; their modules toggle display.
        ============================================================================ -->
+
+  <!-- Manage modules modal (12.4): tick = shown, untick = hidden (dashboard + sidebar). -->
+  <div id="manageModulesModal" class="tcal-popup" style="display: none;">
+    <div class="tcal-popup-card">
+      <button id="manageModulesClose" class="tcal-popup-close" type="button">✕</button>
+      <h3>Show / hide modules</h3>
+      <p class="module-modal-placeholder">Untick a module to hide it from the dashboard and sidebar.</p>
+      <ul id="manageModulesList" class="dash-list"></ul>
+    </div>
+  </div>
+
+  <!-- Module detail modal (12.4): opened from a Dashboard module card. Notes placeholder
+       + that module's tasks. dashboard.js fills the title + #moduleModalTasks. -->
+  <div id="moduleModal" class="tcal-popup" style="display: none;">
+    <div class="tcal-popup-card">
+      <button id="moduleModalClose" class="tcal-popup-close" type="button">✕</button>
+      <h3 id="moduleModalTitle"></h3>
+      <div class="module-modal-label">My notes</div>
+      <p class="module-modal-placeholder">Notes &amp; files are coming soon.</p>
+      <div class="module-modal-label">Tasks</div>
+      <ul id="moduleModalTasks" class="dash-list"></ul>
+    </div>
+  </div>
 
   <!-- Add Task modal (reuses the .tcal-popup overlay/card styles). -->
   <div id="taskModal" class="tcal-popup" style="display: none;">

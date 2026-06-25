@@ -5,8 +5,9 @@
 // It only READS appState (plus writes the name field) and reuses the timetable's
 // term-week math, so there's no second source of truth. Redraws on modulo:datachanged.
 
-import { appState } from "./data.js";
+import { appState, persist } from "./data.js";
 import { currentWeekInfo, totalTeachingWeeks } from "./timetableView.js";
+import { moduleColor } from "./sidebar.js"; // shared module-colour palette
 
 // --- shared helpers (also used by the schedule + tasks panels in 12.3c) ---
 
@@ -224,6 +225,175 @@ function renderTasksDue() {
   }
 }
 
+// --- modules section + detail modal ---
+
+// One entry per distinct module: { label, name, tasks }. Name comes from the timetable;
+// tasks are matched by task.module. Sorted by label.
+function moduleInfos() {
+  const map = new Map();
+  for (const m of appState.timetable?.modules || []) {
+    const label = m.code || m.name;
+    if (!label) continue;
+    if (!map.has(label)) map.set(label, { label, name: m.name || "", tasks: [] });
+    else if (!map.get(label).name && m.name) map.get(label).name = m.name;
+  }
+  for (const t of appState.tasks || []) {
+    if (!t.module) continue;
+    if (!map.has(t.module)) map.set(t.module, { label: t.module, name: "", tasks: [] });
+    map.get(t.module).tasks.push(t);
+  }
+  return [...map.values()].sort((a, b) => a.label.localeCompare(b.label));
+}
+
+const moduleModal = document.getElementById("moduleModal");
+
+// Open the module detail modal: notes placeholder (filled in HTML) + this module's tasks.
+function openModuleModal(m) {
+  document.getElementById("moduleModalTitle").textContent =
+    m.name ? `${m.label} · ${m.name}` : m.label;
+
+  const list = document.getElementById("moduleModalTasks");
+  list.innerHTML = "";
+  const tasks = m.tasks.slice().sort((a, b) => (a.due || "").localeCompare(b.due || ""));
+  if (tasks.length === 0) {
+    list.innerHTML = "<li class='dash-empty'>No tasks for this module.</li>";
+  } else {
+    for (const t of tasks) {
+      const li = document.createElement("li");
+      li.className = "dash-task";
+      const main = document.createElement("div");
+      const title = document.createElement("div");
+      title.textContent = t.title;
+      if (t.done) title.style.textDecoration = "line-through";
+      const meta = document.createElement("div");
+      meta.className = "dash-task-meta";
+      meta.textContent = t.type;
+      main.append(title, meta);
+      const pill = document.createElement("span");
+      pill.className = "dash-task-pill";
+      pill.textContent = t.done ? "Done" : t.due ? dueLabel(t.due) : "No date";
+      li.append(main, pill);
+      list.append(li);
+    }
+  }
+  moduleModal.style.display = "flex";
+}
+function closeModuleModal() { moduleModal.style.display = "none"; }
+
+// Render the Modules cards (coloured header + active-task count; click → detail modal).
+// Hidden modules (appState.hiddenModules) are filtered out here and in the sidebar.
+function renderModules() {
+  const grid = document.getElementById("dashModules");
+  grid.innerHTML = "";
+  const hidden = new Set(appState.hiddenModules || []);
+  const all = moduleInfos();
+  const mods = all.filter((m) => !hidden.has(m.label));
+  const hiddenCount = all.length - mods.length;
+
+  document.getElementById("dashModulesCount").textContent =
+    `${mods.length} ${mods.length === 1 ? "module" : "modules"} this semester` +
+    (hiddenCount ? ` · ${hiddenCount} hidden` : "");
+
+  if (mods.length === 0) {
+    grid.innerHTML = all.length > 0
+      ? "<p class='dash-empty'>All modules hidden — use Manage to show some.</p>"
+      : "<p class='dash-empty'>No modules yet — parse a timetable or add tasks with a module.</p>";
+    return;
+  }
+  for (const m of mods) {
+    const card = document.createElement("button");
+    card.type = "button";
+    card.className = "module-card";
+
+    const head = document.createElement("div");
+    head.className = "module-card-head";
+    head.style.background = moduleColor(m.label);
+    const code = document.createElement("div");
+    code.className = "module-card-code";
+    code.textContent = m.label;
+    const name = document.createElement("div");
+    name.className = "module-card-name";
+    name.textContent = m.name || " "; // non-breaking space keeps the header height
+    head.append(code, name);
+
+    const foot = document.createElement("div");
+    foot.className = "module-card-foot";
+    const active = m.tasks.filter((t) => !t.done).length;
+    const left = document.createElement("span");
+    left.textContent = `${active} active`;
+    const right = document.createElement("span");
+    right.textContent = "open →";
+    foot.append(left, right);
+
+    card.append(head, foot);
+    card.addEventListener("click", () => openModuleModal(m));
+    grid.append(card);
+  }
+}
+
+// Close the module modal via ✕, backdrop click, or Esc.
+document.getElementById("moduleModalClose").addEventListener("click", closeModuleModal);
+moduleModal.addEventListener("click", (e) => { if (e.target === moduleModal) closeModuleModal(); });
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && moduleModal.style.display !== "none") closeModuleModal();
+});
+
+// --- Manage modules (show/hide) ---
+const manageModal = document.getElementById("manageModulesModal");
+
+// Add/remove a module label from appState.hiddenModules, then save (re-renders both views).
+async function setModuleHidden(label, hide) {
+  const set = new Set(appState.hiddenModules || []);
+  if (hide) set.add(label);
+  else set.delete(label);
+  appState.hiddenModules = [...set];
+  await persist();
+}
+
+// Build the checkbox list: one row per module, ticked = shown.
+function renderManageList() {
+  const list = document.getElementById("manageModulesList");
+  list.innerHTML = "";
+  const mods = moduleInfos();
+  if (mods.length === 0) {
+    list.innerHTML = "<li class='dash-empty'>No modules yet.</li>";
+    return;
+  }
+  const hidden = new Set(appState.hiddenModules || []);
+  for (const m of mods) {
+    const li = document.createElement("li");
+    li.className = "manage-row";
+    const label = document.createElement("label");
+    label.className = "manage-label";
+
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.checked = !hidden.has(m.label);                 // ticked = shown
+    cb.addEventListener("change", () => setModuleHidden(m.label, !cb.checked));
+
+    const dot = document.createElement("span");
+    dot.className = "module-dot";
+    dot.style.background = moduleColor(m.label);
+
+    const name = document.createElement("span");
+    name.textContent = m.name ? `${m.label} · ${m.name}` : m.label;
+
+    label.append(cb, dot, name);
+    li.append(label);
+    list.append(li);
+  }
+}
+
+function openManageModal() { renderManageList(); manageModal.style.display = "flex"; }
+function closeManageModal() { manageModal.style.display = "none"; }
+
+document.getElementById("manageModulesBtn").addEventListener("click", openManageModal);
+document.getElementById("manageModulesClose").addEventListener("click", closeManageModal);
+manageModal.addEventListener("click", (e) => { if (e.target === manageModal) closeManageModal(); });
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && manageModal.style.display !== "none") closeManageModal();
+});
+
 function render() {
   document.getElementById("dashEyebrow").textContent = eyebrowText();
   document.getElementById("dashGreeting").textContent = greetingText();
@@ -232,6 +402,7 @@ function render() {
   document.getElementById("cardWeekHours").textContent = weekHoursText();
   renderSchedule();
   renderTasksDue();
+  renderModules();
 }
 
 // Redraw whenever state changes, and once now.
