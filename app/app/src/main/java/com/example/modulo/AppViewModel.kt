@@ -4,6 +4,11 @@ import android.app.Application
 import android.content.Context
 import android.util.Base64
 import android.util.Log
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.credentials.CredentialManager
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
@@ -76,6 +81,17 @@ class AppViewModel(
     // Keep track of connection to internet
     private val networkMonitor = NetworkHelper(application)
     private val _hasInternet = MutableStateFlow(false)
+
+    // Keep track of time in study session
+    var elapsedSeconds by mutableLongStateOf(0L)
+        private set
+    var isTimerRunning by mutableStateOf(false)
+        private set
+    var hasSessionStarted by mutableStateOf(false)
+        private set
+    private var sessionStartTime by mutableStateOf<String?>(null)
+    private var sessionEndTime by mutableStateOf<String?>(null)
+    private var timerJob: Job? = null
 
     // Only sync after a moment of inactivity
     private var delaySync: Job? = null
@@ -409,5 +425,60 @@ class AppViewModel(
         updateData { currentData ->
             currentData.copy(termEnd = date.toString())
         }
+    }
+
+    fun startOrResumeTimer() {
+        if (sessionStartTime == null) {
+            sessionStartTime = Instant.now().toString()
+            hasSessionStarted = true
+        }
+        isTimerRunning = true
+        timerJob = viewModelScope.launch {
+            while (true) {
+                delay(1000L) // Wait 1 second
+                elapsedSeconds += 1
+            }
+        }
+    }
+
+    fun pauseTimer() {
+        isTimerRunning = false
+        timerJob?.cancel()
+    }
+
+    fun stopTimer() {
+        pauseTimer()
+        sessionEndTime = Instant.now().toString()
+        hasSessionStarted = false
+    }
+
+    fun discardSession() {
+        elapsedSeconds = 0L
+        sessionStartTime = null
+    }
+
+    fun saveSession(rating: Int) {
+        val start = sessionStartTime ?: Instant.now().toString()
+        val end = sessionEndTime ?: Instant.now().toString()
+
+        // Round to minutes
+        val durationMins = (elapsedSeconds / 60).toInt()
+
+        if (durationMins > 0) {
+            val newSession = StudySession(
+                start = start,
+                end = end,
+                durationMins = durationMins,
+                rating = rating,
+                createdAt = Instant.now().toString()
+            )
+
+            updateData { currentData ->
+                currentData.copy(studySessions = currentData.studySessions + newSession)
+            }
+        }
+
+        // Clear the timer state
+        discardSession()
     }
 }
