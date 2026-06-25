@@ -401,3 +401,14 @@ body { padding: 0; }
 .dash-eyebrow { font-size: 12px; letter-spacing: 0.08em; color: #8a847a; margin: 0 0 6px; }
 .dash-greeting { font-size: 28px; color: #2b2820; margin: 0 0 6px; }
 .dash-summary { font-size: 14px; color: #6b665c; margin: 0 0 20px; }
+
+/* Stat cards (12.3b). Simple bordered boxes for now; mockup polish in 12.4. */
+.dash-cards { display: flex; gap: 12px; margin-bottom: 24px; }
+.dash-card {
+  border: 1px solid #e7e3da;
+  border-radius: 12px;
+  padding: 14px 18px;
+  min-width: 120px;
+}
+.dash-card-label { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: #8a847a; }
+.dash-card-value { font-size: 24px; color: #2b2820; margin-top: 4px; }

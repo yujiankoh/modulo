@@ -59,6 +59,58 @@ export function tasksDueSoon() {
     .sort((a, b) => a.due.localeCompare(b.due)); // ISO date strings sort chronologically
 }
 
+// --- study stats: this week's hours + the current streak (from studySessions) ---
+
+// Local midnight today, and the Monday of this week (Monday-first, like the rest of the app).
+function startOfToday() {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+function startOfWeek() {
+  const d = startOfToday();
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); // step back to this week's Monday
+  return d;
+}
+
+// Minutes studied since a cutoff Date (sums durationMins of sessions starting on/after it).
+function studyMinsSince(cutoff) {
+  return (appState.studySessions || [])
+    .filter((s) => new Date(s.start) >= cutoff)
+    .reduce((sum, s) => sum + (s.durationMins || 0), 0);
+}
+
+// "14.5h" / "3h" / "0h" — hours studied this week, to one decimal (trailing .0 dropped).
+function weekHoursText() {
+  const hours = studyMinsSince(startOfWeek()) / 60;
+  return `${Math.round(hours * 10) / 10}h`;
+}
+
+// A local-date key ("year-month-day") for grouping sessions by calendar day.
+function dayKey(d) {
+  return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+}
+
+// Current streak = consecutive days, ending today (or yesterday if today is still empty),
+// that each have >= 1 study session. So studying daily grows it; a gap resets it; and not
+// having studied *yet* today doesn't kill a streak that stands on yesterday.
+function studyStreak() {
+  const days = new Set((appState.studySessions || []).map((s) => dayKey(new Date(s.start))));
+  const cursor = startOfToday();
+  if (!days.has(dayKey(cursor))) cursor.setDate(cursor.getDate() - 1); // lean on yesterday
+  let streak = 0;
+  while (days.has(dayKey(cursor))) {
+    streak++;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+  return streak;
+}
+
+function streakText() {
+  const n = studyStreak();
+  return `${n} ${n === 1 ? "day" : "days"}`;
+}
+
 // --- header: eyebrow + greeting + summary ---
 
 const MONTHS = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
@@ -98,6 +150,8 @@ function render() {
   document.getElementById("dashEyebrow").textContent = eyebrowText();
   document.getElementById("dashGreeting").textContent = greetingText();
   document.getElementById("dashSummary").textContent = summaryText();
+  document.getElementById("cardStreak").textContent = streakText();
+  document.getElementById("cardWeekHours").textContent = weekHoursText();
 }
 
 // Redraw whenever state changes, and once now.
