@@ -7,22 +7,43 @@ import { appState, getStorageMode } from "./data.js";
 // A fixed palette + a stable assignment: the same module name always maps to the same
 // colour (sum of char codes mod palette length), independent of order. Exported so other
 // views (e.g. the dashboard) can colour-match modules later.
-const PALETTE = ["#2f6bf6", "#0ea5a4", "#e0a82e", "#e1574c", "#8b5cf6", "#22a06b", "#ec4899", "#f97316"];
+// Cohesive cool spectrum (blues → indigos → violets → teals/cyans) so modules are
+// distinguishable but none clashes with the blue dashboard. More entries = fewer repeats.
+const PALETTE = [
+  "#2f6df0", // royal blue (the dashboard accent)
+  "#1c7ed6", // sky blue
+  "#1b6ec2", // steel blue
+  "#3b5bdb", // blue
+  "#4263eb", // indigo
+  "#5c7cfa", // periwinkle
+  "#6741d9", // blue-violet
+  "#7048e8", // violet
+  "#5f3dc4", // deep violet
+  "#862e9c", // purple
+  "#1098ad", // cyan
+  "#0c8599", // aqua
+  "#0e8f9d", // teal
+  "#087f8c", // deep teal
+  "#0ca678", // turquoise
+  "#099268", // emerald
+];
 export function moduleColor(name) {
   let sum = 0;
   for (let i = 0; i < name.length; i++) sum += name.charCodeAt(i);
   return PALETTE[sum % PALETTE.length];
 }
 
-// Distinct module labels from the timetable (code or name) + tasks, sorted. A Set dedupes.
+// Distinct module labels from the timetable (code or name) + tasks, sorted, with any
+// hidden modules (appState.hiddenModules, managed from the dashboard) filtered out.
 function distinctModules() {
+  const hidden = new Set(appState.hiddenModules || []);
   const set = new Set();
   for (const m of appState.timetable?.modules || []) {
     const label = m.code || m.name;
-    if (label) set.add(label);
+    if (label && !hidden.has(label)) set.add(label);
   }
   for (const t of appState.tasks || []) {
-    if (t.module) set.add(t.module);
+    if (t.module && !hidden.has(t.module)) set.add(t.module);
   }
   return [...set].sort();
 }
