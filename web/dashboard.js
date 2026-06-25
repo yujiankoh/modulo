@@ -146,12 +146,91 @@ function summaryText() {
   return `You have ${cls} today and ${tsk} due this week.`;
 }
 
+// --- panels: today's schedule + tasks due soon ---
+
+// "lecture" -> "Lecture" (just the first letter, for display).
+function capitalize(s) {
+  return s ? s.charAt(0).toUpperCase() + s.slice(1) : "";
+}
+
+// Friendly relative due text: "Today" / "Tomorrow" / "Fri 27 Jun".
+function dueLabel(due) {
+  const d = daysUntil(due);
+  if (d === 0) return "Today";
+  if (d === 1) return "Tomorrow";
+  return new Date(due + "T00:00:00").toLocaleDateString("en-GB", {
+    weekday: "short", day: "2-digit", month: "short",
+  });
+}
+
+// Today's schedule: one row per class — time on the left, module/type + location on the right.
+function renderSchedule() {
+  const list = document.getElementById("dashSchedule");
+  list.innerHTML = "";
+  const classes = classesToday();
+  if (classes.length === 0) {
+    list.innerHTML = "<li class='dash-empty'>No classes today.</li>";
+    return;
+  }
+  for (const c of classes) {
+    const li = document.createElement("li");
+    li.className = "dash-class";
+
+    const time = document.createElement("span");
+    time.className = "dash-class-time";
+    time.textContent = `${c.start}–${c.end}`;
+
+    const main = document.createElement("div");
+    const title = document.createElement("div");
+    title.textContent = `${c.module} · ${capitalize(c.sessionType)}`;
+    const loc = document.createElement("div");
+    loc.className = "dash-class-loc";
+    loc.textContent = c.location || "";
+    main.append(title, loc);
+
+    li.append(time, main);
+    list.append(li);
+  }
+}
+
+// Tasks due soon: the soonest few not-done tasks, each with a relative-date pill.
+function renderTasksDue() {
+  const list = document.getElementById("dashTasks");
+  list.innerHTML = "";
+  const tasks = tasksDueSoon().slice(0, 5); // keep the panel short
+  if (tasks.length === 0) {
+    list.innerHTML = "<li class='dash-empty'>Nothing due this week.</li>";
+    return;
+  }
+  for (const t of tasks) {
+    const li = document.createElement("li");
+    li.className = "dash-task";
+
+    const main = document.createElement("div");
+    const title = document.createElement("div");
+    title.textContent = t.title;
+    const meta = document.createElement("div");
+    meta.className = "dash-task-meta";
+    meta.textContent = t.module ? `${t.module} · ${t.type}` : t.type;
+    main.append(title, meta);
+
+    const pill = document.createElement("span");
+    pill.className = "dash-task-pill";
+    pill.textContent = dueLabel(t.due);
+
+    li.append(main, pill);
+    list.append(li);
+  }
+}
+
 function render() {
   document.getElementById("dashEyebrow").textContent = eyebrowText();
   document.getElementById("dashGreeting").textContent = greetingText();
   document.getElementById("dashSummary").textContent = summaryText();
   document.getElementById("cardStreak").textContent = streakText();
   document.getElementById("cardWeekHours").textContent = weekHoursText();
+  renderSchedule();
+  renderTasksDue();
 }
 
 // Redraw whenever state changes, and once now.

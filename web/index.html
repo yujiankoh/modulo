@@ -64,6 +64,25 @@
             <div class="dash-card-value" id="cardWeekHours">0h</div>
           </div>
         </div>
+
+        <!-- Main panels (12.3c): today's classes + the soonest tasks. The header links
+             jump to the full views via the router. dashboard.js fills the lists. -->
+        <div class="dash-panels">
+          <section class="dash-panel">
+            <div class="dash-panel-head">
+              <h3>Today's schedule</h3>
+              <a href="#timetable">See timetable</a>
+            </div>
+            <ul id="dashSchedule" class="dash-list"></ul>
+          </section>
+          <section class="dash-panel">
+            <div class="dash-panel-head">
+              <h3>Tasks due soon</h3>
+              <a href="#tasks">All tasks</a>
+            </div>
+            <ul id="dashTasks" class="dash-list"></ul>
+          </section>
+        </div>
       </section>
 
       <!-- CALENDAR (Phase 7): month grid of tasks on their due dates. -->
