@@ -146,16 +146,6 @@
       <!-- TIMETABLE (Phases 1–8): image parse, interim term setup, weekly grid, manual editor. -->
       <section id="view-timetable" class="view">
         <h2>Timetable</h2>
-        <label for="eduLevel">Education level:</label>
-        <select id="eduLevel">
-          <option value="">— select —</option>
-          <option value="primary">Primary school</option>
-          <option value="secondary">Secondary school</option>
-          <option value="jc">Junior College</option>
-          <option value="poly">Polytechnic</option>
-          <option value="university">University</option>
-        </select>
-        <br />
         <input id="timetableImage" type="file" accept="image/*" />
         <br />
         <img id="timetablePreview" alt="preview" style="max-width: 400px; display: none;" />
@@ -166,20 +156,6 @@
 
         <!-- Read-only display of the saved timetable; refreshed on save/parse/load. -->
         <div id="timetableDisplay"></div>
-
-        <!-- Phase 8: term setup (INTERIM — moves into the handbook, Phase 13). -->
-        <label for="termStart">Term start (Week 1 Monday):</label>
-        <input id="termStart" type="date" />
-        <br />
-        <label for="termEnd">Term end:</label>
-        <input id="termEnd" type="date" />
-        <br />
-        <label for="breakStart">Recess / holiday from:</label>
-        <input id="breakStart" type="date" />
-        <label for="breakEnd">to:</label>
-        <input id="breakEnd" type="date" />
-        <button id="addBreakBtn" type="button">Add break</button>
-        <div id="breakList"></div>
 
         <!-- Phase 6: weekly calendar grid view of the timetable. -->
         <div id="timetableViewHeader"></div>
@@ -234,6 +210,41 @@
           <button id="connectBtn">Connect Google Drive</button>
           <button id="localBtn">Use this device only</button>
           <button id="reloadBtn">Reload from Drive</button>
+        </div>
+
+        <!-- Timetable setup (INTERIM — moves into the handbook, Phase 13). Education level
+             + term dates live here for now; the timetable parser + grid read them. -->
+        <h3 class="settings-heading">Timetable setup</h3>
+        <div class="card">
+          <label class="task-field">
+            <span>Education level</span>
+            <select id="eduLevel">
+              <option value="">— select —</option>
+              <option value="primary">Primary school</option>
+              <option value="secondary">Secondary school</option>
+              <option value="jc">Junior College</option>
+              <option value="poly">Polytechnic</option>
+              <option value="university">University</option>
+            </select>
+          </label>
+          <label class="task-field">
+            <span>Term start (Week 1 Monday)</span>
+            <input id="termStart" type="date" />
+          </label>
+          <label class="task-field">
+            <span>Term end</span>
+            <input id="termEnd" type="date" />
+          </label>
+          <div class="task-field">
+            <span>Recess / holiday</span>
+            <div class="settings-break-row">
+              <input id="breakStart" type="date" />
+              <span class="settings-break-to">to</span>
+              <input id="breakEnd" type="date" />
+              <button id="addBreakBtn" type="button">Add break</button>
+            </div>
+            <div id="breakList"></div>
+          </div>
         </div>
       </section>
 

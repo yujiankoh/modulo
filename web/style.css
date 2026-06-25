@@ -66,6 +66,10 @@ select {
 
 /* Settings view */
 .settings-card { display: flex; gap: 10px; flex-wrap: wrap; max-width: 520px; }
+.settings-heading { margin: 22px 0 8px; font-size: 15px; font-weight: 600; color: var(--text); }
+.settings-break-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.settings-break-to { color: var(--text-muted); font-size: 13px; }
+.card .task-field:last-child { margin-bottom: 0; }   /* trim the last field's gap inside the card */
 
 /* Sidebar MODULES list (12.4d) */
 .module-nav { margin-top: 18px; }
