@@ -3,8 +3,10 @@ package com.example.modulo.pages
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -14,6 +16,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -49,7 +52,8 @@ import java.util.Locale
 
 @Composable
 fun StudySessionPage(
-    viewModel: AppViewModel
+    viewModel: AppViewModel,
+    onOpenHistory: () -> Unit
 ) {
     val appData by viewModel.appData.collectAsState()
 
@@ -102,6 +106,21 @@ fun StudySessionPage(
                 StatCard(title = "Today", mins = todayMins, modifier = Modifier.weight(1f))
                 StatCard(title = "This Week", mins = weekMins, modifier = Modifier.weight(1f))
                 StatCard(title = "Overall", mins = totalMins, modifier = Modifier.weight(1f))
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+            Button(
+                onClick = onOpenHistory,
+                contentPadding = PaddingValues(
+                    start = 12.dp,
+                    top = ButtonDefaults.ContentPadding.calculateTopPadding(),
+                    end = ButtonDefaults.ContentPadding.calculateEndPadding(layoutDirection = androidx.compose.ui.unit.LayoutDirection.Ltr),
+                    bottom = ButtonDefaults.ContentPadding.calculateBottomPadding()
+                )
+            ) {
+                Icon(painter = painterResource(R.drawable.file_clock), contentDescription = "History")
+                Spacer(modifier = Modifier.padding(6.dp))
+                Text("View History")
             }
 
             Spacer(modifier = Modifier.weight(1f))
