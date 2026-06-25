@@ -177,6 +177,18 @@
     <button id="timerStop" type="button">Stop &amp; Save</button>
   </div>
 
+  <!-- Study-time totals (Phase 10): all derived live from studySessions on redraw. -->
+  <div id="timerTotals">
+    <span>Today: <strong id="totalToday">0m</strong></span>
+    <span>This week: <strong id="totalWeek">0m</strong></span>
+    <span>Total: <strong id="totalAll">0m</strong></span>
+  </div>
+
+  <!-- Recent recorded sessions (newest first; capped for a light DOM). -->
+  <h3>Recent sessions</h3>
+  <p id="sessionNote"></p>
+  <ul id="sessionList"></ul>
+
   <!-- Rating modal (Phase 10): opens on Stop & Save. Reuses the .tcal-popup overlay/card
        styles. Picking 1–5 saves with that rating; Skip saves with rating null; closing
        (✕ / backdrop / Esc) cancels the save and keeps the timer paused. -->

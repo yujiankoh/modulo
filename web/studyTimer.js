@@ -145,5 +145,86 @@ document.addEventListener("keydown", (e) => {
   if (e.key === "Escape" && ratingModal.style.display !== "none") cancelRating();
 });
 
+// --- Sessions list + study-time totals ----------------------------------------
+// All derived LIVE from appState.studySessions on each redraw — nothing is pre-stored,
+// so totals can never drift out of sync. (If the array ever got huge, this is where a
+// cached cumulative total / daily aggregation would slot in — not needed at this scale.)
+
+// Local-midnight reference points for "today" and "this week" (Monday-first, matching
+// the rest of the app's calendars).
+function startOfToday() {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+function startOfWeek() {
+  const d = startOfToday();
+  const mondayOffset = (d.getDay() + 6) % 7; // getDay() is Sun-first; rotate to Mon-first
+  d.setDate(d.getDate() - mondayOffset);
+  return d;
+}
+
+// Sum durationMins of sessions whose start is on/after a cutoff (null = all sessions).
+function sumMinsSince(sessions, cutoff) {
+  return sessions
+    .filter((s) => !cutoff || new Date(s.start) >= cutoff)
+    .reduce((total, s) => total + (s.durationMins || 0), 0);
+}
+
+// Minutes -> friendly "2h 15m" / "45m" / "0m".
+function formatMins(mins) {
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  if (h && m) return `${h}h ${m}m`;
+  if (h) return `${h}h`;
+  return `${m}m`;
+}
+
+// One session's <li>: "Wed 25 Jun, 14:00 · 50m · ★4" (or "no rating").
+function renderSessionRow(s) {
+  const li = document.createElement("li");
+  const when = new Date(s.start);
+  const dateStr = when.toLocaleDateString("en-GB", {
+    weekday: "short", day: "2-digit", month: "short", // "Wed 25 Jun"
+  });
+  const timeStr = when.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+  const rating = s.rating ? `★${s.rating}` : "no rating";
+  li.textContent = `${dateStr}, ${timeStr} · ${formatMins(s.durationMins || 0)} · ${rating}`;
+  return li;
+}
+
+const RECENT_LIMIT = 10; // how many sessions to show in the list (keeps the DOM light)
+
+// Redraw the totals + the recent-sessions list from current state.
+function renderSessions() {
+  const sessions = appState.studySessions || [];
+
+  // Totals.
+  document.getElementById("totalToday").textContent = formatMins(sumMinsSince(sessions, startOfToday()));
+  document.getElementById("totalWeek").textContent = formatMins(sumMinsSince(sessions, startOfWeek()));
+  document.getElementById("totalAll").textContent = formatMins(sumMinsSince(sessions, null));
+
+  // List: newest first (ISO start strings sort chronologically), capped at RECENT_LIMIT.
+  const list = document.getElementById("sessionList");
+  list.innerHTML = "";
+  const note = document.getElementById("sessionNote");
+
+  if (sessions.length === 0) {
+    note.textContent = "";
+    list.innerHTML = "<li>No sessions yet — start the timer above.</li>";
+    return;
+  }
+
+  const sorted = [...sessions].sort((a, b) => b.start.localeCompare(a.start));
+  note.textContent = sessions.length > RECENT_LIMIT
+    ? `Showing latest ${RECENT_LIMIT} of ${sessions.length}.`
+    : "";
+  for (const s of sorted.slice(0, RECENT_LIMIT)) list.append(renderSessionRow(s));
+}
+
+// Redraw the sessions UI whenever state is saved/loaded, then draw once now.
+window.addEventListener("modulo:datachanged", renderSessions);
+renderSessions();
+
 // Draw 00:00:00 once on load.
 render();
