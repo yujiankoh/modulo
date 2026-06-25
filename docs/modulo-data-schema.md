@@ -137,8 +137,12 @@ to the level and leaves the rest as `""`; the STORAGE shape is identical for eve
   ]
 }
 ```
+| Field (Timetable) | Type   | Description |
+|-------------------|--------|-------------|
+| `modules`         | array of Module | All subjects taken in this semester. |
 
-| Field (module) | Type   | Description |
+
+| Field (Module) | Type   | Description |
 |----------------|--------|-------------|
 | `code`         | string | Module code (e.g. "CS2030S"). Empty `""` for primary/secondary/jc. |
 | `name`         | string | Subject or module name. May be `""` if not visible in the image. |

@@ -1,4 +1,4 @@
-package com.example.modulo
+package com.example.modulo.pages
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
@@ -13,6 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import com.example.modulo.R
 
 @Composable
 fun SignInPage(
@@ -30,6 +31,7 @@ fun SignInPage(
             contentDescription = "logo"
         )
         Spacer(modifier = Modifier.height(16.dp))
+
         Button(onClick = onSyncWithDriveClick) {
             Text("Sync with Google Drive")
         }

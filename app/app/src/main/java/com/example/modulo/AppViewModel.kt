@@ -1,37 +1,51 @@
 package com.example.modulo
 
 import android.app.Application
+import android.content.Context
+import android.util.Base64
 import android.util.Log
+import androidx.credentials.CredentialManager
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.preferencesDataStore
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
+import com.example.modulo.helpers.AuthenticationHelper
+import com.example.modulo.helpers.LocalSaveHelper
+import com.example.modulo.helpers.NetworkHelper
+import com.example.modulo.helpers.NetworkResult
+import com.example.modulo.helpers.SyncingHelper
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.serialization.encodeToString
+import java.time.Instant
+import java.time.LocalDate
+
+private const val TAG = "ViewModel"
+
+// Flags in device hard drive
+val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
+val HAS_SEEN_TUTORIAL = booleanPreferencesKey("has_seen_tutorial")
+val IS_DRIVE_SYNC_ENABLED = booleanPreferencesKey("is_drive_sync_enabled")
 
 class AppViewModel(
     application: Application,
     private val savedStateHandle: SavedStateHandle
 ) : AndroidViewModel(application) {
-    private val TAG = "ViewModel"
-
-    // Stores if syncing is enabled
-    var isDriveSyncEnabled = false
-        private set
-
-    fun setDriveSync(isEnabled: Boolean) {
-        isDriveSyncEnabled = isEnabled
-    }
-
     // Stores the helper for local save
     private val localSaveHelper = LocalSaveHelper(application)
-
     // Stores the helper for syncing
     var syncingHelper: SyncingHelper? = null
+    // Stores the helper for parsing timetable
+    private val parsingHelper = com.example.modulo.helpers.ParsingHelper()
 
+    // Stores user email for authentication
     fun setUserEmail(email: String) {
         savedStateHandle["email"] = email
     }
@@ -39,32 +53,232 @@ class AppViewModel(
         return savedStateHandle["email"] ?: ""
     }
 
+    // Stores whether user is using Google Drive Sync
+    private val _isDriveSyncEnabled = MutableStateFlow(false)
+    val isDriveSyncEnabled = _isDriveSyncEnabled.asStateFlow()
+
     // Stores the app data, load based on local save
     private val _appData = MutableStateFlow(localSaveHelper.loadData())
     val appData = _appData.asStateFlow()
 
     // Stores the current syncing progress
-    private val _syncState = MutableStateFlow(SyncState.SYNCED)
+    private val _syncState = MutableStateFlow(SyncState.OFFLINE)
     val syncState = _syncState.asStateFlow()
+
+    // Stores the current startup state
+    private val _startupState = MutableStateFlow(StartupState.LOADING)
+    val startupState = _startupState.asStateFlow()
+
+    // Stores the status of timetable parsing
+    private val _timetableState = MutableStateFlow<TimetableState>(TimetableState.Idle)
+    val timetableState = _timetableState.asStateFlow()
+
+    // Keep track of connection to internet
+    private val networkMonitor = NetworkHelper(application)
+    private val _hasInternet = MutableStateFlow(false)
 
     // Only sync after a moment of inactivity
     private var delaySync: Job? = null
 
+    // Functions for startup
+    init {
+        startUpChecks()
+        autoSync()
+    }
+
+    fun onAuthenticationSuccess(context: Context, email: String) {
+        setUserEmail(email)
+        saveSyncPreference(true)
+        syncingHelper = SyncingHelper.getSyncService(context, email)
+
+        viewModelScope.launch {
+            _syncState.value = SyncState.SYNCING
+            resolveConflict(syncingHelper!!)
+            _syncState.value = SyncState.SYNCED
+
+            _startupState.value = StartupState.READY
+        }
+    }
+
+    private suspend fun attemptSilentSignIn(onComplete: () -> Unit = {}) {
+        val credentialManager = CredentialManager.create(getApplication())
+
+        AuthenticationHelper.silentSignIn(
+            context = getApplication(),
+            credentialManager = credentialManager,
+            onSuccess = { email ->
+                setUserEmail(email)
+                syncingHelper = SyncingHelper.getSyncService(getApplication(), email)
+
+                viewModelScope.launch {
+                    resolveConflict(syncingHelper!!)
+                    onComplete()
+                }
+            },
+            onFailure = {
+                _startupState.value = StartupState.AUTHENTICATE
+            }
+        )
+    }
+
+    private suspend fun resolveConflict(helper: SyncingHelper) {
+        val cloudData = helper.downloadAppData()
+        val localData = _appData.value
+
+        if (cloudData != null) {
+            // Parse timestamps, defaulting to the start of time if missing
+            val cloudTime = cloudData.updatedAt?.let { Instant.parse(it) } ?: Instant.MIN
+            val localTime = localData.updatedAt?.let { Instant.parse(it) } ?: Instant.MIN
+
+            if (cloudTime.isAfter(localTime)) {
+                // Cloud is newer, overwrite local
+                _appData.value = cloudData
+                localSaveHelper.saveData(cloudData)
+                Log.d(TAG, "Cloud data is newer. Downloaded from Drive.")
+            } else if (localTime.isAfter(cloudTime)) {
+                // Local is newer, upload to Cloud
+                Log.d(TAG, "Local data is newer. Uploading to Drive.")
+                triggerDriveSync()
+            } else {
+                // Exactly the same, do nothing
+                Log.d(TAG, "Data is completely in sync.")
+            }
+        } else {
+            // No cloud data exists yet, push local up
+            triggerDriveSync()
+        }
+    }
+
+    private fun startUpChecks() {
+        viewModelScope.launch {
+            val prefs = getApplication<Application>().dataStore.data.first()
+            val hasSeenTutorial = prefs[HAS_SEEN_TUTORIAL] ?: false
+            val isSyncEnabled = prefs[IS_DRIVE_SYNC_ENABLED]
+
+            // Check for first time users
+            if (!hasSeenTutorial) {
+                _startupState.value = StartupState.TUTORIAL
+                return@launch
+            }
+
+            when (isSyncEnabled) {
+                true -> {
+                    // User selected sync, go to Silent Sign-in
+                    _isDriveSyncEnabled.value = true
+
+                    if (!networkMonitor.isConnected()) {
+                        Log.d(TAG, "App launched offline. Bypassing Google Sign-In.")
+                        _syncState.value = SyncState.OFFLINE
+                        _startupState.value = StartupState.READY
+                        return@launch
+                    }
+
+                    attemptSilentSignIn(
+                        onComplete = {
+                            _syncState.value = SyncState.SYNCED
+                            _startupState.value = StartupState.READY
+                        }
+                    )
+                }
+                false -> {
+                    // User selected local save, go to Home
+                    _isDriveSyncEnabled.value = false
+                    _startupState.value = StartupState.READY
+                }
+                null -> {
+                    // Completed tutorial but user did not select, go to Sign-in
+                    _startupState.value = StartupState.SIGN_IN
+                }
+            }
+        }
+    }
+
+    private fun autoSync() {
+        viewModelScope.launch {
+            networkMonitor.isConnected.collect { hasInternet ->
+                _hasInternet.value = hasInternet
+
+                if (!isDriveSyncEnabled.value) return@collect
+
+                if (hasInternet) {
+                    if (syncingHelper == null) {
+                        Log.d(TAG, "Internet reconnected, silent sign in")
+                        attemptSilentSignIn()
+                    } else {
+                        resolveConflict(syncingHelper!!)
+                    }
+                } else {
+                    // Internet lost
+                    _syncState.value = SyncState.OFFLINE
+                    delaySync?.cancel()
+                }
+            }
+        }
+    }
+
+    fun completeTutorial() {
+        viewModelScope.launch {
+            getApplication<Application>().dataStore.edit { settings ->
+                settings[HAS_SEEN_TUTORIAL] = true
+            }
+            _startupState.value = StartupState.SIGN_IN
+        }
+    }
+
+    fun saveSyncPreference(enabled: Boolean) {
+        viewModelScope.launch {
+            getApplication<Application>().dataStore.edit { settings ->
+                settings[IS_DRIVE_SYNC_ENABLED] = enabled
+            }
+            _isDriveSyncEnabled.value = enabled
+
+            // If local save, go straight to home
+            if (!enabled) {
+                _startupState.value = StartupState.READY
+                _syncState.value = SyncState.OFFLINE
+            }
+        }
+    }
+
+    fun signOut(context: Context) {
+        viewModelScope.launch {
+            AuthenticationHelper.signOut(context)
+
+            setUserEmail("")
+            saveSyncPreference(false)
+            syncingHelper = null
+        }
+    }
+
+    fun reAuthenticate() {
+        _startupState.value = StartupState.AUTHENTICATE
+    }
+
     // TODO: other functions to change appdata
-    fun addTask(title: String, type: String, deadline: String, isCompleted: Boolean) {
+    fun addTask(module: Module?, title: String, type: String, deadline: LocalDate?, isCompleted: Boolean) {
+        val currentTime = System.currentTimeMillis()
         val newTask = Task(
-            id = System.currentTimeMillis(),
+            id = currentTime,
+            module = if (module == null) {
+                    ""
+                } else if (module.code != "") {
+                    module.code
+                } else {
+                    module.name
+                },
             title = title,
-            due = deadline,
+            due = deadline?.toString() ?: "",
             type = type,
-            done = isCompleted)
+            done = isCompleted
+
+        )
 
         updateData { currentData ->
             currentData.copy(tasks = currentData.tasks + newTask)
         }
     }
 
-    fun toggleTaskCompletion(toggledTask: Task) {
+    fun completeTask(toggledTask: Task) {
         updateData { currentData ->
             val updatedTasks = currentData.tasks.map { task ->
                 if (task == toggledTask) {
@@ -78,12 +292,20 @@ class AppViewModel(
         }
     }
 
-    private fun updateData(updateFunction: (AppData) -> AppData) {
-        _appData.value = updateFunction(_appData.value)
+    fun deleteTask(deletedTask: Task) {
+        updateData { currentData ->
+            currentData.copy(
+                tasks = currentData.tasks.filter { it != deletedTask }
+            )
+        }
+    }
 
+    // function that both updates local save and Google Drive
+    private fun updateData(updateFunction: (AppData) -> AppData) {
+        _appData.value = updateFunction(_appData.value).copy(updatedAt = Instant.now().toString())
         localSaveHelper.saveData(_appData.value)
 
-        if (isDriveSyncEnabled) {
+        if (_isDriveSyncEnabled.value && _hasInternet.value) {
             // Reset state to UNSYNCED while user is interacting
             _syncState.value = SyncState.UNSYNCED
 
@@ -97,11 +319,11 @@ class AppViewModel(
     }
 
     private suspend fun triggerDriveSync() {
+        if (!_hasInternet.value || !_isDriveSyncEnabled.value) return
+
         _syncState.value = SyncState.SYNCING
 
-        val jsonPayload = syncJsonParser.encodeToString(_appData.value)
-
-        val success = syncingHelper?.uploadAppData(jsonPayload) == true
+        val success = syncingHelper?.uploadAppData(_appData.value) == true
 
         if (success) {
             _syncState.value = SyncState.SYNCED
@@ -118,20 +340,74 @@ class AppViewModel(
         }
 
         viewModelScope.launch {
-            val jsonString = helper.downloadAppData()
+            val downloadedData = helper.downloadAppData()
 
-            if (jsonString != null) {
+            if (downloadedData != null) {
                 try {
-                    val downloadedData = syncJsonParser.decodeFromString<AppData>(jsonString)
-
                     _appData.value = downloadedData
                     localSaveHelper.saveData(downloadedData)
 
                     Log.d(TAG, "Data successfully downloaded and saved")
                 } catch (e: Exception) {
-                    Log.e(TAG, "Failed to parse downloaded data")
+                    Log.e(TAG, "Failed to parse downloaded data", e)
                 }
             }
+        }
+    }
+
+    fun clearTimetableState() {
+        _timetableState.value = TimetableState.Idle
+    }
+
+    fun uploadTimetable(imageBytes: ByteArray, mimeType: String, educationLevel: String) {
+        _timetableState.value = TimetableState.Processing
+        viewModelScope.launch {
+            try {
+                val base64String = Base64.encodeToString(imageBytes, Base64.NO_WRAP)
+
+                val parsingData = ParsingData(
+                    image = base64String,
+                    mimeType = mimeType,
+                    educationLevel = educationLevel
+                )
+
+                when (val result = parsingHelper.parseTimetable(parsingData)) {
+                    is NetworkResult.Success -> {
+                        _timetableState.value = TimetableState.ReviewData(result.data)
+                    }
+                    is NetworkResult.Failure -> {
+                        val message = when (result.statusCode) {
+                            429 -> "Parsing limit reached for today, try again tomorrow."
+                            504 -> "Taking too long, please retry."
+                            400 -> "Invalid image format sent to server. Please try another image."
+                            else -> "Couldn't read the timetable, try another photo."
+                        }
+                        _timetableState.value = TimetableState.Error(message)
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Unexpected error during upload", e)
+                _timetableState.value = TimetableState.Error("An unexpected error occurred. Please try again.")
+            }
+        }
+    }
+
+    fun saveTimetable(timetable: Timetable) {
+        updateData { currentData ->
+            currentData.copy(educationLevel = timetable.educationLevel, timetable = timetable)
+        }
+        _timetableState.value = TimetableState.Idle
+    }
+
+    fun saveTermStart(date: LocalDate?) {
+        updateData { currentData ->
+            currentData.copy(termStart = date.toString())
+        }
+    }
+
+    fun saveTermEnd(date: LocalDate?) {
+        updateData { currentData ->
+            currentData.copy(termEnd = date.toString())
         }
     }
 }

@@ -1,4 +1,4 @@
-package com.example.modulo
+package com.example.modulo.pages
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
