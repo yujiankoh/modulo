@@ -195,50 +195,72 @@ function renderSchedule() {
   }
 }
 
-// Tasks due soon: the soonest few not-done tasks, each with a relative-date pill.
+// One task row: checkbox (completes it) + bold title + module dot/meta + relative-date pill.
+function buildTaskRow(t) {
+  const li = document.createElement("li");
+  li.className = "dash-task";
+
+  // Toggling persists → this panel redraws and the now-done task drops off.
+  const check = document.createElement("input");
+  check.type = "checkbox";
+  check.className = "dash-check";
+  check.addEventListener("change", () => toggleTask(t.id));
+
+  const main = document.createElement("div");
+  const title = document.createElement("div");
+  title.className = "dash-task-title";
+  title.textContent = t.title;
+
+  const meta = document.createElement("div");
+  meta.className = "dash-task-meta";
+  if (t.module) {
+    const dot = document.createElement("span");
+    dot.className = "task-dot";
+    dot.style.background = moduleColor(t.module);
+    meta.append(dot);
+  }
+  meta.append(document.createTextNode(t.module ? `${t.module} · ${t.type}` : t.type));
+  main.append(title, meta);
+
+  const d = daysUntil(t.due);
+  const pill = document.createElement("span");
+  // Blue accent only for today/tomorrow; overdue + later stay neutral.
+  pill.className = "dash-task-pill" + (d === 0 || d === 1 ? " dash-task-pill--soon" : "");
+  pill.textContent = dueLabel(t.due);
+
+  li.append(check, main, pill);
+  return li;
+}
+
+// Add a bucket: an uppercase header + its task rows (skipped entirely when empty).
+function renderBucket(list, label, tasks) {
+  if (tasks.length === 0) return;
+  const header = document.createElement("li");
+  header.className = "dash-task-group";
+  header.textContent = `${label} · ${tasks.length}`;
+  list.append(header);
+  for (const t of tasks) list.append(buildTaskRow(t));
+}
+
+// Not-done tasks with a due date, bucketed into Overdue + Due-this-week (next 7 days).
+// Tasks due later than a week are intentionally omitted from the dashboard summary.
 function renderTasksDue() {
   const list = document.getElementById("dashTasks");
   list.innerHTML = "";
-  const tasks = tasksDueSoon().slice(0, 5); // keep the panel short
-  if (tasks.length === 0) {
-    list.innerHTML = "<li class='dash-empty'>Nothing due this week.</li>";
+  const withDate = (appState.tasks || []).filter((t) => !t.done && t.due);
+  const overdue = withDate
+    .filter((t) => daysUntil(t.due) < 0)
+    .sort((a, b) => a.due.localeCompare(b.due));    // most overdue first
+  const thisWeek = withDate
+    .filter((t) => { const d = daysUntil(t.due); return d >= 0 && d <= 7; })
+    .sort((a, b) => a.due.localeCompare(b.due));    // soonest first
+
+  if (overdue.length === 0 && thisWeek.length === 0) {
+    list.innerHTML = "<li class='dash-empty'>Nothing overdue or due this week.</li>";
     return;
   }
-  for (const t of tasks) {
-    const li = document.createElement("li");
-    li.className = "dash-task";
-
-    // Checkbox completes the task (these are all not-done). Toggling persists → this list
-    // redraws and the now-done task drops off.
-    const check = document.createElement("input");
-    check.type = "checkbox";
-    check.className = "dash-check";
-    check.addEventListener("change", () => toggleTask(t.id));
-
-    const main = document.createElement("div");
-    const title = document.createElement("div");
-    title.className = "dash-task-title";
-    title.textContent = t.title;
-
-    const meta = document.createElement("div");
-    meta.className = "dash-task-meta";
-    if (t.module) {
-      const dot = document.createElement("span");
-      dot.className = "task-dot";
-      dot.style.background = moduleColor(t.module);
-      meta.append(dot);
-    }
-    meta.append(document.createTextNode(t.module ? `${t.module} · ${t.type}` : t.type));
-    main.append(title, meta);
-
-    const pill = document.createElement("span");
-    // Soonest tasks (due today/tomorrow) get the blue accent pill; others stay neutral.
-    pill.className = "dash-task-pill" + (daysUntil(t.due) <= 1 ? " dash-task-pill--soon" : "");
-    pill.textContent = dueLabel(t.due);
-
-    li.append(check, main, pill);
-    list.append(li);
-  }
+  renderBucket(list, "Overdue", overdue);
+  renderBucket(list, "Due this week", thisWeek);
 }
 
 // --- modules section + detail modal ---

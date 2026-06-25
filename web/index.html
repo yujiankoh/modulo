@@ -118,11 +118,13 @@
 
       <!-- ALL TASKS (Phase 9): toolbar (actions left, filters/sort right) + bucketed list. -->
       <section id="view-tasks" class="view">
-        <h2>All Tasks</h2>
-        <!-- + Add Task now lives in the top bar (global). The toolbar keeps just the
-             filters + sort. Each select's default option names it (All modules / All
-             types / All tasks); ids/values unchanged, so task.js keeps working. -->
-        <div class="task-toolbar">
+        <!-- Header: eyebrow + title on the left, filter pills on the right (task.js sets
+             the "N OPEN" count). Each select's default option names it; ids unchanged. -->
+        <div class="tasks-head">
+          <div>
+            <p class="view-eyebrow" id="tasksEyebrow">ALL TASKS</p>
+            <h2 class="view-title">Things to do</h2>
+          </div>
           <div class="task-controls">
             <select id="taskFilterModule"><option value="all">All modules</option></select>
             <select id="taskFilterType"><option value="all">All types</option></select>
@@ -138,7 +140,7 @@
             </select>
           </div>
         </div>
-        <ul id="taskList"></ul>
+        <div id="taskList"></div>
       </section>
 
       <!-- TIMETABLE (Phases 1–8): image parse, interim term setup, weekly grid, manual editor. -->
