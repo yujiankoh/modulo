@@ -122,6 +122,22 @@ function weekInfo(monday) {
   return { dates, number, parity, status: "normal" };
 }
 
+// --- Phase 12: read-only helpers the Dashboard reuses, so its "Week N" matches this
+// view exactly (one source of truth for term-week math). Both just call weekInfo, which
+// already handles term bounds + break-skipping. ---
+
+// This week's info (number / parity / status) for today's week.
+export function currentWeekInfo() {
+  return weekInfo(mondayOf(new Date()));
+}
+
+// Total teaching weeks in the term = the number of the term-end week (breaks excluded),
+// or null if no term end is set. (weekInfo on the last week returns the running count.)
+export function totalTeachingWeeks() {
+  const end = termEndMonday();
+  return end ? weekInfo(end).number : null;
+}
+
 // Month abbreviations for the week-range title.
 const MONTHS_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
