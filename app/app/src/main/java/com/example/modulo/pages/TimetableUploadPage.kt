@@ -8,6 +8,7 @@ import android.os.Build
 import android.provider.MediaStore
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -184,7 +185,8 @@ fun UploadTimetable(
                 .fillMaxWidth()
                 .height(300.dp)
                 .clip(RoundedCornerShape(12.dp))
-                .clickable{ galleryLauncher.launch("image/*") },
+                .clickable{ galleryLauncher.launch("image/*") }
+                .background(color = MaterialTheme.colorScheme.surfaceContainer),
             contentAlignment = Alignment.Center
         ) {
             if (imageUri != null) {

@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Badge
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DatePicker
@@ -48,6 +49,7 @@ import com.example.modulo.getModuleColor
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
+import kotlin.text.isNotBlank
 
 @Composable
 fun TimetablePage(
@@ -84,7 +86,8 @@ fun TimetablePage(
                     end = slot.end,
                     location = slot.location,
                     sessionType = slot.sessionType,
-                    week = slot.week.lowercase()
+                    week = slot.week.lowercase(),
+                    classNo = slot.classNo
                 )
             }
         } ?: emptyList()
@@ -108,13 +111,25 @@ fun TimetablePage(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(start = 8.dp, end = 8.dp, top = 20.dp, bottom = 0.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(onClick = onBack) {
-                    Icon(painter = painterResource(R.drawable.arrow_left), contentDescription = "Go Back")
+                Row (
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = onBack) {
+                        Icon(painter = painterResource(R.drawable.arrow_left), contentDescription = "Go Back")
+                    }
+
+                    Text(text = "Timetable", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                 }
 
-                Text(text = "Timetable", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                // Reupload Button
+                Button(
+                    onClick = onUploadTimetable,
+                ) {
+                    Text("Reupload")
+                }
             }
 
             Row(
@@ -209,7 +224,7 @@ fun TimetablePage(
 
                     items(slotsForDay.sortedBy { it.start }) { slot ->
                         TimetableSlotCard(
-                            educationLevel = appData.educationLevel ?: "",
+                            educationLevel = timetable.educationLevel,
                             slot = slot
                         )
                     }
@@ -227,7 +242,8 @@ data class DisplaySlot(
     val end: String,
     val location: String,
     val sessionType: String,
-    val week: String
+    val week: String,
+    val classNo: String,
 )
 
 @Composable
@@ -289,13 +305,18 @@ fun TimetableSlotCard(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 if (slot.location.isNotBlank()) {
-                    Badge(containerColor = Color.White.copy(alpha = 0.5f)) {
+                    Badge(containerColor = Color.White.copy(alpha = 0.4f)) {
                         Text(slot.location, color = theme.onContainer)
                     }
                 }
                 if (slot.sessionType.isNotBlank()) {
-                    Badge(containerColor = Color.White.copy(alpha = 0.5f)) {
+                    Badge(containerColor = Color.White.copy(alpha = 0.4f)) {
                         Text(slot.sessionType.uppercase(), color = theme.onContainer)
+                    }
+                }
+                if (slot.classNo.isNotBlank()) {
+                    Badge(containerColor = Color.White.copy(alpha = 0.4f)) {
+                        Text(slot.classNo.uppercase(), color = theme.onContainer)
                     }
                 }
             }

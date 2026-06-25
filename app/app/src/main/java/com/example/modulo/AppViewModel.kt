@@ -393,7 +393,7 @@ class AppViewModel(
 
     fun saveTimetable(timetable: Timetable) {
         updateData { currentData ->
-            currentData.copy(timetable = timetable)
+            currentData.copy(educationLevel = timetable.educationLevel, timetable = timetable)
         }
         _timetableState.value = TimetableState.Idle
     }
