@@ -1,11 +1,12 @@
 // studyTimer.js — a count-up stopwatch (Phase 10). Owns the timer engine + the big
-// display, and wires the Start / Pause / Reset buttons. Step 2 = engine only: it runs
-// and shows elapsed time but does NOT save anything yet (recording a session = step 3).
+// display, wires Start / Pause / Reset, and (step 3) records a session on Stop & Save.
 //
 // Accuracy idea: we compute elapsed time from wall-clock TIMESTAMPS, not by counting
 // ticks. A backgrounded tab throttles setInterval, so a "+1 each tick" counter would
 // drift/lose time. Here the interval ONLY triggers a repaint; the time itself is always
 // recomputed from Date.now(), so it's correct the instant we read it.
+
+import { appState, persist, getStorageMode } from "./data.js";
 
 // --- Engine state (private to this module) -----------------------------------
 let running = false;        // is the clock currently counting?
@@ -69,11 +70,80 @@ function reset() {
   render();
 }
 
+// --- Stop & Save: record a study session --------------------------------------
+// When the user stops, we freeze the session details here while the rating modal is
+// open. Picking a rating (or Skip) finalizes the save; cancelling discards this.
+let pendingSession = null;
+
+const ratingModal = document.getElementById("ratingModal");
+
+// Stop & Save: pause the clock, capture the session, and ask for a rating.
+function stopAndSave() {
+  if (!getStorageMode()) { alert("Choose Google Drive or local mode first."); return; }
+  if (elapsedMs() < 1000) { alert("Start the timer first."); return; } // nothing to save
+  if (running) pause();            // bank the time so elapsedMs is stable while we save
+
+  const ms = elapsedMs();
+  const end = new Date();
+  pendingSession = {
+    start: new Date(end.getTime() - ms).toISOString(), // end minus elapsed = when it began
+    end: end.toISOString(),
+    durationMins: Math.round(ms / 60000),              // whole minutes (60,000 ms per min)
+  };
+
+  document.getElementById("ratingSummary").textContent =
+    `You studied for ${pendingSession.durationMins} min.`;
+  ratingModal.style.display = "flex";  // .tcal-popup CSS centres the card
+}
+
+// Finalize: build the full record (with rating or null), save it, then reset the clock.
+async function finalizeSave(rating) {
+  if (!pendingSession) return;
+  if (!appState.studySessions) appState.studySessions = []; // defensive
+  appState.studySessions.push({
+    id: crypto.randomUUID(),
+    start: pendingSession.start,
+    end: pendingSession.end,
+    durationMins: pendingSession.durationMins,
+    rating,                              // 1–5, or null if skipped
+    createdAt: new Date().toISOString(),
+  });
+  pendingSession = null;
+  ratingModal.style.display = "none";
+  reset();                               // zero the clock for the next session
+  await persist();                       // save + fire modulo:datachanged
+}
+
+// Cancel: discard the pending save but KEEP the timer paused (no data lost — resume or
+// Stop & Save again).
+function cancelRating() {
+  pendingSession = null;
+  ratingModal.style.display = "none";
+}
+
 // Wire the buttons to the engine. Pass the function itself (no "()"), so it's CALLED on
 // click rather than immediately.
 document.getElementById("timerStart").addEventListener("click", start);
 document.getElementById("timerPause").addEventListener("click", pause);
-document.getElementById("timerReset").addEventListener("click", reset);
+document.getElementById("timerStop").addEventListener("click", stopAndSave);
+
+// Rating modal: a click on any number button reads its data-rating and saves with it.
+// (Event delegation: one listener on the container; closest() finds the clicked button.)
+document.getElementById("ratingButtons").addEventListener("click", (e) => {
+  const btn = e.target.closest("button[data-rating]");
+  if (!btn) return;
+  finalizeSave(Number(btn.dataset.rating));
+});
+document.getElementById("ratingSkip").addEventListener("click", () => finalizeSave(null));
+
+// Close the rating modal = cancel: via ✕, clicking the dim backdrop, or pressing Esc.
+document.getElementById("ratingClose").addEventListener("click", cancelRating);
+ratingModal.addEventListener("click", (e) => {
+  if (e.target === ratingModal) cancelRating();   // backdrop only, not the card
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && ratingModal.style.display !== "none") cancelRating();
+});
 
 // Draw 00:00:00 once on load.
 render();

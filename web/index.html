@@ -174,7 +174,26 @@
   <div id="timerControls">
     <button id="timerStart" type="button">Start</button>
     <button id="timerPause" type="button">Pause</button>
-    <button id="timerReset" type="button">Reset</button>
+    <button id="timerStop" type="button">Stop &amp; Save</button>
+  </div>
+
+  <!-- Rating modal (Phase 10): opens on Stop & Save. Reuses the .tcal-popup overlay/card
+       styles. Picking 1–5 saves with that rating; Skip saves with rating null; closing
+       (✕ / backdrop / Esc) cancels the save and keeps the timer paused. -->
+  <div id="ratingModal" class="tcal-popup" style="display: none;">
+    <div class="tcal-popup-card">
+      <button id="ratingClose" class="tcal-popup-close" type="button">✕</button>
+      <h3>How did that session go?</h3>
+      <p id="ratingSummary"></p>
+      <div id="ratingButtons">
+        <button type="button" data-rating="1">1</button>
+        <button type="button" data-rating="2">2</button>
+        <button type="button" data-rating="3">3</button>
+        <button type="button" data-rating="4">4</button>
+        <button type="button" data-rating="5">5</button>
+      </div>
+      <button id="ratingSkip" type="button">Skip rating</button>
+    </div>
   </div>
 
   <script type="module" src="main.js"></script>
