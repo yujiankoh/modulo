@@ -180,6 +180,18 @@ function formatMins(mins) {
   return `${m}m`;
 }
 
+// A single session's duration for the list. Normally minutes, but a sub-minute session
+// would read "0m" — so for those we show exact SECONDS, computed from the stored
+// start/end timestamps (no need for a separate stored seconds field).
+function formatSessionDuration(s) {
+  if ((s.durationMins || 0) >= 1) return formatMins(s.durationMins);
+  if (s.start && s.end) {
+    const secs = Math.round((new Date(s.end) - new Date(s.start)) / 1000);
+    return `${secs}s`;
+  }
+  return "0m";
+}
+
 // One session's <li>: "Wed 25 Jun, 14:00 · 50m · ★4" (or "no rating").
 function renderSessionRow(s) {
   const li = document.createElement("li");
@@ -189,7 +201,7 @@ function renderSessionRow(s) {
   });
   const timeStr = when.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
   const rating = s.rating ? `★${s.rating}` : "no rating";
-  li.textContent = `${dateStr}, ${timeStr} · ${formatMins(s.durationMins || 0)} · ${rating}`;
+  li.textContent = `${dateStr}, ${timeStr} · ${formatSessionDuration(s)} · ${rating}`;
   return li;
 }
 
