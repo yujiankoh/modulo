@@ -87,6 +87,8 @@ class AppViewModel(
         private set
     var isTimerRunning by mutableStateOf(false)
         private set
+    var hasSessionStarted by mutableStateOf(false)
+        private set
     private var sessionStartTime by mutableStateOf<String?>(null)
     private var sessionEndTime by mutableStateOf<String?>(null)
     private var timerJob: Job? = null
@@ -428,6 +430,7 @@ class AppViewModel(
     fun startOrResumeTimer() {
         if (sessionStartTime == null) {
             sessionStartTime = Instant.now().toString()
+            hasSessionStarted = true
         }
         isTimerRunning = true
         timerJob = viewModelScope.launch {
@@ -446,6 +449,7 @@ class AppViewModel(
     fun stopTimer() {
         pauseTimer()
         sessionEndTime = Instant.now().toString()
+        hasSessionStarted = false
     }
 
     fun discardSession() {

@@ -36,6 +36,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
@@ -146,7 +147,7 @@ fun StudySessionPage(
                     }
                 }
 
-                if (viewModel.isTimerRunning) {
+                if (viewModel.hasSessionStarted) {
                     IconButton(
                         onClick = {
                             viewModel.stopTimer()
@@ -230,11 +231,29 @@ fun StatCard(title: String, mins: Int, modifier: Modifier = Modifier) {
         modifier = modifier
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(title, style = MaterialTheme.typography.labelMedium)
             Text("$mins min", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
         }
+    }
+}
+
+@Preview(
+    showBackground = true,
+    showSystemUi = true,
+)
+@Composable
+fun Layout() {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        StatCard(title = "Today", mins = 12, modifier = Modifier.weight(1f))
+        StatCard(title = "This Week", mins = 30, modifier = Modifier.weight(1f))
+        StatCard(title = "Overall", mins = 500, modifier = Modifier.weight(1f))
     }
 }
