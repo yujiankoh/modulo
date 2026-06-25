@@ -11,6 +11,7 @@ import "./timetableView.js"; // side-effect import: renders the calendar grid
 import "./calendarView.js"; // side-effect import: renders the task month-calendar
 import "./task.js"; // side-effect import: task list UI + add/toggle/delete + Add button
 import "./studyTimer.js"; // side-effect import: study-timer engine + controls (Phase 10)
+import "./router.js"; // side-effect import: SPA view-switcher + hash routing (Phase 12)
 
 // Runs after the page + Google's library have finished loading.
 window.onload = () => {

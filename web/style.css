@@ -349,3 +349,48 @@ button { padding: 0.6rem 1rem; font-size: 1rem; cursor: pointer; }
   border-radius: 999px;     /* fully rounded "pill" */
   white-space: nowrap;
 }
+
+/* === Phase 12: SPA shell (STRUCTURE ONLY — mockup colours/fonts come in step 12.4) === */
+/* The old `body { padding: 2rem }` centred a single column; the shell wants the sidebar
+   flush to the edge and full height, so we zero body padding and pad #main instead. */
+body { padding: 0; }
+#app {
+  display: grid;
+  grid-template-columns: 220px 1fr;  /* fixed sidebar + flexible main */
+  min-height: 100vh;
+}
+#sidebar {
+  border-right: 1px solid #e7e3da;
+  padding: 16px 12px;
+}
+.brand { font-weight: 700; letter-spacing: 2px; margin: 4px 8px 18px; }
+#nav { display: flex; flex-direction: column; gap: 2px; }
+.nav-link {
+  text-decoration: none;
+  color: #2b2820;
+  padding: 8px 10px;
+  border-radius: 8px;
+}
+.nav-link:hover { background: #faf8f3; }
+.nav-link.is-active { background: #efe9dc; font-weight: 600; }  /* current view */
+.nav-link--bottom { margin-top: 24px; }                         /* push Settings down */
+#main { padding: 24px 28px; }
+
+/* The router shows exactly one view: only `.view.is-active` is displayed. */
+.view { display: none; }
+.view.is-active { display: block; }
+
+/* Top bar: status link pushed left, + Add Task pushed right (space-between). */
+#topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 16px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid #e7e3da;
+}
+.topbar-status { font-size: 13px; color: #6b665c; text-decoration: none; }
+.topbar-status:hover { text-decoration: underline; }
+/* Minimal primary-button look; the mockup's orange/rounded polish lands in 12.4. */
+.btn-primary { border: 1px solid #d9d4c8; border-radius: 8px; background: #fff; }
