@@ -27,7 +27,8 @@ enum class StartupState{
 enum class SortOption(val displayName: String) {
     DUE_DATE("Due Date"),
     MODULE_CODE("Module Code"),
-    TYPE("Task Type")
+    TYPE("Task Type"),
+    TITLE("Name")
 }
 
 enum class EducationLevel(val json: String, val displayName: String) {

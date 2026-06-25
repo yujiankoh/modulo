@@ -255,7 +255,7 @@ class AppViewModel(
     }
 
     // TODO: other functions to change appdata
-    fun addTask(module: Module?, title: String, type: String, deadline: String, isCompleted: Boolean) {
+    fun addTask(module: Module?, title: String, type: String, deadline: LocalDate?, isCompleted: Boolean) {
         val currentTime = System.currentTimeMillis()
         val newTask = Task(
             id = currentTime,
@@ -267,7 +267,7 @@ class AppViewModel(
                     module.name
                 },
             title = title,
-            due = deadline,
+            due = deadline?.toString() ?: "",
             type = type,
             done = isCompleted
 
@@ -360,7 +360,7 @@ class AppViewModel(
     }
 
     fun uploadTimetable(imageBytes: ByteArray, mimeType: String, educationLevel: String) {
-        _timetableState.value = TimetableState.Processing;
+        _timetableState.value = TimetableState.Processing
         viewModelScope.launch {
             try {
                 val base64String = Base64.encodeToString(imageBytes, Base64.NO_WRAP)

@@ -1,22 +1,19 @@
 package com.example.modulo.pages
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -35,7 +32,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.painterResource
@@ -49,6 +45,7 @@ import androidx.compose.ui.window.Dialog
 import com.example.modulo.AppViewModel
 import com.example.modulo.R
 import com.example.modulo.Task
+import com.example.modulo.getModuleColor
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.TextStyle
@@ -182,11 +179,9 @@ fun DayCell(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(2.dp)
-            .background(
-                color = MaterialTheme.colorScheme.surfaceContainer,
-                shape = RoundedCornerShape(8.dp)
-            )
+            .padding(0.dp)
+            .background(color = MaterialTheme.colorScheme.surfaceContainer)
+            .border(width = 1.dp, color = MaterialTheme.colorScheme.inverseOnSurface)
             .padding(4.dp)
     ) {
         Row(
@@ -208,19 +203,21 @@ fun DayCell(
         Spacer(modifier = Modifier.height(4.dp))
 
         tasks.take(3).forEach { task ->
+            val theme = getModuleColor(task.module.ifBlank { task.title })
+
             Text(
                 text = task.title,
-                fontSize = 8.sp,
+                fontSize = 10.sp,
                 maxLines = 1,
-                lineHeight = 12.sp,
+                lineHeight = 15.sp,
                 overflow = TextOverflow.Ellipsis,
-                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                color = theme.onContainer,
                 textDecoration = if (task.done) TextDecoration.LineThrough else TextDecoration.None,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 2.dp)
                     .background(
-                        MaterialTheme.colorScheme.primaryContainer,
+                        theme.container,
                         RoundedCornerShape(4.dp)
                     )
                     .padding(horizontal = 2.dp)
@@ -231,7 +228,7 @@ fun DayCell(
         if (tasks.size > 3) {
             Text(
                 text = "+${tasks.size - 3} more",
-                fontSize = 8.sp,
+                fontSize = 10.sp,
                 color = Color.Gray
             )
         }

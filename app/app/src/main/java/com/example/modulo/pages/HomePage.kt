@@ -22,12 +22,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavController
 import com.example.modulo.AppViewModel
 import com.example.modulo.SyncState
 import com.example.modulo.Task
 import com.example.modulo.TimetableState
-import com.example.modulo.navigation.TimetableUpload
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale

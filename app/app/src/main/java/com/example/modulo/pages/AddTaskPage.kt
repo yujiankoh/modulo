@@ -4,13 +4,17 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenuItem
@@ -18,6 +22,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -31,22 +36,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavController
 import com.example.modulo.AppData
 import com.example.modulo.AppViewModel
 import com.example.modulo.Module
+import com.example.modulo.R
 import com.example.modulo.TimetableState
-import com.example.modulo.navigation.TimetableUpload
-import java.text.SimpleDateFormat
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
-import java.util.Date
-import java.util.Locale
-import java.util.TimeZone
 
 @Composable
 fun AddTaskPage(
@@ -87,6 +88,7 @@ fun AddTaskPage(
             OutlinedTextField(
                 state = inputTitle,
                 label = { Text("Title") },
+                modifier = Modifier.fillMaxWidth(0.7f)
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -94,14 +96,16 @@ fun AddTaskPage(
             ModuleDropDownMenu(
                 selectedModule = selectedModule,
                 appData = appData,
-                onModuleSelected = { selectedModule = it }
+                onModuleSelected = { selectedModule = it },
+                modifier = Modifier.fillMaxWidth(0.7f)
             )
 
             Spacer(modifier = Modifier.height(8.dp))
 
             TaskTypeDropDownMenu(
                 selectedType = selectedTaskType,
-                onTypeSelected = { selectedTaskType = it }
+                onTypeSelected = { selectedTaskType = it },
+                modifier = Modifier.fillMaxWidth(0.7f)
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -109,19 +113,20 @@ fun AddTaskPage(
             DatePickerMenu(
                 label = "Deadline",
                 selectedDate = selectedDeadline,
-                onDateSelected = { selectedDeadline = it }
+                onDateSelected = { selectedDeadline = it },
+                modifier = Modifier.fillMaxWidth(0.7f)
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             Button(
                 onClick = {
                     viewModel.addTask(
-                        selectedModule,
-                        inputTitle.text.toString(),
-                        selectedTaskType,
-                        selectedDeadline?.toString() ?: "",
-                        false
+                        module =  selectedModule,
+                        title = inputTitle.text.toString(),
+                        type = selectedTaskType,
+                        deadline = selectedDeadline,
+                        isCompleted =  false
                     )
 
                     // Clear input fields
@@ -130,8 +135,16 @@ fun AddTaskPage(
 
                     onAddTask()
                 },
-                enabled = inputTitle.text.isNotBlank() && selectedDeadline != null && selectedModule != null
+                enabled = inputTitle.text.isNotBlank() && selectedDeadline != null && selectedModule != null,
+                contentPadding = PaddingValues(
+                    start = 8.dp,
+                    top = ButtonDefaults.ContentPadding.calculateTopPadding(),
+                    end = ButtonDefaults.ContentPadding.calculateEndPadding(layoutDirection = androidx.compose.ui.unit.LayoutDirection.Ltr),
+                    bottom = ButtonDefaults.ContentPadding.calculateBottomPadding()
+                )
             ) {
+                Icon(painter = painterResource(R.drawable.plus), contentDescription = "Add")
+                Spacer(modifier = Modifier.padding(6.dp))
                 Text("Add Task")
             }
         }
@@ -143,32 +156,26 @@ fun AddTaskPage(
 fun ModuleDropDownMenu(
     selectedModule: Module?,
     appData: AppData,
-    onModuleSelected: (Module) -> Unit
+    onModuleSelected: (Module) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     var isExpanded by remember { mutableStateOf(false) }
     val modules = appData.timetable?.modules
 
-    // Prevent overflowing in display text field
     val moduleName = toDisplay(selectedModule)
-    val maxLength = 25
-    val displayValue = if (moduleName.length > maxLength) {
-        moduleName.take(maxLength - 3) + "..."
-    } else {
-        moduleName
-    }
 
     ExposedDropdownMenuBox(
         expanded = isExpanded,
-        onExpandedChange = { isExpanded = !isExpanded }
+        onExpandedChange = { isExpanded = !isExpanded },
     ) {
         OutlinedTextField(
-            value = displayValue,
+            value = moduleName,
             onValueChange = {},
             readOnly = true,
             singleLine = true,
             label = { Text("Module") },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isExpanded) },
-            modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
+            modifier = modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
         )
 
         ExposedDropdownMenu(
@@ -201,7 +208,8 @@ fun toDisplay(module: Module?): String {
 @Composable
 fun TaskTypeDropDownMenu(
     selectedType: String,
-    onTypeSelected: (String) -> Unit
+    onTypeSelected: (String) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     var isExpanded by remember { mutableStateOf(false) }
     val taskTypes = arrayOf("assignment", "tutorial", "quiz", "exam")
@@ -217,7 +225,7 @@ fun TaskTypeDropDownMenu(
             label = { Text("Task Type") },
             singleLine = true,
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isExpanded) },
-            modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
+            modifier = modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
         )
 
         ExposedDropdownMenu(

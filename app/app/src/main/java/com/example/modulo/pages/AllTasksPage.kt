@@ -1,6 +1,5 @@
 package com.example.modulo.pages
 
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -15,7 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Badge
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
@@ -32,6 +31,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextDecoration
@@ -39,9 +39,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.modulo.AppViewModel
 import com.example.modulo.R
-import com.example.modulo.R.drawable
 import com.example.modulo.SortOption
 import com.example.modulo.Task
+import com.example.modulo.getModuleColor
 import java.text.SimpleDateFormat
 import java.util.Locale
 
@@ -71,6 +71,7 @@ fun AllTaskPage(
         SortOption.DUE_DATE -> filteredTasks.sortedBy { it.due }
         SortOption.MODULE_CODE -> filteredTasks.sortedBy { it.module }
         SortOption.TYPE -> filteredTasks.sortedBy { it.type }
+        SortOption.TITLE -> filteredTasks.sortedBy { it.title }
     }
 
     val uncompletedTasks = filteredTasks.filter { !it.done }.sortedBy { it.due }
@@ -222,10 +223,11 @@ fun TaskCard(
     dueText: String = formatDate(task.due)
 ) {
 
+    val theme = getModuleColor(task.module.ifBlank { task.title })
     val cardColour = if (showDelete) {
         MaterialTheme.colorScheme.error
     } else {
-        MaterialTheme.colorScheme.surfaceContainerHigh
+        theme.container
     }
 
     Card(
@@ -273,28 +275,29 @@ fun TaskCard(
                 }
 
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().padding(start = 4.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row {
-                        Text(
-                            text = task.module,
-                            fontSize = 12.sp,
-                            lineHeight = 18.sp,
-                            modifier = Modifier
-                                .border(width = 1.dp, color = if (showDelete) MaterialTheme.colorScheme.onError else MaterialTheme.colorScheme.outline, shape = RoundedCornerShape(4.dp))
-                                .padding(horizontal = 8.dp, vertical = 4.dp)
-                        )
-                        Spacer(Modifier.padding(4.dp))
-                        Text(
-                            text = task.type.replaceFirstChar { it.uppercase() },
-                            fontSize = 12.sp,
-                            lineHeight = 18.sp,
-                            modifier = Modifier
-                                .border(width = 1.dp, color = if (showDelete) MaterialTheme.colorScheme.onError else MaterialTheme.colorScheme.outline, shape = RoundedCornerShape(4.dp))
-                                .padding(horizontal = 8.dp, vertical = 4.dp)
-                        )
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Badge(containerColor = Color.White.copy(alpha = 0.4f)) {
+                            Text(
+                                text = task.module.ifBlank { task.title },
+                                fontSize = 12.sp,
+                                color = if (showDelete) MaterialTheme.colorScheme.onError else theme.onContainer,
+                                modifier = Modifier.padding(2.dp)
+                            )
+                        }
+                        Badge(containerColor = Color.White.copy(alpha = 0.4f)) {
+                            Text(
+                                text = task.type.replaceFirstChar { it.uppercase() },
+                                fontSize = 12.sp,
+                                color = if (showDelete) MaterialTheme.colorScheme.onError else theme.onContainer,
+                                modifier = Modifier.padding(2.dp)
+                            )
+                        }
                     }
 
                     if (dueText.isNotEmpty()) {

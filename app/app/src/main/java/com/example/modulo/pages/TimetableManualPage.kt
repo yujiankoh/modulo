@@ -4,8 +4,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -16,6 +18,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenuItem
@@ -89,7 +92,7 @@ fun TimetableManualPage(
                     }
 
                     Text(
-                        text = "Manual Timetable Entry",
+                        text = "Enter Timetable",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold
                     )
@@ -104,8 +107,16 @@ fun TimetableManualPage(
                         } else {
                             it.name.isNotBlank()
                         }
-                    }
+                    },
+                    contentPadding = PaddingValues(
+                        start = 12.dp,
+                        top = ButtonDefaults.ContentPadding.calculateTopPadding(),
+                        end = ButtonDefaults.ContentPadding.calculateEndPadding(layoutDirection = androidx.compose.ui.unit.LayoutDirection.Ltr),
+                        bottom = ButtonDefaults.ContentPadding.calculateBottomPadding()
+                    )
                 ) {
+                    Icon(painter = painterResource(R.drawable.save), contentDescription = "Save")
+                    Spacer(modifier = Modifier.padding(6.dp))
                     Text("Save")
                 }
             }

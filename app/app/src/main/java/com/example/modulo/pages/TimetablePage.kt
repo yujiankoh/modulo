@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -18,9 +19,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Badge
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.DatePicker
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -28,7 +27,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SecondaryTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -44,7 +42,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.modulo.AppViewModel
-import com.example.modulo.EducationLevel
 import com.example.modulo.R
 import com.example.modulo.getModuleColor
 import java.time.LocalDate
@@ -61,8 +58,8 @@ fun TimetablePage(
     val appData by viewModel.appData.collectAsState()
     val timetable = appData.timetable
 
-    var termStartDate by remember { mutableStateOf<LocalDate?>(if (appData.termStart == null) null else LocalDate.parse(appData.termStart)) }
-    var termEndDate by remember { mutableStateOf<LocalDate?>(if (appData.termEnd == null) null else LocalDate.parse(appData.termEnd)) }
+    var termStartDate by remember { mutableStateOf(if (appData.termStart == null) null else LocalDate.parse(appData.termStart)) }
+    var termEndDate by remember { mutableStateOf(if (appData.termEnd == null) null else LocalDate.parse(appData.termEnd)) }
 
     // Rounded down to the earliest Monday and latest Friday
     val baseMonday = remember(termStartDate) {
@@ -156,7 +153,15 @@ fun TimetablePage(
                 // Reupload Button
                 Button(
                     onClick = onUploadTimetable,
+                    contentPadding = PaddingValues(
+                        start = 8.dp,
+                        top = ButtonDefaults.ContentPadding.calculateTopPadding(),
+                        end = ButtonDefaults.ContentPadding.calculateEndPadding(layoutDirection = androidx.compose.ui.unit.LayoutDirection.Ltr),
+                        bottom = ButtonDefaults.ContentPadding.calculateBottomPadding()
+                    )
                 ) {
+                    Icon(painter = painterResource(R.drawable.rotate), contentDescription = "Reupload")
+                    Spacer(modifier = Modifier.padding(6.dp))
                     Text("Reupload")
                 }
             }
@@ -325,7 +330,7 @@ fun TimetableSlotCard(
     educationLevel: String,
     slot: DisplaySlot
 ) {
-    val theme = getModuleColor(slot.moduleCode)
+    val theme = getModuleColor(slot.moduleCode.ifBlank { slot.moduleName })
 
     Row(
         modifier = Modifier
