@@ -33,22 +33,181 @@
   <img id="timetablePreview" alt="preview" style="max-width: 400px; display: none;" />
   <br />
   <button id="parseBtn">Parse timetable</button>
+  <button id="addWeekBtn">Add another week</button>
   <pre id="parseOutput"></pre>
+
+  <!-- Read-only display of the saved timetable; refreshed on save/parse/load. -->
+  <div id="timetableDisplay"></div>
+
+  <!-- Phase 8: term setup (INTERIM — moves into the handbook, Phase 13). Lets the weekly
+       grid show real dates + week numbers and skip recess/holiday weeks. -->
+  <label for="termStart">Term start (Week 1 Monday):</label>
+  <input id="termStart" type="date" />
+  <br />
+  <label for="termEnd">Term end:</label>
+  <input id="termEnd" type="date" />
+  <br />
+  <label for="breakStart">Recess / holiday from:</label>
+  <input id="breakStart" type="date" />
+  <label for="breakEnd">to:</label>
+  <input id="breakEnd" type="date" />
+  <button id="addBreakBtn" type="button">Add break</button>
+  <div id="breakList"></div>
+
+  <!-- Phase 6: weekly calendar grid view of the timetable. -->
+  <div id="timetableViewHeader"></div>
+  <div id="timetableCalendar"></div>
+
+  <!-- Manual timetable editor (Phase 5): opens to CORRECT a parsed timetable, or to
+       ENTER one by hand when parsing fails / there's no photo. JS fills #moduleList. -->
+  <button id="manualEntryBtn">Enter / edit timetable manually</button>
+
+  <div id="timetableEditor" style="display: none;">
+    <h3>Edit timetable</h3>
+    <p id="editorHint">Add your modules and their class slots, then Save.</p>
+    <div id="moduleList"></div>
+    <button id="addModuleBtn">+ Add module</button>
+    <div>
+      <button id="saveTimetableBtn">Save timetable</button>
+      <button id="closeEditorBtn">Close</button>
+      <span id="editorStatus"></span>
+    </div>
+  </div>
+
+  <!-- Calendar portion (Phase 7): month-grid showing tasks on their due dates.
+       Its own section for now; becomes its own page/tab when routing lands (Phase 12). -->
+  <hr />
+  <h2>Calendar</h2>
+  <div id="taskCalendarHeader"></div>
+  <div id="taskCalendarGrid"></div>
 
   <!-- Task adding portion -->
   <hr />
   <h2>Tasks</h2>
-  <input id="taskTitle" type="text" placeholder="Task title (e.g. CS1101S tutorial)" />
-  <input id="taskDue" type="date" />
-  <select id="taskType">
-    <option value="assignment">Assignment</option>
-    <option value="tutorial">Tutorial</option>
-    <option value="quiz">Quiz</option>
-    <option value="exam">Exam</option>
-  </select>
-  <button id="addBtn">Add Task</button>
-  <button id="reloadBtn">Reload from Drive</button>
+
+  <!-- UI upgrade (layout): toolbar — actions on the LEFT, filters + sort on the RIGHT
+       (mirrors the mockup). The Add-Task form still lives in #taskModal below. -->
+  <div class="task-toolbar">
+    <div class="task-actions">
+      <button id="openAddTask">+ Add Task</button>
+      <button id="reloadBtn">Reload from Drive</button>
+    </div>
+
+    <!-- Filters + sort. No labels: each select's default option names it (All modules /
+         All types / All tasks), so they read as standalone controls like the mockup.
+         ids/values unchanged, so task.js keeps working. -->
+    <div class="task-controls">
+      <select id="taskFilterModule"><option value="all">All modules</option></select>
+      <select id="taskFilterType"><option value="all">All types</option></select>
+      <select id="taskFilterStatus">
+        <option value="all">All tasks</option>
+        <option value="active">Active</option>
+        <option value="done">Done</option>
+      </select>
+      <select id="taskSort">
+        <option value="due">Due date</option>
+        <option value="type">Type</option>
+        <option value="newest">Newest</option>
+      </select>
+    </div>
+  </div>
+
   <ul id="taskList"></ul>
-  <script src="app.js"></script>
+
+  <!-- Add Task modal. Reuses the .tcal-popup overlay/card styles (dim backdrop +
+       centred card + ✕). Hidden by default; task.js toggles display and reads these
+       fields on Save. -->
+  <div id="taskModal" class="tcal-popup" style="display: none;">
+    <div class="tcal-popup-card">
+      <button id="taskModalClose" class="tcal-popup-close" type="button">✕</button>
+      <h3>Add a task</h3>
+
+      <label class="task-field">
+        <span>Title</span>
+        <input id="taskTitle" type="text" placeholder="e.g. CS2030S Lab 4" />
+      </label>
+
+      <label class="task-field">
+        <span>Module/Subject</span>
+        <input id="taskModule" type="text" placeholder="e.g. CS2030S (optional)" />
+      </label>
+
+      <label class="task-field">
+        <span>Due date</span>
+        <input id="taskDue" type="date" />
+      </label>
+
+      <label class="task-field">
+        <span>Type</span>
+        <select id="taskType">
+          <option value="assignment">Assignment</option>
+          <option value="tutorial">Tutorial</option>
+          <option value="quiz">Quiz</option>
+          <option value="exam">Exam</option>
+          <option value="reading">Reading</option>
+          <option value="other">Other</option>
+        </select>
+      </label>
+
+      <div class="task-modal-actions">
+        <button id="cancelAddTask" type="button">Cancel</button>
+        <button id="addBtn" type="button">Add Task</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Phase 7.3: day popup — opened by clicking a calendar day; lists that day's tasks.
+       Hidden by default; calendarView.js toggles it and fills #dayPopupBody. -->
+  <div id="dayPopup" class="tcal-popup" style="display: none;">
+    <div class="tcal-popup-card">
+      <button id="dayPopupClose" class="tcal-popup-close" type="button">✕</button>
+      <h3 id="dayPopupTitle"></h3>
+      <div id="dayPopupBody"></div>
+    </div>
+  </div>
+
+  <!-- Study Timer (Phase 10): a count-up stopwatch. The big display + controls;
+       studyTimer.js owns the engine. Stop & Save (record a session) + totals come next. -->
+  <hr />
+  <h2>Study Timer</h2>
+  <div id="timerDisplay">00:00:00</div>
+  <div id="timerControls">
+    <button id="timerStart" type="button">Start</button>
+    <button id="timerPause" type="button">Pause</button>
+    <button id="timerStop" type="button">Stop &amp; Save</button>
+  </div>
+
+  <!-- Study-time totals (Phase 10): all derived live from studySessions on redraw. -->
+  <div id="timerTotals">
+    <span>Today: <strong id="totalToday">0m</strong></span>
+    <span>This week: <strong id="totalWeek">0m</strong></span>
+    <span>Total: <strong id="totalAll">0m</strong></span>
+  </div>
+
+  <!-- Recent recorded sessions (newest first; capped for a light DOM). -->
+  <h3>Recent sessions</h3>
+  <p id="sessionNote"></p>
+  <ul id="sessionList"></ul>
+
+  <!-- Rating modal (Phase 10): opens on Stop & Save. Reuses the .tcal-popup overlay/card
+       styles. Picking 1–5 saves with that rating; Skip saves with rating null; closing
+       (✕ / backdrop / Esc) cancels the save and keeps the timer paused. -->
+  <div id="ratingModal" class="tcal-popup" style="display: none;">
+    <div class="tcal-popup-card">
+      <button id="ratingClose" class="tcal-popup-close" type="button">✕</button>
+      <h3>How did that session go?</h3>
+      <p id="ratingSummary"></p>
+      <div id="ratingButtons">
+        <button type="button" data-rating="1">1</button>
+        <button type="button" data-rating="2">2</button>
+        <button type="button" data-rating="3">3</button>
+        <button type="button" data-rating="4">4</button>
+        <button type="button" data-rating="5">5</button>
+      </div>
+      <button id="ratingSkip" type="button">Skip rating</button>
+    </div>
+  </div>
+
+  <script type="module" src="main.js"></script>
 </body>
 </html>

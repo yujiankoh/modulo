@@ -1,2 +1,351 @@
 body { font-family: system-ui, sans-serif; padding: 2rem; }
 button { padding: 0.6rem 1rem; font-size: 1rem; cursor: pointer; }
+
+/* --- Phase 6: timetable calendar grid --- */
+#timetableCalendar {
+  display: grid;
+  grid-template-columns: 56px repeat(5, 1fr);  /* time gutter + 5 day columns */
+  border: 1px solid #e7e3da;
+  border-radius: 12px;
+  overflow: hidden;
+  margin: 8px 0 28px;           /* bottom gap so the next button doesn't crowd 19:00 */
+  background: #fff;
+}
+
+/* header strip above the grid */
+#timetableViewHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 20px;
+}
+.cal-header-left { display: flex; align-items: center; gap: 10px; }
+.cal-title { font-size: 20px; font-weight: 600; color: #2b2820; }
+.cal-week-btn {
+  padding: 4px 12px;
+  font-size: 12px;
+  border: 1px solid #d9d4c8;
+  border-radius: 999px;
+  background: #fff;
+  color: #6b665c;
+}
+.cal-week-btn.is-active { background: #2b2820; border-color: #2b2820; color: #fff; }
+.cal-reupload {
+  padding: 7px 16px;
+  font-size: 13px;
+  border: 1px solid #d9d4c8;
+  border-radius: 999px;
+  background: #fff;
+  color: #2b2820;
+}
+
+/* current-day highlight */
+.cal-dayhead--today { background: #faf6ee; }
+.cal-col--today {
+  /* hour line at the TOP of each 64px band so it aligns with on-the-hour card tops */
+  background: repeating-linear-gradient(
+    to bottom, #efe9dc 0, #efe9dc 1px, #faf6ee 1px, #faf6ee 64px
+  );
+}
+.cal-corner { border-bottom: 1px solid #e7e3da; }
+.cal-dayhead {
+  padding: 10px 12px;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: #6b665c;
+  border-bottom: 1px solid #e7e3da;
+  border-left: 1px solid #f0ece3;
+}
+/* Phase 8: dated weekly view — week eyebrow + two-line day headers (code + date) */
+.tt-eyebrow { font-size: 11px; letter-spacing: 0.12em; color: #9a948a; margin-bottom: 2px; }
+.tt-dayhead-code { font-size: 11px; letter-spacing: 0.08em; color: #6b665c; }
+.tt-dayhead-date { font-size: 18px; color: #2b2820; margin-top: 2px; }
+
+/* Phase 8.4: week navigation (replaces the manual odd/even toggle in the dated view) */
+.tt-nav { display: inline-flex; align-items: center; gap: 6px; margin-left: 12px; }
+.tt-arrow, .tt-thisweek {
+  padding: 6px 12px;
+  font-size: 14px;
+  border: 1px solid #d9d4c8;
+  border-radius: 8px;
+  background: #fff;
+  color: #2b2820;
+  cursor: pointer;
+}
+.tt-arrow:disabled { opacity: 0.4; cursor: default; } /* greyed out at the term bounds */
+
+/* recess/holiday week chips (interim term-setup editor) */
+#breakList { margin-top: 6px; }
+.break-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 6px 6px 0;
+  padding: 3px 6px 3px 10px;
+  font-size: 12px;
+  background: #efe9dc;
+  border-radius: 999px;
+}
+.break-chip button {
+  padding: 0 4px;
+  border: none;
+  background: transparent;
+  font-size: 12px;
+  color: #6b665c;
+  cursor: pointer;
+}
+.cal-gutter { position: relative; }
+.cal-hour {
+  position: absolute;
+  right: 6px;
+  transform: translateY(-50%);   /* centre the label on its hour line */
+  font-size: 11px;
+  color: #9a948a;
+}
+.cal-hour--first { transform: none; }  /* top-aligned so it clears the header border */
+.cal-col {
+  position: relative;
+  border-left: 1px solid #f0ece3;
+  /* faint hour line at the TOP of each band (HOUR_PX = 64px in timetableView.js),
+     so on-the-hour card tops sit exactly on the line */
+  background: repeating-linear-gradient(
+    to bottom, #f0ece3 0, #f0ece3 1px, #fff 1px, #fff 64px
+  );
+}
+.cal-block {
+  position: absolute;
+  left: 0;                      /* full day-column width */
+  right: 0;
+  box-sizing: border-box;       /* padding/border counts inside left/right, no overflow */
+  padding: 3px 8px;
+  line-height: 1.2;             /* tighter so 30-min blocks fit two lines */
+  background: #fff;
+  border: 1px solid #d9d4c8;
+  border-radius: 8px;
+  overflow: hidden;             /* clip text in very short blocks */
+}
+.cal-block-title { font-size: 12px; font-weight: 600; color: #2b2820; }
+.cal-block-sub { font-size: 11px; color: #8a847a; }
+
+/* --- Phase 7: task calendar (month grid) --- */
+#taskCalendarHeader {
+  margin-top: 28px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between; /* title block left, arrows pushed right */
+  gap: 12px;
+}
+.tcal-header-left { position: relative; } /* anchor for the absolute picker popover */
+.tcal-title { font-size: 34px; color: #2b2820; }
+.tcal-title em { font-style: italic; font-weight: 600; }
+
+/* title row: month + year are plain text, chevron sits beside them */
+.tcal-title-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+/* only the chevron is the clickable button — strip the default button look */
+.tcal-chevron-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+/* down-pointing triangle drawn with borders (crisp, font-independent) */
+.tcal-chevron {
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 7px solid #6b665c;
+}
+
+/* prev / next month arrows */
+.tcal-nav { display: flex; gap: 6px; }
+.tcal-arrow {
+  padding: 6px 12px;
+  font-size: 16px;
+  line-height: 1;
+  border: 1px solid #d9d4c8;
+  border-radius: 8px;
+  background: #fff;
+  color: #2b2820;
+}
+
+/* month/year picker popover (under the title) */
+.tcal-picker {
+  position: absolute;
+  top: 100%;            /* directly below the title block */
+  left: 0;
+  margin-top: 8px;
+  z-index: 50;
+  width: 260px;
+  padding: 12px;
+  background: #fff;
+  border: 1px solid #e7e3da;
+  border-radius: 12px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.15);
+}
+.tcal-picker-year {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.tcal-picker-year span { font-size: 15px; font-weight: 600; color: #2b2820; }
+.tcal-picker-year button {
+  padding: 4px 10px;
+  font-size: 15px;
+  border: 1px solid #d9d4c8;
+  border-radius: 8px;
+  background: #fff;
+  color: #2b2820;
+}
+.tcal-picker-months {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr); /* 3 cols × 4 rows = 12 months */
+  gap: 6px;
+}
+.tcal-picker-month {
+  padding: 8px 0;
+  font-size: 13px;
+  border: 1px solid #e7e3da;
+  border-radius: 8px;
+  background: #fff;
+  color: #2b2820;
+}
+.tcal-picker-month.is-active { background: #2b2820; border-color: #2b2820; color: #fff; }
+
+#taskCalendarGrid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);  /* MON..SUN */
+  border: 1px solid #e7e3da;
+  border-radius: 12px;
+  overflow: hidden;
+  margin: 12px 0 28px;
+  background: #fff;
+}
+.tcal-weekday {
+  padding: 10px 12px;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: #6b665c;
+  border-bottom: 1px solid #e7e3da;
+  border-left: 1px solid #f0ece3;
+}
+.tcal-cell {
+  min-height: 96px;
+  padding: 8px 10px;
+  border-left: 1px solid #f0ece3;
+  border-bottom: 1px solid #f0ece3;
+}
+.tcal-cell--blank { background: #faf8f3; }   /* faint fill for the leading blanks */
+/* today: inset outline (box-shadow doesn't take layout space, so the grid stays put) */
+.tcal-cell--today { box-shadow: inset 0 0 0 2px #2b2820; }
+.tcal-cell--today .tcal-date { font-weight: 700; }
+.tcal-date { font-size: 13px; color: #2b2820; }
+.tcal-pill {
+  margin-top: 4px;
+  padding: 2px 6px;
+  font-size: 11px;
+  color: #2b2820;
+  background: #efe9dc;          /* neutral; per-module colours come with the module field */
+  border-radius: 4px;
+  white-space: nowrap;          /* keep each pill on one line... */
+  overflow: hidden;            /* ...and clip overflow... */
+  text-overflow: ellipsis;     /* ...showing "…" when the title is too long */
+}
+.tcal-pill--done { text-decoration: line-through; color: #9a948a; background: #f3f0e9; }
+.tcal-more { margin-top: 4px; font-size: 11px; font-weight: 600; color: #6b665c; }
+/* Phase 10: per-day rounded average study rating, shown as gold stars. */
+.tcal-rating { margin-top: 4px; font-size: 12px; line-height: 1; color: #d4a017; letter-spacing: 1px; }
+.tcal-cell--has-tasks { cursor: pointer; }       /* signals the day is clickable */
+.tcal-cell--has-tasks:hover { background: #faf8f3; }
+
+/* --- day popup (overlay backdrop + centred card) --- */
+.tcal-popup {
+  position: fixed;              /* sits over the page, ignores scroll */
+  inset: 0;                     /* top/right/bottom/left all 0 → fills the viewport */
+  background: rgba(43, 40, 32, 0.45);  /* dim, semi-transparent backdrop */
+  display: flex;               /* (toggled none/flex in JS) centres the card */
+  align-items: center;
+  justify-content: center;
+  z-index: 100;                /* stack above everything else */
+}
+.tcal-popup-card {
+  position: relative;          /* anchor for the absolutely-placed ✕ */
+  background: #fff;
+  width: min(360px, 90vw);     /* 360px, but never wider than 90% of the screen */
+  max-height: 80vh;
+  overflow-y: auto;            /* scroll inside the card if a day has many tasks */
+  padding: 20px 22px;
+  border-radius: 14px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+}
+.tcal-popup-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  border: none;
+  background: transparent;
+  font-size: 16px;
+  color: #6b665c;
+}
+.tcal-popup-card h3 { margin: 0 24px 12px 0; font-size: 16px; color: #2b2820; }
+.tcal-popup-task { padding: 8px 0; border-top: 1px solid #f0ece3; }
+.tcal-popup-task-title { font-size: 14px; color: #2b2820; }
+.tcal-popup-task-meta { font-size: 12px; color: #8a847a; margin-top: 2px; }
+
+/* Step 9.0: Add Task modal form rows — label stacked above its input. Layout only;
+   visual polish (fonts/colours) comes in Phase 12. */
+.task-field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
+.task-field > span { font-size: 12px; color: #8a847a; }
+.task-field > input,
+.task-field > select { padding: 6px 8px; font-size: 14px; }
+.task-modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
+
+/* Step 9.4: bucketed task list — group headers, rows, and the relative-date pill.
+   Layout only; the mockup's polish (cards, colours, fonts) lands in Phase 12. */
+/* UI upgrade (layout): task toolbar — actions left, filters/sort right. */
+.task-toolbar {
+  display: flex;
+  justify-content: space-between;   /* push actions + controls to opposite ends */
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;                  /* wrap instead of overflowing on narrow screens */
+  margin: 8px 0 12px;
+}
+.task-actions { display: flex; gap: 8px; }
+.task-controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+#taskList { list-style: none; padding: 0; }
+.task-group {
+  margin-top: 14px;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: #8a847a;          /* muted, uppercase-style section label */
+}
+.task-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-top: 1px solid #f0ece3;
+}
+.task-check { width: 16px; height: 16px; flex: none; }  /* checkbox, fixed size */
+.task-main { flex: 1; }                                  /* title block takes the slack */
+.task-title { font-size: 14px; color: #2b2820; }
+.task-meta { font-size: 12px; color: #8a847a; margin-top: 2px; }  /* "module · type" line */
+.task-del { padding: 2px 10px; font-size: 12px; }
+.task-pill {
+  font-size: 12px;
+  color: #6b6459;
+  background: #f0ece3;
+  padding: 2px 8px;
+  border-radius: 999px;     /* fully rounded "pill" */
+  white-space: nowrap;
+}
