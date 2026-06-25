@@ -38,6 +38,16 @@ breaks even though the file transfers fine.
       "updatedAt": "2026-06-03T09:35:06.606Z"
     }
   ],
+  "studySessions": [
+    {
+      "id": "9f1c3b2a-5e44-4c8a-9b1d-2f0a7e6d4c11",
+      "start": "2026-06-24T13:00:00.000Z",
+      "end": "2026-06-24T13:50:00.000Z",
+      "durationMins": 50,
+      "rating": 4,
+      "createdAt": "2026-06-24T13:50:02.140Z"
+    }
+  ],
   "timetable": {
     "educationLevel": "university",
     "modules": [
@@ -66,6 +76,7 @@ breaks even though the file transfers fine.
 | `breaks`         | array of `{ start, end }` (each `YYYY-MM-DD`) | no | Recess/holiday date ranges. Any week overlapping a range is non-academic: skipped in week numbering (so parity continues across it) and shows no classes. Defaults to `[]`. Web-only for now. |
 | `updatedAt`      | string (ISO 8601) | yes      | When the whole state was last saved. Key field for sync + local-save reconciliation. |
 | `tasks`          | array of Task     | yes      | All of the user's tasks. May be empty (`[]`). |
+| `studySessions`  | array of StudySession | no   | Recorded focus/study sessions (Phase 10). Defaults to `[]`. Used for daily/weekly/cumulative study-time totals + the calendar's per-day average rating; feeds the MS3 study game. |
 | `timetable`      | Timetable \| null | yes      | The parsed timetable, or `null` if none yet. |
 
 ## Task object
@@ -80,6 +91,21 @@ breaks even though the file transfers fine.
 | `done`      | boolean           | yes      | Whether completed. |
 | `createdAt` | string (ISO 8601) | yes      | When created. |
 | `updatedAt` | string (ISO 8601) | yes      | When last changed. |
+
+## StudySession object
+
+One recorded focus/study session. Stored at a fine granularity (one row per session) so
+daily / weekly / cumulative totals can be **summed** later and the per-day average rating
+**averaged** — totals are never pre-stored, always derived from these rows.
+
+| Field          | Type                | Required | Description |
+|----------------|---------------------|----------|-------------|
+| `id`           | string              | yes      | Unique id (web uses `crypto.randomUUID()`). |
+| `start`        | string (ISO 8601)   | yes      | When the session began. Its date is what groups a session into a day/week. |
+| `end`          | string (ISO 8601)   | yes      | When the session ended. |
+| `durationMins` | number              | yes      | Minutes actually studied (excludes paused time). Summed for totals. |
+| `rating`       | number (1–5) \| null| yes      | User's self-rating of the session, or `null` if skipped. The calendar shows each day's rounded **average** of non-null ratings. (Will be shown as emoji later; the stored value stays 1–5.) |
+| `createdAt`    | string (ISO 8601)   | yes      | When the record was saved. |
 
 ---
 
@@ -175,6 +201,7 @@ let appState = {
   breaks: [],             // ["YYYY-MM-DD", ...] recess/holiday week Mondays
   updatedAt: null,
   tasks: [],
+  studySessions: [],      // [{ id, start, end, durationMins, rating, createdAt }] — Phase 10
   timetable: null,        // { educationLevel, modules: [...] }
 };
 ```
@@ -196,7 +223,18 @@ data class ModuloData(
     val breaks: List<Break> = emptyList(), // recess/holiday date ranges (web-only for now)
     val updatedAt: String? = null,
     val tasks: List<Task> = emptyList(),
+    val studySessions: List<StudySession> = emptyList(), // Phase 10; default keeps old files loading
     val timetable: Timetable? = null
+)
+
+@Serializable
+data class StudySession(
+    val id: String,
+    val start: String,          // ISO 8601
+    val end: String,            // ISO 8601
+    val durationMins: Int,      // minutes studied (excludes paused time)
+    val rating: Int? = null,    // 1–5, or null if skipped
+    val createdAt: String? = null
 )
 
 @Serializable
@@ -255,3 +293,4 @@ data class Slot(
 | 2       | 2026-06-18 | Added `module` to `Task` (the module code, or name for primary/secondary/jc, that the task belongs to). |
 | 2       | 2026-06-23 | Added top-level `termStart` (`YYYY-MM-DD` Week-1 Monday, default `null`) for the dated weekly timetable view + odd/even parity (Phase 8). Additive + defaulted, so old files still load; `schemaVersion` stays 2. Web-only for now; app may ignore it. |
 | 2       | 2026-06-23 | Added top-level `termEnd` (`YYYY-MM-DD`, default `null`) and `breaks` (recess/holiday `{ start, end }` date ranges, default `[]`) for term bounds + non-academic weeks (Phase 8). Any week overlapping a break range is skipped in numbering. Additive + defaulted; `schemaVersion` stays 2. Web-only for now. |
+| 2       | 2026-06-24 | Added top-level `studySessions` (array of StudySession `{ id, start, end, durationMins, rating, createdAt }`, default `[]`) for the Phase 10 study timer. Feeds daily/weekly/cumulative study-time totals + the calendar's per-day average rating (and the MS3 study game). Additive + defaulted, so old files still load; `schemaVersion` stays 2. **Ling Song: heads-up — additive contract change.** |

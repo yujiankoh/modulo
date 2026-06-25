@@ -3,6 +3,9 @@
 // view-only popup; month nav via prev/next arrows + a month/year picker; today is
 // highlighted. Redraws on the modulo:datachanged event. (Phase 8 will add timetable
 // sessions onto these same date cells.)
+//
+// Phase 10: each day cell also shows the rounded AVERAGE rating of that day's study
+// sessions (as stars) — read from appState.studySessions, display-only.
 
 import { appState } from "./data.js";
 
@@ -66,6 +69,25 @@ function tasksByDate(tasks) {
     map[t.due].push(t);
   }
   return map;
+}
+
+// Group study sessions into a per-day ROUNDED AVERAGE rating: { "2026-06-08": 4, ... }.
+// A session's `start` is an ISO timestamp, so we key on its LOCAL date using the same
+// isoDate() the cells use → keys line up (no timezone drift). Sessions with no rating
+// (skipped → null) are ignored; a day with only unrated sessions gets no entry.
+function avgRatingByDate(sessions) {
+  const acc = {}; // date -> { sum, count }
+  for (const s of sessions) {
+    if (s.rating == null) continue;  // skip unrated (null / undefined)
+    const d = new Date(s.start);
+    const key = isoDate(d.getFullYear(), d.getMonth(), d.getDate());
+    if (!acc[key]) acc[key] = { sum: 0, count: 0 };
+    acc[key].sum += s.rating;
+    acc[key].count += 1;
+  }
+  const avg = {};
+  for (const key in acc) avg[key] = Math.round(acc[key].sum / acc[key].count);
+  return avg;
 }
 
 // Build the header ONCE: eyebrow + clickable title (with chevron) + picker popover
@@ -215,6 +237,7 @@ function renderGrid() {
 
   // --- one cell per day of the month ---
   const grouped = tasksByDate(appState.tasks || []);
+  const ratings = avgRatingByDate(appState.studySessions || []);
   const total = daysInMonth(viewYear, viewMonth);
   // today's parts, so we only highlight "today" when its real month is on screen
   const isCurrentMonth =
@@ -229,8 +252,10 @@ function renderGrid() {
     num.textContent = d;
     cell.append(num);
 
+    const dayKey = isoDate(viewYear, viewMonth, d);
+
     // tasks due on this day → up to MAX_PILLS pills, then an "N more" row
-    const dayTasks = grouped[isoDate(viewYear, viewMonth, d)] || [];
+    const dayTasks = grouped[dayKey] || [];
     for (const t of dayTasks.slice(0, MAX_PILLS)) {
       const pill = document.createElement("div");
       pill.className = "tcal-pill" + (t.done ? " tcal-pill--done" : "");
@@ -250,6 +275,16 @@ function renderGrid() {
       const day = d; // capture this cell's day for the click handler
       cell.classList.add("tcal-cell--has-tasks");
       cell.addEventListener("click", () => openDayPopup(viewYear, viewMonth, day, dayTasks));
+    }
+
+    // study-session rating for this day (rounded average) → stars, e.g. ★★★★ for 4
+    const avgRating = ratings[dayKey];
+    if (avgRating) {
+      const rating = document.createElement("div");
+      rating.className = "tcal-rating";
+      rating.textContent = "★".repeat(avgRating);
+      rating.title = `Avg study rating: ${avgRating}/5`;
+      cell.append(rating);
     }
 
     gridEl.append(cell);
