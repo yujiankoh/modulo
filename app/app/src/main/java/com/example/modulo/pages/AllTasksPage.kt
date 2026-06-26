@@ -1,7 +1,6 @@
 package com.example.modulo.pages
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -26,10 +25,13 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SecondaryTabRow
+import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -57,8 +59,6 @@ fun AllTaskPage(
 ) {
     val appData by viewModel.appData.collectAsState()
 
-    var isCompletedSectionExpanded by remember { mutableStateOf(false) }
-
     var deletedTask by remember { mutableStateOf<Task?>(null) }
 
     var currentSort by remember { mutableStateOf(SortOption.DUE_DATE) }
@@ -82,6 +82,8 @@ fun AllTaskPage(
 
     val uncompletedTasks = filteredTasks.filter { !it.done }.sortedBy { it.due }
     val completedTasks = filteredTasks.filter { it.done }.sortedByDescending { it.due }
+
+    var selectedTabIndex by remember { mutableIntStateOf(0) }
 
     Scaffold { paddingValues ->
         Column(
@@ -148,86 +150,91 @@ fun AllTaskPage(
                 }
             }
 
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+            SecondaryTabRow(
+                selectedTabIndex = selectedTabIndex,
+                containerColor = MaterialTheme.colorScheme.background
             ) {
-                if (uncompletedTasks.isEmpty()) {
-                    item {
-                        Text(
-                            text = "All pending tasks are completed!",
-                            modifier = Modifier.padding(16.dp)
-                        )
-                    }
-                } else {
-                    item {
-                        Text(
-                            text = "${uncompletedTasks.size} Uncompleted ${ if (uncompletedTasks.size < 2) "Work" else "Works" }",
-                            modifier = Modifier.padding(16.dp))
-                    }
+                Tab(
+                    selected = selectedTabIndex == 0,
+                    onClick = { selectedTabIndex = 0 },
+                    text = { Text("Pending (${uncompletedTasks.size})") }
+                )
+                Tab(
+                    selected = selectedTabIndex == 1,
+                    onClick = { selectedTabIndex = 1 },
+                    text = { Text("Completed (${completedTasks.size})") }
+                )
+            }
 
-                    items(uncompletedTasks) { task ->
-                        TaskCard(
-                            task = task,
-                            showDelete = deletedTask == task,
-                            onLongPress = { deletedTask = task },
-                            onNormalPress = { deletedTask = null },
-                            onToggle = { clickedTask ->
-                                viewModel.completeTask(clickedTask)
-                            },
-                            onDelete = {
-                                viewModel.deleteTask(task)
-                                deletedTask = null
-                            }
-                        )
-                    }
-                }
-
-                item {
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Row(
+            when (selectedTabIndex) {
+                0 -> {
+                    LazyColumn(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { isCompletedSectionExpanded = !isCompletedSectionExpanded }
-                            .padding(horizontal = 16.dp, vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
+                            .padding(top = 16.dp)
+                            .weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text("${completedTasks.size} Completed ${if (completedTasks.size < 2) "Work" else "Works"}")
-
-                        Icon(
-                            painter = if (isCompletedSectionExpanded) painterResource(R.drawable.chevron) else painterResource(R.drawable.chevron_down),
-                            contentDescription = if (isCompletedSectionExpanded) "Hide Completed" else "Show Completed"
-                        )
+                        if (uncompletedTasks.isEmpty()) {
+                            item {
+                                Text(
+                                    text = "All pending tasks are completed!",
+                                    modifier = Modifier.padding(top = 16.dp)
+                                )
+                            }
+                        } else {
+                            items(uncompletedTasks) { task ->
+                                TaskCard(
+                                    task = task,
+                                    showDelete = deletedTask == task,
+                                    onLongPress = { deletedTask = task },
+                                    onNormalPress = { deletedTask = null },
+                                    onToggle = { clickedTask ->
+                                        viewModel.completeTask(clickedTask)
+                                    },
+                                    onDelete = {
+                                        viewModel.deleteTask(task)
+                                        deletedTask = null
+                                    }
+                                )
+                            }
+                        }
                     }
                 }
 
-                if (isCompletedSectionExpanded) {
-                    if (completedTasks.isEmpty()) {
-                        item {
-                            Text(
-                                text = "No completed tasks yet.",
-                                modifier = Modifier.padding(16.dp)
-                            )
-                        }
-                    } else {
-                        items(completedTasks) { task ->
-                            TaskCard(
-                                task = task,
-                                showDelete = deletedTask == task,
-                                onLongPress = { deletedTask = task },
-                                onNormalPress = { deletedTask = null },
-                                onToggle = { clickedTask ->
-                                    viewModel.completeTask(clickedTask)
-                                },
-                                onDelete = {
-                                    viewModel.deleteTask(task)
-                                    deletedTask = null
-                                }
-                            )
+                1 -> {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 16.dp)
+                            .weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        if (completedTasks.isEmpty()) {
+                            item {
+                                Text(
+                                    text = "No completed tasks yet.",
+                                    modifier = Modifier.padding(top = 16.dp)
+                                )
+                            }
+                        } else {
+                            items(completedTasks) { task ->
+                                TaskCard(
+                                    task = task,
+                                    showDelete = deletedTask == task,
+                                    onLongPress = { deletedTask = task },
+                                    onNormalPress = { deletedTask = null },
+                                    onToggle = { clickedTask ->
+                                        viewModel.completeTask(clickedTask)
+                                    },
+                                    onDelete = {
+                                        viewModel.deleteTask(task)
+                                        deletedTask = null
+                                    }
+                                )
+                            }
                         }
                     }
                 }

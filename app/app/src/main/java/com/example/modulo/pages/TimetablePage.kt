@@ -252,7 +252,10 @@ fun TimetablePage(
                 }
             } else if (hasEvenOddSplit) {
                 // Even / Odd option
-                SecondaryTabRow(selectedTabIndex = if (manualTab == "odd") 0 else 1) {
+                SecondaryTabRow(
+                    selectedTabIndex = if (manualTab == "odd") 0 else 1,
+                    containerColor = MaterialTheme.colorScheme.background
+                ) {
                     Tab(selected = manualTab == "odd", onClick = { manualTab = "odd" }, text = { Text("Odd Week") })
                     Tab(selected = manualTab == "even", onClick = { manualTab = "even" }, text = { Text("Even Week") })
                 }
