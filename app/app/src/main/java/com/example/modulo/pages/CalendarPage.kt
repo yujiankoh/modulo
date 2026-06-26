@@ -22,6 +22,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -49,6 +50,7 @@ import com.example.modulo.StudySession
 import com.example.modulo.Task
 import com.example.modulo.emojis
 import com.example.modulo.getModuleColor
+import com.example.modulo.ui.theme.ModuloTheme
 import java.time.Instant
 import java.time.LocalDate
 import java.time.YearMonth
@@ -117,105 +119,113 @@ fun CalendarPage(
         }
     }
 
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-        // Calendar header
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = { currentMonth = currentMonth.minusMonths(1) }) {
-                Icon(painter = painterResource(R.drawable.chevron_left), contentDescription = "Previous Month")
-            }
-
-            Text(
-                text = "${currentMonth.month.getDisplayName(TextStyle.FULL, Locale.getDefault())} ${currentMonth.year}",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold
-            )
-
-            IconButton(onClick = { currentMonth = currentMonth.plusMonths(1) }) {
-                Icon(painter = painterResource(R.drawable.chevron_right), contentDescription = "Next Month")
-            }
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Row(modifier = Modifier.fillMaxWidth()) {
-            daysOfWeek.forEach { day ->
-                Text(
-                    text = day,
-                    modifier = Modifier.weight(1f),
-                    textAlign = TextAlign.Center,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // Grid
+    Scaffold { paddingValues ->
         Column(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(1.dp)
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(horizontal = 16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            for (rowIndex in 0 until 6) {
-                val firstDayOfRow = rowIndex * 7 - offset
+            // Calendar header
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = { currentMonth = currentMonth.minusMonths(1) }) {
+                    Icon(painter = painterResource(R.drawable.chevron_left), contentDescription = "Previous Month")
+                }
 
-                if (firstDayOfRow >= daysInMonth) {
-                    Spacer(modifier = Modifier.weight(1f))
-                } else {
-                    Row(
-                        modifier = Modifier.weight(1f).fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(1.dp)
-                    ) {
-                        for (colIndex in 0 until 7) {
-                            val dayIndex = rowIndex * 7 + colIndex - offset
+                Text(
+                    text = "${currentMonth.month.getDisplayName(TextStyle.FULL, Locale.getDefault())} ${currentMonth.year}",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold
+                )
 
-                            if (dayIndex in 0 until daysInMonth) {
-                                val date = currentMonth.atDay(dayIndex + 1)
+                IconButton(onClick = { currentMonth = currentMonth.plusMonths(1) }) {
+                    Icon(painter = painterResource(R.drawable.chevron_right), contentDescription = "Next Month")
+                }
+            }
 
-                                val dayTasks = tasks.filter { task ->
-                                    try {
-                                        task.due.isNotEmpty() && LocalDate.parse(task.due) == date
-                                    } catch (e: Exception) {
-                                        false
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(modifier = Modifier.fillMaxWidth()) {
+                daysOfWeek.forEach { day ->
+                    Text(
+                        text = day,
+                        modifier = Modifier.weight(1f),
+                        textAlign = TextAlign.Center,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Grid
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(1.dp)
+            ) {
+                for (rowIndex in 0 until 6) {
+                    val firstDayOfRow = rowIndex * 7 - offset
+
+                    if (firstDayOfRow >= daysInMonth) {
+                        Spacer(modifier = Modifier.weight(1f))
+                    } else {
+                        Row(
+                            modifier = Modifier.weight(1f).fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(1.dp)
+                        ) {
+                            for (colIndex in 0 until 7) {
+                                val dayIndex = rowIndex * 7 + colIndex - offset
+
+                                if (dayIndex in 0 until daysInMonth) {
+                                    val date = currentMonth.atDay(dayIndex + 1)
+
+                                    val dayTasks = tasks.filter { task ->
+                                        try {
+                                            task.due.isNotEmpty() && LocalDate.parse(task.due) == date
+                                        } catch (e: Exception) {
+                                            false
+                                        }
                                     }
-                                }
 
-                                DayCell(
-                                    date = date,
-                                    tasks = dayTasks,
-                                    isToday = (date == today),
-                                    modifier = Modifier.weight(1f).clickable { selectedDate = date },
-                                    emoji = ratings[date] ?: ""
-                                )
-                            } else {
-                                // Empty invisible box for days before the 1st or after the end of month
-                                Spacer(modifier = Modifier.weight(1f).fillMaxHeight())
+                                    DayCell(
+                                        date = date,
+                                        tasks = dayTasks,
+                                        isToday = (date == today),
+                                        modifier = Modifier.weight(1f).clickable { selectedDate = date },
+                                        emoji = ratings[date] ?: ""
+                                    )
+                                } else {
+                                    // Empty invisible box for days before the 1st or after the end of month
+                                    Spacer(modifier = Modifier.weight(1f).fillMaxHeight())
+                                }
                             }
                         }
                     }
                 }
             }
-        }
 
-        selectedDate?.let { date ->
-            val selectedTasks = tasks.filter { task ->
-                try {
-                    task.due.isNotEmpty() && LocalDate.parse(task.due) == date
-                } catch (e: Exception) {
-                    false
+            selectedDate?.let { date ->
+                val selectedTasks = tasks.filter { task ->
+                    try {
+                        task.due.isNotEmpty() && LocalDate.parse(task.due) == date
+                    } catch (e: Exception) {
+                        false
+                    }
                 }
-            }
 
-            ViewCalendarCell(
-                date = date,
-                tasks = selectedTasks,
-                viewModel = viewModel,
-                onDismiss = {selectedDate = null}
-            )
+                ViewCalendarCell(
+                    date = date,
+                    tasks = selectedTasks,
+                    viewModel = viewModel,
+                    onDismiss = {selectedDate = null}
+                )
+            }
         }
     }
 }
@@ -287,7 +297,7 @@ fun DayCell(
             Text(
                 text = "+${tasks.size - 3} more",
                 fontSize = 10.sp,
-                color = Color.Gray
+                color = ModuloTheme.colors.subText
             )
         }
     }

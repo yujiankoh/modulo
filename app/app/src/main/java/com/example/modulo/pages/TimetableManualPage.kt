@@ -69,7 +69,13 @@ fun TimetableManualPage(
     onBack: () -> Unit
 ) {
     var educationLevel by remember { mutableStateOf(currEducationLevel) }
-    val modules = remember { mutableStateListOf(FormModule()) }
+    val modules = remember {
+        mutableStateListOf(
+            FormModule(
+                slots = mutableListOf(FormSlot(sessionType = getDefaultSessionType(currEducationLevel)))
+            )
+        )
+    }
 
     var showSaveWarning by remember { mutableStateOf(false) }
     val isHigherEd = educationLevel == EducationLevel.UNIVERSITY || educationLevel == EducationLevel.POLY
@@ -153,7 +159,13 @@ fun TimetableManualPage(
 
                 item {
                     OutlinedButton(
-                        onClick = { modules.add(FormModule()) },
+                        onClick = {
+                            modules.add(
+                                FormModule(
+                                    slots = mutableListOf(FormSlot(sessionType = getDefaultSessionType(educationLevel)))
+                                )
+                            )
+                        },
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Icon(painter = painterResource(R.drawable.plus), contentDescription = "Add Module")
@@ -203,6 +215,13 @@ fun TimetableManualPage(
             },
             onDismiss = { showSaveWarning = false }
         )
+    }
+}
+
+fun getDefaultSessionType(level: EducationLevel): String {
+    return when (level) {
+        EducationLevel.PRIMARY, EducationLevel.SECONDARY, EducationLevel.JC -> "lesson"
+        EducationLevel.POLY, EducationLevel.UNIVERSITY -> "lecture"
     }
 }
 
@@ -298,7 +317,7 @@ fun ModuleEntryCard(
             TextButton(
                 onClick = {
                     val newSlots = module.slots.toMutableList()
-                    newSlots.add(FormSlot())
+                    newSlots.add(FormSlot(sessionType = getDefaultSessionType(educationLevel)))
                     onModuleChange(module.copy(slots = newSlots))
                 }
             ) {
@@ -321,8 +340,7 @@ fun SlotEntryRow(
     val weeks = arrayOf("all", "even", "odd")
 
     val sessions = when (educationLevel) {
-        EducationLevel.PRIMARY -> arrayOf("lesson")
-        EducationLevel.SECONDARY -> arrayOf("lesson")
+        EducationLevel.PRIMARY, EducationLevel.SECONDARY -> arrayOf("lesson")
         EducationLevel.JC -> arrayOf("lesson", "tutorial")
         EducationLevel.POLY -> arrayOf("lecture", "tutorial", "lab", "practical")
         EducationLevel.UNIVERSITY -> arrayOf("lecture", "tutorial", "lab", "seminar")
