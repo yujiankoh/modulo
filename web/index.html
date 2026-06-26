@@ -4,6 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MODULO</title>
+  <!-- Apply the saved theme before paint, so there's no flash of light mode on load. -->
+  <script>
+    (function () {
+      if (localStorage.getItem("modulo-theme") === "dark")
+        document.documentElement.dataset.theme = "dark";
+    })();
+  </script>
   <!-- Inter (Google Fonts) — the app's typeface. -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -39,6 +46,9 @@
         <div id="moduleNav" class="module-nav"></div>
         <a class="nav-link nav-link--bottom" href="#settings">Settings</a>
       </nav>
+
+      <!-- Light/dark toggle (theme.js updates the label). -->
+      <button id="themeToggleSide" class="theme-toggle-side" type="button" aria-label="Toggle dark mode">🌙 Dark mode</button>
 
       <!-- Account chip (12.4d): shows the storage mode; links to Settings. sidebar.js fills it. -->
       <a id="accountChip" class="account-chip" href="#settings">
@@ -194,6 +204,11 @@
           <button id="connectBtn">Connect Google Drive</button>
           <button id="localBtn">Use this device only</button>
           <button id="reloadBtn">Reload from Drive</button>
+        </div>
+
+        <h3 class="settings-heading">Appearance</h3>
+        <div class="card settings-card">
+          <button id="themeToggle" type="button">Switch to dark mode</button>
         </div>
 
         <!-- Timetable setup (INTERIM — moves into the handbook, Phase 13). Education level

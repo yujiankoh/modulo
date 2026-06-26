@@ -8,7 +8,28 @@
   --text: #20263a;        /* headings / near-navy body text */
   --text-muted: #8890a4;  /* secondary text */
   --border: #e7eaf3;      /* card + divider borders */
+  --border-strong: #cfd6e8;/* slightly stronger border (hover) */
   --pill-bg: #eef1f8;     /* neutral due-date pills */
+  --hover: #f2f5fd;       /* faint hover background */
+  --today: #f3f7ff;       /* today highlight tint */
+  /* Soft layered card elevation: a tight contact shadow + a wider ambient one. */
+  --shadow: 0 1px 2px rgba(20, 30, 60, 0.04), 0 4px 14px rgba(20, 30, 60, 0.06);
+}
+
+/* === Dark theme: same tokens, dark values. Toggled via data-theme="dark" on <html>. === */
+[data-theme="dark"] {
+  --bg: #0e1524;
+  --surface: #161e30;
+  --primary: #3b82f6;
+  --primary-soft: #1e2b48;
+  --text: #e7eaf2;
+  --text-muted: #8a93a8;
+  --border: #232c42;
+  --border-strong: #2e3a57;
+  --pill-bg: #20283b;
+  --hover: #1c2438;
+  --today: #16233f;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 6px 18px rgba(0, 0, 0, 0.4);
 }
 
 body { font-family: "Inter", system-ui, sans-serif; padding: 2rem; }
@@ -23,7 +44,7 @@ button {
   border: 1px solid var(--border);
   border-radius: 8px;
 }
-button:hover { border-color: #cfd6e8; }
+button:hover { border-color: var(--border-strong); }
 /* Selects (filters, type pickers): match the button look. */
 select {
   padding: 6px 10px;
@@ -41,7 +62,7 @@ select {
   border: 1px solid var(--border);
   border-radius: 14px;
   padding: 16px 18px;
-  box-shadow: 0 1px 3px rgba(20, 30, 60, 0.05);
+  box-shadow: var(--shadow);
 }
 
 /* Study Session view */
@@ -59,7 +80,7 @@ select {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 14px;
-  box-shadow: 0 1px 3px rgba(20, 30, 60, 0.05);
+  box-shadow: var(--shadow);
 }
 #sessionList li { padding: 6px 0; border-top: 1px solid var(--border); font-size: 14px; color: var(--text); }
 #sessionList li:first-child { border-top: none; }
@@ -85,10 +106,10 @@ select {
   margin-top: 12px;
   padding: 10px;
   border-radius: 12px;
-  background: #f3f5fc;
+  background: var(--hover);
   text-decoration: none;
 }
-.account-chip:hover { background: #eaeefb; }
+.account-chip:hover { background: var(--pill-bg); }
 .account-avatar {
   width: 32px;
   height: 32px;
@@ -106,6 +127,20 @@ select {
 .account-name { font-size: 13px; font-weight: 600; color: var(--text); }
 .account-sub { font-size: 11px; color: var(--text-muted); }
 
+/* Sidebar light/dark toggle (12 polish: night mode) */
+.theme-toggle-side {
+  align-self: flex-start;
+  margin: 4px 0;
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 13px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.theme-toggle-side:hover { background: var(--hover); }
+
 /* --- Phase 6: timetable calendar grid --- */
 #timetableCalendar {
   display: grid;
@@ -114,7 +149,8 @@ select {
   border-radius: 12px;
   overflow: hidden;
   margin: 8px 0 28px;           /* bottom gap so the next button doesn't crowd 19:00 */
-  background: #fff;
+  background: var(--surface);
+  box-shadow: var(--shadow);
 }
 
 /* header strip above the grid */
@@ -132,7 +168,7 @@ select {
   font-size: 12px;
   border: 1px solid var(--border);
   border-radius: 999px;
-  background: #fff;
+  background: var(--surface);
   color: var(--text-muted);
 }
 .cal-week-btn.is-active { background: var(--primary); border-color: var(--primary); color: #fff; }
@@ -141,16 +177,16 @@ select {
   font-size: 13px;
   border: 1px solid var(--border);
   border-radius: 999px;
-  background: #fff;
+  background: var(--surface);
   color: var(--text);
 }
 
 /* current-day highlight */
-.cal-dayhead--today { background: #f3f7ff; }
+.cal-dayhead--today { background: var(--today); }
 .cal-col--today {
   /* hour line at the TOP of each 64px band so it aligns with on-the-hour card tops */
   background: repeating-linear-gradient(
-    to bottom, var(--primary-soft) 0, var(--primary-soft) 1px, #f3f7ff 1px, #f3f7ff 64px
+    to bottom, var(--primary-soft) 0, var(--primary-soft) 1px, var(--today) 1px, var(--today) 64px
   );
 }
 .cal-corner { border-bottom: 1px solid var(--border); }
@@ -174,7 +210,7 @@ select {
   font-size: 14px;
   border: 1px solid var(--border);
   border-radius: 8px;
-  background: #fff;
+  background: var(--surface);
   color: var(--text);
   cursor: pointer;
 }
@@ -215,7 +251,7 @@ select {
   /* faint hour line at the TOP of each band (HOUR_PX = 64px in timetableView.js),
      so on-the-hour card tops sit exactly on the line */
   background: repeating-linear-gradient(
-    to bottom, var(--border) 0, var(--border) 1px, #fff 1px, #fff 64px
+    to bottom, var(--border) 0, var(--border) 1px, var(--surface) 1px, var(--surface) 64px
   );
 }
 .cal-block {
@@ -225,7 +261,7 @@ select {
   box-sizing: border-box;       /* padding/border counts inside left/right, no overflow */
   padding: 3px 8px;
   line-height: 1.2;             /* tighter so 30-min blocks fit two lines */
-  background: #fff;
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 8px;
   overflow: hidden;             /* clip text in very short blocks */
@@ -277,7 +313,7 @@ select {
   line-height: 1;
   border: 1px solid var(--border);
   border-radius: 8px;
-  background: #fff;
+  background: var(--surface);
   color: var(--text);
 }
 
@@ -290,7 +326,7 @@ select {
   z-index: 50;
   width: 260px;
   padding: 12px;
-  background: #fff;
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 12px;
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.15);
@@ -307,7 +343,7 @@ select {
   font-size: 15px;
   border: 1px solid var(--border);
   border-radius: 8px;
-  background: #fff;
+  background: var(--surface);
   color: var(--text);
 }
 .tcal-picker-months {
@@ -320,7 +356,7 @@ select {
   font-size: 13px;
   border: 1px solid var(--border);
   border-radius: 8px;
-  background: #fff;
+  background: var(--surface);
   color: var(--text);
 }
 .tcal-picker-month.is-active { background: var(--primary); border-color: var(--primary); color: #fff; }
@@ -332,7 +368,8 @@ select {
   border-radius: 12px;
   overflow: hidden;
   margin: 12px 0 28px;
-  background: #fff;
+  background: var(--surface);
+  box-shadow: var(--shadow);
 }
 .tcal-weekday {
   padding: 10px 12px;
@@ -348,7 +385,7 @@ select {
   border-left: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
 }
-.tcal-cell--blank { background: #f3f5fc; }   /* faint fill for the leading blanks */
+.tcal-cell--blank { background: var(--hover); }   /* faint fill for the leading blanks */
 /* today: inset outline (box-shadow doesn't take layout space, so the grid stays put) */
 .tcal-cell--today { box-shadow: inset 0 0 0 2px var(--primary); }
 .tcal-cell--today .tcal-date { font-weight: 700; }
@@ -364,12 +401,12 @@ select {
   overflow: hidden;            /* ...and clip overflow... */
   text-overflow: ellipsis;     /* ...showing "…" when the title is too long */
 }
-.tcal-pill--done { text-decoration: line-through; color: var(--text-muted); background: #f3f5fc; }
+.tcal-pill--done { text-decoration: line-through; color: var(--text-muted); background: var(--hover); }
 .tcal-more { margin-top: 4px; font-size: 11px; font-weight: 600; color: var(--text-muted); }
 /* Phase 10: per-day rounded average study rating, shown as gold stars. */
 .tcal-rating { margin-top: 4px; font-size: 12px; line-height: 1; color: #d4a017; letter-spacing: 1px; }
 .tcal-cell--has-tasks { cursor: pointer; }       /* signals the day is clickable */
-.tcal-cell--has-tasks:hover { background: #f3f5fc; }
+.tcal-cell--has-tasks:hover { background: var(--hover); }
 
 /* --- day popup (overlay backdrop + centred card) --- */
 .tcal-popup {
@@ -383,7 +420,7 @@ select {
 }
 .tcal-popup-card {
   position: relative;          /* anchor for the absolutely-placed ✕ */
-  background: #fff;
+  background: var(--surface);
   width: min(360px, 90vw);     /* 360px, but never wider than 90% of the screen */
   max-height: 80vh;
   overflow-y: auto;            /* scroll inside the card if a day has many tasks */
@@ -441,7 +478,7 @@ select {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 14px;
-  box-shadow: 0 1px 3px rgba(20, 30, 60, 0.05);
+  box-shadow: var(--shadow);
 }
 .task-card .task-row:first-child { border-top: none; }  /* no divider at the card's top */
 .task-group {
@@ -510,7 +547,7 @@ body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
   padding: 9px 12px;
   border-radius: 10px;
 }
-.nav-link:hover { background: #f2f5fd; }
+.nav-link:hover { background: var(--hover); }
 .nav-link.is-active { background: var(--primary-soft); color: var(--primary); font-weight: 600; }  /* current view */
 .nav-link--bottom { margin-top: auto; }                         /* push Settings down */
 #main { padding: 24px 28px; }
@@ -553,7 +590,7 @@ body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
   border-radius: 14px;
   padding: 14px 18px;
   min-width: 130px;
-  box-shadow: 0 1px 3px rgba(20, 30, 60, 0.05);
+  box-shadow: var(--shadow);
 }
 .dash-card-label { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); }
 .dash-card-value { font-size: 26px; color: var(--text); margin-top: 4px; }
@@ -571,7 +608,7 @@ body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
   border: 1px solid var(--border);
   border-radius: 14px;
   padding: 16px 18px;
-  box-shadow: 0 1px 3px rgba(20, 30, 60, 0.05);
+  box-shadow: var(--shadow);
 }
 .dash-panel-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
 .dash-panel-head h3 { margin: 0; font-size: 15px; font-weight: 600; color: var(--text); }
@@ -623,9 +660,9 @@ body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 14px;
-  box-shadow: 0 1px 3px rgba(20, 30, 60, 0.05);
+  box-shadow: var(--shadow);
 }
-.module-card:hover { border-color: #cfd6e8; }
+.module-card:hover { border-color: var(--border-strong); }
 .module-card-head { padding: 14px 16px; color: #fff; }       /* background colour set inline */
 .module-card-code { font-size: 11px; letter-spacing: 0.06em; opacity: 0.9; }
 .module-card-name { font-size: 15px; font-weight: 600; margin-top: 2px; }

@@ -14,6 +14,7 @@ import "./studyTimer.js"; // side-effect import: study-timer engine + controls (
 import "./dashboard.js"; // side-effect import: Dashboard landing view (Phase 12.3)
 import "./sidebar.js"; // side-effect import: sidebar modules list + account chip (Phase 12.4d)
 import "./router.js"; // side-effect import: SPA view-switcher + hash routing (Phase 12)
+import "./theme.js"; // side-effect import: light/dark theme toggle (Phase 12 polish)
 
 // Runs after the page + Google's library have finished loading.
 window.onload = () => {
