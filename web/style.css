@@ -646,3 +646,9 @@ body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
 .cal-header-actions { display: flex; gap: 8px; }
 .tt-editor-card { width: min(720px, 92vw); }   /* wider than the default popup for slot rows */
 .tt-editor-actions { display: flex; align-items: center; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+/* Timetable empty state + upload-modal actions */
+.tt-empty { max-width: 480px; }
+.tt-empty h3 { margin: 0 0 6px; font-size: 16px; color: var(--text); }
+.tt-empty p { margin: 0; font-size: 14px; color: var(--text-muted); }
+.tt-empty-actions { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+.tt-upload-actions { display: flex; gap: 8px; margin: 10px 0; flex-wrap: wrap; }

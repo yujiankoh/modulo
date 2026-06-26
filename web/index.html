@@ -145,18 +145,19 @@
 
       <!-- TIMETABLE (Phases 1–8): image parse, interim term setup, weekly grid, manual editor. -->
       <section id="view-timetable" class="view">
-        <!-- Grid first: its header carries the title + week nav + Re-upload. -->
+        <!-- Grid first: its header carries the title + week nav + Edit + Re-upload. -->
         <div id="timetableViewHeader"></div>
         <div id="timetableCalendar"></div>
 
-        <!-- Upload / parse controls (move into a modal in 12.5d). -->
-        <input id="timetableImage" type="file" accept="image/*" />
-        <br />
-        <img id="timetablePreview" alt="preview" style="max-width: 400px; display: none;" />
-        <br />
-        <button id="parseBtn">Parse timetable</button>
-        <button id="addWeekBtn">Add another week</button>
-        <pre id="parseOutput"></pre>
+        <!-- Empty state (shown by timetableView.js when there's no timetable yet). -->
+        <div id="timetableEmpty" class="card tt-empty" style="display: none;">
+          <h3>Add your timetable</h3>
+          <p>Upload a photo to parse it automatically, or enter it by hand.</p>
+          <div class="tt-empty-actions">
+            <button id="ttEmptyUpload" class="btn-primary" type="button">Upload timetable</button>
+            <button id="ttEmptyManual" type="button">Enter manually</button>
+          </div>
+        </div>
       </section>
 
       <!-- STUDY SESSION (Phase 10): count-up stopwatch + totals + recent sessions. -->
@@ -239,6 +240,23 @@
        over whichever view is showing (Add-Task from Tasks, day popup from Calendar,
        rating from Study). Hidden by default; their modules toggle display.
        ============================================================================ -->
+
+  <!-- Upload timetable modal (12.5d): opened by Re-upload / the empty-state Upload button.
+       Education level lives in Settings now; the hint shows the current level. -->
+  <div id="uploadModal" class="tcal-popup" style="display: none;">
+    <div class="tcal-popup-card">
+      <button id="uploadCloseX" class="tcal-popup-close" type="button">✕</button>
+      <h3>Upload timetable</h3>
+      <p id="uploadLevelHint" class="module-modal-placeholder"></p>
+      <input id="timetableImage" type="file" accept="image/*" />
+      <img id="timetablePreview" alt="preview" style="max-width: 100%; display: none; margin-top: 10px; border-radius: 8px;" />
+      <div class="tt-upload-actions">
+        <button id="parseBtn" class="btn-primary" type="button">Parse timetable</button>
+        <button id="addWeekBtn" type="button">Add another week</button>
+      </div>
+      <pre id="parseOutput"></pre>
+    </div>
+  </div>
 
   <!-- Manual timetable editor (12.5c): opened by the grid header's "Edit" button. Reuses
        the .tcal-popup overlay; a wider card holds the module/slot rows. JS fills #moduleList. -->

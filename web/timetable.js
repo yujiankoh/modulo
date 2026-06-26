@@ -107,15 +107,28 @@ const previewEl = document.getElementById("timetablePreview");
 // Set by "Add another week" so the next image pick parses + appends, instead of
 // just previewing and waiting for a Parse click.
 let appendOnNextPick = false;
-// Set by the calendar's "Re-upload timetable" button: next pick parses + replaces.
-let replaceOnNextPick = false;
+// The Upload timetable modal (opened by the grid's "Re-upload" + the empty-state "Upload").
+const uploadModal = document.getElementById("uploadModal");
 
-// Called by the calendar view's "Re-upload timetable" button.
+// Open the upload modal: show the current education level (set in Settings) and reset the
+// picker. The user then chooses an image and clicks Parse.
 export function startReupload() {
-  replaceOnNextPick = true;
-  imageInput.value = "";   // reset so re-picking the same filename still fires "change"
-  imageInput.click();      // open the file dialog
+  document.getElementById("uploadLevelHint").textContent = appState.educationLevel
+    ? `Level: ${appState.educationLevel} · change in Settings`
+    : "Set your education level in Settings first.";
+  selectedImage = null;
+  imageInput.value = "";
+  previewEl.src = "";
+  previewEl.style.display = "none";
+  document.getElementById("parseOutput").textContent = "";
+  uploadModal.style.display = "flex";   // .tcal-popup centres the card
 }
+function closeUpload() { uploadModal.style.display = "none"; }
+document.getElementById("uploadCloseX").addEventListener("click", closeUpload);
+uploadModal.addEventListener("click", (e) => { if (e.target === uploadModal) closeUpload(); });
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && uploadModal.style.display !== "none") closeUpload();
+});
 
 imageInput.addEventListener("change", async () => {
   const file = imageInput.files[0];
@@ -134,18 +147,13 @@ imageInput.addEventListener("change", async () => {
   document.getElementById("parseOutput").textContent =
     `Image ready (downscaled ${mimeType}, ~${Math.round(base64.length / 1024)} KB).`;
 
-  // If a button started this pick, parse straight away: append or replace.
+  // "Add another week" picks a second image and parses + appends it straight away.
   if (appendOnNextPick) {
     appendOnNextPick = false;
     const modules = await parseSelectedImage();
     if (!modules) return;
     const merged = mergeModules(appState.timetable?.modules || [], modules);
-    await saveTimetableModules(merged, `Added another week — ${merged.length} module(s) total:`);
-  } else if (replaceOnNextPick) {
-    replaceOnNextPick = false;
-    const modules = await parseSelectedImage();
-    if (!modules) return;
-    await saveTimetableModules(modules, `Parsed ${modules.length} module(s):`);
+    await saveTimetableModules(merged, `Added another week — ${merged.length} module(s) total ✓`);
   }
 });
 
@@ -187,7 +195,7 @@ async function parseSelectedImage() {
     // fetch() does NOT throw on HTTP errors (429/503/504/...), so check res.ok.
     if (!res.ok) {
       out.textContent = parseErrorMessage(res.status) +
-        "\nYou can still enter your timetable manually below.";
+        "\nYou can still enter it manually with Edit.";
       return null;
     }
     const data = await res.json();
@@ -195,7 +203,7 @@ async function parseSelectedImage() {
   } catch (err) {
     // Only reached on a network-level failure (server unreachable, offline, CORS).
     out.textContent = "Can't reach the server — check your connection and try again." +
-      "\nYou can still enter your timetable manually below.";
+      "\nYou can still enter it manually with Edit.";
     return null;
   }
 }
@@ -231,15 +239,14 @@ function mergeModules(existing, incoming) {
 async function saveTimetableModules(modules, message) {
   appState.timetable = { educationLevel: appState.educationLevel || "", modules };
   await persist();   // fires modulo:datachanged → the timetable views redraw themselves
-  document.getElementById("parseOutput").textContent =
-    `${message}\n` + JSON.stringify(modules, null, 2);
+  document.getElementById("parseOutput").textContent = message;
 }
 
 // Parse → REPLACE the timetable (the normal, single-image flow).
 document.getElementById("parseBtn").addEventListener("click", async () => {
   const modules = await parseSelectedImage();
   if (!modules) return;
-  await saveTimetableModules(modules, `Parsed ${modules.length} module(s):`);
+  await saveTimetableModules(modules, `Parsed ${modules.length} module(s) ✓`);
 });
 
 // Add another week → prompt for a NEW image; the picker's change handler then

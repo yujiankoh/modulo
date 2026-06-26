@@ -173,6 +173,7 @@ function goThisWeek() {
 
 const headerEl = document.getElementById("timetableViewHeader");
 const calEl = document.getElementById("timetableCalendar");
+const emptyEl = document.getElementById("timetableEmpty");
 
 // The strip above the grid: week title (+ odd/even toggle) on the left, re-upload right.
 // `wk` is the weekInfo for the shown week; when it has a number we show real dates.
@@ -293,6 +294,17 @@ function addBlock(col, module, slot, startH) {
 
 function renderCalendar() {
   const modules = appState.timetable?.modules || [];
+
+  // Empty state: no timetable yet → show the prompt card instead of an empty grid.
+  if (modules.length === 0) {
+    headerEl.innerHTML = "";
+    calEl.style.display = "none";
+    emptyEl.style.display = "block";
+    return;
+  }
+  emptyEl.style.display = "none";
+  calEl.style.display = "";   // restore the grid (CSS sets display:grid)
+
   const alternating = hasAlternatingWeeks(modules);
   const wk = weekInfo(viewedMonday);
   renderHeader(alternating, wk);
@@ -368,6 +380,10 @@ function renderCalendar() {
     }
   }
 }
+
+// Empty-state buttons: open the upload modal / the manual editor.
+document.getElementById("ttEmptyUpload").addEventListener("click", startReupload);
+document.getElementById("ttEmptyManual").addEventListener("click", openEditor);
 
 window.addEventListener("modulo:datachanged", renderCalendar);
 renderCalendar();
