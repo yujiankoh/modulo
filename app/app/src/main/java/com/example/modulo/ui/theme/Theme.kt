@@ -17,6 +17,7 @@ import androidx.compose.ui.platform.LocalContext
 @Immutable
 data class CustomColors(
     val pillBg: Color,
+    val subText: Color
 )
 
 private val DarkColorScheme = darkColorScheme(
@@ -47,10 +48,12 @@ private val LightColorScheme = lightColorScheme(
 
 private val LightCustomColors = CustomColors(
     pillBg = LightPillBg,
+    subText = LightTextMuted
 )
 
 private val DarkCustomColors = CustomColors(
     pillBg = DarkPillBg,
+    subText = DarkTextMuted
 )
 
 private val LocalCustomColors = staticCompositionLocalOf { LightCustomColors }

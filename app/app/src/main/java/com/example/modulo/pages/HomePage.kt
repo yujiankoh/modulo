@@ -35,7 +35,9 @@ import com.example.modulo.SyncState
 import com.example.modulo.Task
 import com.example.modulo.TimetableState
 import java.text.SimpleDateFormat
+import java.time.LocalDate
 import java.time.LocalTime
+import java.time.temporal.ChronoUnit
 import java.util.Calendar
 import java.util.Locale
 import java.util.TimeZone
@@ -138,6 +140,7 @@ fun HomePage(
                 }
             }
 
+            // Deadlines
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -152,8 +155,8 @@ fun HomePage(
             LazyColumn(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .heightIn(max = 300.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+                    .heightIn(max = 240.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(dueTasks) { task ->
                     TaskCard(
@@ -206,38 +209,15 @@ fun formatRelativeDate(dataDate: String): String {
     if (dataDate.isBlank()) return ""
 
     return try {
-        val parser = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).apply {
-            timeZone = TimeZone.getTimeZone("UTC")
-        }
-        val dueDate = parser.parse(dataDate) ?: return dataDate
-
-        // Get today's date in UTC
-        val today = Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply {
-            set(Calendar.HOUR_OF_DAY, 0)
-            set(Calendar.MINUTE, 0)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-        }
-
-        val due = Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply {
-            time = dueDate
-        }
-
-        // Calculate days between by dividing the millisecond difference
-        val diffMillis = due.timeInMillis - today.timeInMillis
-        val daysBetween = diffMillis / (1000 * 60 * 60 * 24)
+        val due = LocalDate.parse(dataDate)
+        val today = LocalDate.now()
+        val daysBetween = ChronoUnit.DAYS.between(today, due)
 
         when {
             daysBetween < 0 -> "Overdue"
             daysBetween == 0L -> "Today"
             daysBetween == 1L -> "Tomorrow"
-
-            else -> {
-                val displayFormatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).apply {
-                    timeZone = TimeZone.getTimeZone("UTC")
-                }
-                displayFormatter.format(dueDate)
-            }
+            else -> formatDate(dataDate)
         }
     } catch (e: Exception) {
         dataDate

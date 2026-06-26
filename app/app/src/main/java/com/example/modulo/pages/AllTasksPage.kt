@@ -1,5 +1,6 @@
 package com.example.modulo.pages
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Badge
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -31,9 +33,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -42,7 +44,9 @@ import com.example.modulo.R
 import com.example.modulo.SortOption
 import com.example.modulo.Task
 import com.example.modulo.getModuleColor
-import java.text.SimpleDateFormat
+import com.example.modulo.ui.theme.ModuloTheme
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 @Composable
@@ -220,92 +224,82 @@ fun TaskCard(
     onNormalPress: () -> Unit,
     onToggle: (Task) -> Unit,
     onDelete: () -> Unit,
+    modifier: Modifier = Modifier,
     dueText: String = formatDate(task.due)
 ) {
 
     val theme = getModuleColor(task.module.ifBlank { task.title })
+
     val cardColour = if (showDelete) {
         MaterialTheme.colorScheme.error
     } else {
-        theme.container
+        MaterialTheme.colorScheme.surface
     }
 
     Card(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .combinedClickable(
                 onClick = {onNormalPress()},
                 onLongClick = {onLongPress()}
-            )
-            .padding(vertical = 4.dp, horizontal = 8.dp),
+            ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        shape = RoundedCornerShape(20.dp),
+        border = BorderStroke(2.dp, theme.container),
         colors = CardDefaults.cardColors(containerColor = cardColour),
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
+            modifier = Modifier.fillMaxWidth().padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Column(
-                modifier = Modifier.padding(8.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+            Row {
+                if (showDelete) {
+                    IconButton(onClick = { onDelete() }) {
+                        Icon(
+                            painter = painterResource(R.drawable.trash_2),
+                            contentDescription = "Delete Task"
+                        )
+                    }
+                } else {
+                    Checkbox(
+                        checked = task.done,
+                        onCheckedChange = { onToggle(task) },
+                    )
+                }
+
+                Column(
+                    modifier = Modifier.padding(horizontal = 8.dp)
                 ) {
                     Text(
                         text = task.title,
                         textDecoration = if (task.done) TextDecoration.LineThrough else TextDecoration.None,
-                        modifier = Modifier.padding(start = 8.dp)
+                        fontWeight = FontWeight.SemiBold
                     )
 
-                    if (showDelete) {
-                        IconButton(onClick = { onDelete() }) {
-                            Icon(
-                                painter = painterResource(R.drawable.trash_2),
-                                contentDescription = "Delete Task"
-                            )
-                        }
-                    } else {
-                        Checkbox(
-                            checked = task.done,
-                            onCheckedChange = { onToggle(task) },
-                        )
-                    }
-                }
-
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(start = 4.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Badge(containerColor = Color.White.copy(alpha = 0.4f)) {
-                            Text(
-                                text = task.module.ifBlank { task.title },
-                                fontSize = 12.sp,
-                                color = if (showDelete) MaterialTheme.colorScheme.onError else theme.onContainer,
-                                modifier = Modifier.padding(2.dp)
-                            )
-                        }
-                        Badge(containerColor = Color.White.copy(alpha = 0.4f)) {
-                            Text(
-                                text = task.type.replaceFirstChar { it.uppercase() },
-                                fontSize = 12.sp,
-                                color = if (showDelete) MaterialTheme.colorScheme.onError else theme.onContainer,
-                                modifier = Modifier.padding(2.dp)
-                            )
-                        }
-                    }
+                        Badge(containerColor = theme.container)
+                        Spacer(modifier.padding(4.dp))
 
-                    if (dueText.isNotEmpty()) {
                         Text(
-                            text = if (dueText == "Overdue") "$dueText!" else "Due: $dueText",
-                            modifier = Modifier.padding(end = 8.dp)
+                            text = "${task.module.ifBlank { task.title }} • ${task.type.replaceFirstChar { it.uppercase() }}",
+                            fontSize = 12.sp,
+                            color = if (showDelete) MaterialTheme.colorScheme.onError.copy(alpha = 0.7f) else ModuloTheme.colors.subText
                         )
                     }
+
+                }
+            }
+
+            Badge(containerColor = if (showDelete) MaterialTheme.colorScheme.onError.copy(alpha = 0.2f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)) {
+                if (dueText.isNotEmpty()) {
+                    Text(
+                        text = dueText,
+                        fontSize = 12.sp,
+                        modifier = Modifier.padding(4.dp)
+                    )
                 }
             }
         }
@@ -316,13 +310,9 @@ fun formatDate(dataDate: String): String {
     if (dataDate.isBlank()) return ""
 
     return try {
-        val parser = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-
-        val formatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-
-        val date = parser.parse(dataDate)
-
-        if (date != null) formatter.format(date) else dataDate
+        val date = LocalDate.parse(dataDate) // Natively parses "yyyy-MM-dd"
+        val formatter = DateTimeFormatter.ofPattern("E d MMMM", Locale.getDefault())
+        date.format(formatter)
     } catch (e: Exception) {
         dataDate
     }
