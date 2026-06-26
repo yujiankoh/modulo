@@ -7,30 +7,25 @@ import { appState, getStorageMode } from "./data.js";
 // A fixed palette + a stable assignment: the same module name always maps to the same
 // colour (sum of char codes mod palette length), independent of order. Exported so other
 // views (e.g. the dashboard) can colour-match modules later.
-// Cohesive cool spectrum (blues → indigos → violets → teals/cyans) so modules are
-// distinguishable but none clashes with the blue dashboard. More entries = fewer repeats.
-const PALETTE = [
-  "#2f6df0", // royal blue (the dashboard accent)
-  "#1c7ed6", // sky blue
-  "#1b6ec2", // steel blue
-  "#3b5bdb", // blue
-  "#4263eb", // indigo
-  "#5c7cfa", // periwinkle
-  "#6741d9", // blue-violet
-  "#7048e8", // violet
-  "#5f3dc4", // deep violet
-  "#862e9c", // purple
-  "#1098ad", // cyan
-  "#0c8599", // aqua
-  "#0e8f9d", // teal
-  "#087f8c", // deep teal
-  "#0ca678", // turquoise
-  "#099268", // emerald
+// Cohesive cool spectrum so modules are distinguishable but none clashes with the blue UI.
+// Two palettes, hue-aligned by index, so a module keeps "its" hue across themes: the LIGHT
+// set is mid-toned for white cards; the DARK set is brighter so dots/headers pop on navy.
+const PALETTE_LIGHT = [
+  "#2f6df0", "#1c7ed6", "#1b6ec2", "#3b5bdb", "#4263eb", "#5c7cfa", "#6741d9", "#7048e8",
+  "#5f3dc4", "#862e9c", "#1098ad", "#0c8599", "#0e8f9d", "#087f8c", "#0ca678", "#099268",
 ];
+const PALETTE_DARK = [
+  "#4dabf7", "#74c0fc", "#5c7cfa", "#748ffc", "#9775fa", "#845ef7", "#be4bdb", "#cc5de8",
+  "#22b8cf", "#3bc9db", "#66d9e8", "#20c997", "#12b886", "#38d9a9", "#40c057", "#51cf66",
+];
+
+// Deterministic colour for a module name (same name → same index), picked from the palette
+// that matches the current theme. Re-evaluated on each render (the theme toggle fires a redraw).
 export function moduleColor(name) {
   let sum = 0;
   for (let i = 0; i < name.length; i++) sum += name.charCodeAt(i);
-  return PALETTE[sum % PALETTE.length];
+  const palette = document.documentElement.dataset.theme === "dark" ? PALETTE_DARK : PALETTE_LIGHT;
+  return palette[sum % palette.length];
 }
 
 // Distinct module labels from the timetable (code or name) + tasks, sorted, with any
