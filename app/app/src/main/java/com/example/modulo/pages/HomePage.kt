@@ -89,7 +89,7 @@ fun HomePage(
                         deletedTask = null
                     })
                 },
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             // Missing timetable banner
             if (appData.timetable == null && timetableState is TimetableState.Idle) {

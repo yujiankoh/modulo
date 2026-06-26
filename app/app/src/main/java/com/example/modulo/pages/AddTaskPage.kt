@@ -16,6 +16,7 @@ import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -23,6 +24,7 @@ import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -180,6 +182,7 @@ fun ModuleDropDownMenu(
 
         ExposedDropdownMenu(
             expanded = isExpanded,
+            containerColor = MaterialTheme.colorScheme.surface,
             onDismissRequest = { isExpanded = false }
         ) {
             modules?.forEach { item ->
@@ -230,6 +233,7 @@ fun TaskTypeDropDownMenu(
 
         ExposedDropdownMenu(
             expanded = isExpanded,
+            containerColor = MaterialTheme.colorScheme.surface,
             onDismissRequest = { isExpanded = false }
         ) {
             taskTypes.forEach { item ->
@@ -281,6 +285,9 @@ fun DatePickerMenu(
     if (showCalendar) {
         DatePickerDialog(
             onDismissRequest = { showCalendar = false },
+            colors = DatePickerDefaults.colors(
+                containerColor = MaterialTheme.colorScheme.surface
+            ),
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -305,7 +312,12 @@ fun DatePickerMenu(
                 }
             }
         ) {
-            DatePicker(state = datePickerState)
+            DatePicker(
+                state = datePickerState,
+                colors = DatePickerDefaults.colors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
+            )
         }
     }
 }
