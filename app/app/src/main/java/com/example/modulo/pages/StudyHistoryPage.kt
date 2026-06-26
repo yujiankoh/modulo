@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import com.example.modulo.AppViewModel
 import com.example.modulo.R
 import com.example.modulo.StudySession
+import com.example.modulo.emojis
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -123,7 +124,7 @@ fun StudySessionCard (
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainer
+            containerColor = MaterialTheme.colorScheme.surface
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
@@ -140,13 +141,13 @@ fun StudySessionCard (
                 Text(
                     text = formattedDate,
                     style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurface
                 )
 
                 Text(
-                    text = if (session.rating == null) "" else session.rating.toString(),
+                    text = if (session.rating == null) "" else emojis[session.rating - 1],
                     style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurface
                 )
             }
 

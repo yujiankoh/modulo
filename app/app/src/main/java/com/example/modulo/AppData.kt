@@ -148,6 +148,8 @@ val darkColors = listOf(
     ModuleColor(Color(0xFF4A148C), Color(0xFFF3E5F5))  // Dark Purple
 )
 
+val emojis = arrayOf("\uD83D\uDDD1\uFE0F", "\uD83D\uDCA9", "\uD83D\uDE10", "\uD83D\uDD25", "\uD83D\uDCA1")
+
 @Composable
 fun getModuleColor(code: String): ModuleColor {
     val colors = if (isSystemInDarkTheme()) darkColors else lightColors

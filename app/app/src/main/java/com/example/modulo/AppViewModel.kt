@@ -31,6 +31,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
+import kotlin.math.roundToInt
 
 private const val TAG = "ViewModel"
 
@@ -416,7 +417,7 @@ class AppViewModel(
         val end = sessionEndTime ?: Instant.now().toString()
 
         // Round to minutes
-        val durationMins = (elapsedSeconds / 60).toInt()
+        val durationMins = (elapsedSeconds / 60.0).roundToInt()
 
         if (durationMins > 0) {
             val newSession = StudySession(

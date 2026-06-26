@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
 import com.example.modulo.AppViewModel
 import com.example.modulo.R
+import com.example.modulo.emojis
 import java.time.Instant
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
@@ -193,8 +194,8 @@ fun StudySessionPage(
             AlertDialog(
                 onDismissRequest = {},
                 properties = DialogProperties(
-                    dismissOnClickOutside = false, // Stops background taps
-                    dismissOnBackPress = false     // Stops the Android back swipe/button
+                    dismissOnClickOutside = false,
+                    dismissOnBackPress = false
                 ),
                 title = { Text("Session Ended") },
                 text = {
@@ -213,7 +214,7 @@ fun StudySessionPage(
                                     )
                                 ) {
                                     Text(
-                                        text = i.toString(),
+                                        text = emojis[i - 1],
                                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                                     )
                                 }
@@ -246,7 +247,7 @@ fun StudySessionPage(
 fun StatCard(title: String, mins: Int, modifier: Modifier = Modifier) {
     Card(
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         modifier = modifier
     ) {
         Column(
