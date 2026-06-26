@@ -4,17 +4,13 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -28,7 +24,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -53,15 +49,7 @@ fun HomePage(
     // Collect info from the model
     val appData by viewModel.appData.collectAsState()
     val syncState by viewModel.syncState.collectAsState()
-    val isDriveSyncEnabled by viewModel.isDriveSyncEnabled.collectAsState()
     val timetableState by viewModel.timetableState.collectAsState()
-
-    val statusText = when (syncState) {
-        SyncState.OFFLINE -> "Device is Offline"
-        SyncState.UNSYNCED -> "Unsynced changes..."
-        SyncState.SYNCING -> "Syncing to Drive..."
-        SyncState.SYNCED -> "All changes synced"
-    }
 
     var deletedTask by remember { mutableStateOf<Task?>(null) }
 
@@ -130,16 +118,23 @@ fun HomePage(
                     )
                 }
 
-                // Settings / Profile Button
-                IconButton(
-                    onClick = onSettingsClick
+                // Sync Icon + Settings / Profile Button
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp) // Adds a nice gap between the icon and button
                 ) {
-                    Icon(
-                        painter = painterResource(R.drawable.circle_user_round),
-                        contentDescription = "Profile and Settings",
-                        modifier = Modifier.size(40.dp),
-                        tint = MaterialTheme.colorScheme.primary
-                    )
+                    SyncIcon(state = syncState)
+
+                    IconButton(
+                        onClick = onSettingsClick
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.circle_user_round),
+                            contentDescription = "Profile and Settings",
+                            modifier = Modifier.size(40.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
                 }
             }
 
@@ -179,82 +174,6 @@ fun HomePage(
             }
         }
     }
-
-    /*
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .wrapContentSize(Alignment.Center)
-            .pointerInput(Unit) {
-                detectTapGestures(onTap = {
-                    deletedTask = null
-                })
-            },
-
-    ) {
-        Spacer(modifier = Modifier.height(24.dp))
-        Text("HomePage")
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(text = "Drive Sync is ${if (isDriveSyncEnabled) "ON" else "OFF"}")
-        Spacer(modifier = Modifier.height(16.dp))
-
-        if (isDriveSyncEnabled) {
-            Button(
-                onClick ={ viewModel.downloadFromDrive() }
-            ) {
-                Text("Download from Drive")
-            }
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-        Text("My Tasks:")
-        Spacer(modifier = Modifier.height(8.dp))
-
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f)
-        ) {
-            if (dueTasks.isEmpty()) {
-                item {
-                    Text(
-                        text = "No tasks due in a week.",
-                        modifier = Modifier.padding(16.dp)
-                    )
-                }
-            } else {
-                items(dueTasks) { task ->
-                    TaskCard(
-                        task = task,
-                        showDelete = deletedTask == task,
-                        onLongPress = { deletedTask = task },
-                        onNormalPress = { deletedTask = null },
-                        onToggle = { clickedTask ->
-                            viewModel.completeTask(clickedTask)
-                        },
-                        onDelete = {
-                            viewModel.deleteTask(task)
-                            deletedTask = null
-                        },
-                        dueText = formatRelativeDate(task.due)
-                    )
-                }
-            }
-        }
-
-
-        Text(text = statusText)
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Button( onClick = onSettingsClick ) {
-            Text("Settings")
-        }
-
-        Spacer(modifier = Modifier.height(48.dp))
-
-    }
-     */
 }
 
 fun getGreeting(): String {
@@ -264,6 +183,23 @@ fun getGreeting(): String {
         in 12..17 -> "Good Afternoon,"
         else -> "Good Evening,"
     }
+}
+
+@Composable
+fun SyncIcon(state: SyncState, modifier: Modifier = Modifier) {
+    val (icon, tint) = when (state) {
+        SyncState.OFFLINE -> Pair(R.drawable.cloud_off, Color.Gray)
+        SyncState.UNSYNCED -> Pair(R.drawable.cloud_alert, MaterialTheme.colorScheme.error)
+        SyncState.SYNCING -> Pair(R.drawable.cloud_sync, MaterialTheme.colorScheme.primary)
+        SyncState.SYNCED -> Pair(R.drawable.cloud_check, MaterialTheme.colorScheme.primary)
+    }
+
+    Icon(
+        painter = painterResource(icon),
+        contentDescription = "Sync Status: ${state.name}",
+        tint = tint,
+        modifier = modifier
+    )
 }
 
 fun formatRelativeDate(dataDate: String): String {

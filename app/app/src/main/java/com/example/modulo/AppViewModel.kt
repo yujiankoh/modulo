@@ -7,7 +7,6 @@ import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.credentials.CredentialManager
 import androidx.datastore.core.DataStore
@@ -154,15 +153,17 @@ class AppViewModel(
             } else if (localTime.isAfter(cloudTime)) {
                 // Local is newer, upload to Cloud
                 Log.d(TAG, "Local data is newer. Uploading to Drive.")
-                triggerDriveSync()
+                uploadToDrive()
             } else {
                 // Exactly the same, do nothing
                 Log.d(TAG, "Data is completely in sync.")
             }
         } else {
             // No cloud data exists yet, push local up
-            triggerDriveSync()
+            uploadToDrive()
         }
+
+        _syncState.value = SyncState.SYNCED
     }
 
     private fun startUpChecks() {
@@ -221,6 +222,7 @@ class AppViewModel(
                         Log.d(TAG, "Internet reconnected, silent sign in")
                         attemptSilentSignIn()
                     } else {
+                        _syncState.value = SyncState.UNSYNCED
                         resolveConflict(syncingHelper!!)
                     }
                 } else {
@@ -329,12 +331,12 @@ class AppViewModel(
             delaySync?.cancel()
             delaySync = viewModelScope.launch {
                 delay(1000L) // Wait for 1s of inactivity
-                triggerDriveSync()
+                uploadToDrive()
             }
         }
     }
 
-    private suspend fun triggerDriveSync() {
+    private suspend fun uploadToDrive() {
         if (!_hasInternet.value || !_isDriveSyncEnabled.value) return
 
         _syncState.value = SyncState.SYNCING
