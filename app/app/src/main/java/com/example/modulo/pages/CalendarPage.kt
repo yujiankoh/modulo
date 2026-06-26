@@ -42,6 +42,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.example.modulo.AppViewModel
 import com.example.modulo.R
 import com.example.modulo.StudySession
@@ -306,13 +307,16 @@ fun ViewCalendarCell(
 
     val screenHeight = with(density) { windowInfo.containerSize.height.toDp() }
 
-    Dialog(onDismissRequest = onDismiss) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
         Card(
             modifier = Modifier
-                .fillMaxWidth()
+                .fillMaxWidth(0.9f)
                 .padding(16.dp)
                 .heightIn(max = screenHeight * 0.6f),
-            shape = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(36.dp),
             elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surface
@@ -335,7 +339,10 @@ fun ViewCalendarCell(
                 if (tasks.isEmpty()) {
                     Text("No tasks scheduled for this day.", color = Color.Gray)
                 } else {
-                    LazyColumn(modifier = Modifier.weight(1f, fill = false)) {
+                    LazyColumn(
+                        modifier = Modifier.weight(1f, fill = false),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
                         items(tasks) { task ->
                             TaskCard(
                                 task = task,

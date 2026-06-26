@@ -21,9 +21,11 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -81,121 +83,92 @@ fun AllTaskPage(
     val uncompletedTasks = filteredTasks.filter { !it.done }.sortedBy { it.due }
     val completedTasks = filteredTasks.filter { it.done }.sortedByDescending { it.due }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .pointerInput(Unit) {
-                detectTapGestures(onTap = {
-                    deletedTask = null
-                })
-            }
-    ) {
-        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
-            Text("Sort By:", style = MaterialTheme.typography.labelMedium)
-
-            // Horizontally scrolling row for Sort buttons
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(SortOption.entries.toTypedArray()) { option ->
-                    FilterChip(
-                        selected = currentSort == option,
-                        onClick = { currentSort = option },
-                        label = { Text(option.displayName) }
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            if (moduleCodes.isNotEmpty()) {
-                Text("Filter Module:", style = MaterialTheme.typography.labelMedium)
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-
-                    item {
-                        FilterChip(
-                            selected = activeModuleFilter == null,
-                            onClick = { activeModuleFilter = null },
-                            label = { Text("All") }
-                        )
-                    }
-
-                    // Generate a button for every module code the user has tasks for
-                    items(moduleCodes) { moduleCode ->
-                        FilterChip(
-                            selected = activeModuleFilter == moduleCode,
-                            onClick = { activeModuleFilter = moduleCode },
-                            label = { Text(moduleCode) }
-                        )
-                    }
-                }
-            }
-        }
-
-        LazyColumn(
+    Scaffold { paddingValues ->
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f)
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(horizontal = 16.dp)
+                .pointerInput(Unit) {
+                    detectTapGestures(onTap = {
+                        deletedTask = null
+                    })
+                },
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            if (uncompletedTasks.isEmpty()) {
-                item {
-                    Text(
-                        text = "All pending tasks are completed!",
-                        modifier = Modifier.padding(16.dp)
-                    )
-                }
-            } else {
-                item {
-                    Text(
-                        text = "${uncompletedTasks.size} Uncompleted ${ if (uncompletedTasks.size < 2) "Work" else "Works" }",
-                        modifier = Modifier.padding(16.dp))
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Text("Sort By:", style = MaterialTheme.typography.labelMedium)
+
+                // Horizontally scrolling row for Sort buttons
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(SortOption.entries.toTypedArray()) { option ->
+                        FilterChip(
+                            selected = currentSort == option,
+                            onClick = { currentSort = option },
+                            label = { Text(option.displayName) },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = ModuloTheme.colors.pillBg,
+                                selectedLabelColor = MaterialTheme.colorScheme.primary
+                            )
+                        )
+                    }
                 }
 
-                items(uncompletedTasks) { task ->
-                    TaskCard(
-                        task = task,
-                        showDelete = deletedTask == task,
-                        onLongPress = { deletedTask = task },
-                        onNormalPress = { deletedTask = null },
-                        onToggle = { clickedTask ->
-                            viewModel.completeTask(clickedTask)
-                        },
-                        onDelete = {
-                            viewModel.deleteTask(task)
-                            deletedTask = null
+                Spacer(modifier = Modifier.height(8.dp))
+
+                if (moduleCodes.isNotEmpty()) {
+                    Text("Filter Module:", style = MaterialTheme.typography.labelMedium)
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+
+                        item {
+                            FilterChip(
+                                selected = activeModuleFilter == null,
+                                onClick = { activeModuleFilter = null },
+                                label = { Text("All") },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = ModuloTheme.colors.pillBg,
+                                    selectedLabelColor = MaterialTheme.colorScheme.primary
+                                )
+                            )
                         }
-                    )
+
+                        // Generate a button for every module code the user has tasks for
+                        items(moduleCodes) { moduleCode ->
+                            FilterChip(
+                                selected = activeModuleFilter == moduleCode,
+                                onClick = { activeModuleFilter = moduleCode },
+                                label = { Text(moduleCode) },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = ModuloTheme.colors.pillBg,
+                                    selectedLabelColor = MaterialTheme.colorScheme.primary
+                                )
+                            )
+                        }
+                    }
                 }
             }
 
-            item {
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { isCompletedSectionExpanded = !isCompletedSectionExpanded }
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text("${completedTasks.size} Completed ${if (completedTasks.size < 2) "Work" else "Works"}")
-
-                    Icon(
-                        painter = if (isCompletedSectionExpanded) painterResource(R.drawable.chevron) else painterResource(R.drawable.chevron_down),
-                        contentDescription = if (isCompletedSectionExpanded) "Hide Completed" else "Show Completed"
-                    )
-                }
-            }
-
-            if (isCompletedSectionExpanded) {
-                if (completedTasks.isEmpty()) {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                if (uncompletedTasks.isEmpty()) {
                     item {
                         Text(
-                            text = "No completed tasks yet.",
+                            text = "All pending tasks are completed!",
                             modifier = Modifier.padding(16.dp)
                         )
                     }
                 } else {
-                    items(completedTasks) { task ->
+                    item {
+                        Text(
+                            text = "${uncompletedTasks.size} Uncompleted ${ if (uncompletedTasks.size < 2) "Work" else "Works" }",
+                            modifier = Modifier.padding(16.dp))
+                    }
+
+                    items(uncompletedTasks) { task ->
                         TaskCard(
                             task = task,
                             showDelete = deletedTask == task,
@@ -209,6 +182,53 @@ fun AllTaskPage(
                                 deletedTask = null
                             }
                         )
+                    }
+                }
+
+                item {
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { isCompletedSectionExpanded = !isCompletedSectionExpanded }
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text("${completedTasks.size} Completed ${if (completedTasks.size < 2) "Work" else "Works"}")
+
+                        Icon(
+                            painter = if (isCompletedSectionExpanded) painterResource(R.drawable.chevron) else painterResource(R.drawable.chevron_down),
+                            contentDescription = if (isCompletedSectionExpanded) "Hide Completed" else "Show Completed"
+                        )
+                    }
+                }
+
+                if (isCompletedSectionExpanded) {
+                    if (completedTasks.isEmpty()) {
+                        item {
+                            Text(
+                                text = "No completed tasks yet.",
+                                modifier = Modifier.padding(16.dp)
+                            )
+                        }
+                    } else {
+                        items(completedTasks) { task ->
+                            TaskCard(
+                                task = task,
+                                showDelete = deletedTask == task,
+                                onLongPress = { deletedTask = task },
+                                onNormalPress = { deletedTask = null },
+                                onToggle = { clickedTask ->
+                                    viewModel.completeTask(clickedTask)
+                                },
+                                onDelete = {
+                                    viewModel.deleteTask(task)
+                                    deletedTask = null
+                                }
+                            )
+                        }
                     }
                 }
             }
@@ -292,9 +312,8 @@ fun TaskCard(
 
                 }
             }
-
-            Badge(containerColor = if (showDelete) MaterialTheme.colorScheme.onError.copy(alpha = 0.2f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)) {
-                if (dueText.isNotEmpty()) {
+            if (dueText.isNotEmpty()) {
+                Badge(containerColor = if (showDelete) MaterialTheme.colorScheme.onError.copy(alpha = 0.2f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)) {
                     Text(
                         text = dueText,
                         fontSize = 12.sp,

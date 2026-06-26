@@ -21,6 +21,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -37,6 +38,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
+import androidx.compose.material3.TimePickerDefaults
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -57,6 +59,7 @@ import com.example.modulo.Module
 import com.example.modulo.R
 import com.example.modulo.Slot
 import com.example.modulo.Timetable
+import com.example.modulo.ui.theme.ModuloTheme
 import kotlin.math.roundToInt
 
 @Composable
@@ -231,7 +234,7 @@ fun ModuleEntryCard(
 
     ElevatedCard(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+        colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
@@ -435,6 +438,7 @@ fun FormDropDownMenu(
 
         ExposedDropdownMenu(
             expanded = isExpanded,
+            containerColor = MaterialTheme.colorScheme.surface,
             onDismissRequest = { isExpanded = false }
         ) {
             itemOptions.forEach { item ->
@@ -490,6 +494,7 @@ fun TimePickerMenu(
 
     if (showDialog) {
         AlertDialog(
+            containerColor = MaterialTheme.colorScheme.surface,
             onDismissRequest = { showDialog = false },
             confirmButton = {
                 TextButton(onClick = {
@@ -515,13 +520,17 @@ fun TimePickerMenu(
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showDialog = false }) {
-                    Text("Cancel")
-                }
+                TextButton(onClick = { showDialog = false }) { Text("Cancel") }
             },
             text = {
-                // This renders the visual clock dial!
-                TimePicker(state = timePickerState)
+                TimePicker(
+                    state = timePickerState,
+                    colors = TimePickerDefaults.colors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        clockDialColor = ModuloTheme.colors.pillBg,
+                        timeSelectorUnselectedContainerColor = ModuloTheme.colors.pillBg
+                    )
+                )
             }
         )
     }

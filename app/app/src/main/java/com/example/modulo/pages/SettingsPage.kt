@@ -193,6 +193,7 @@ fun WarningCard(
     AlertDialog(
         title = { Text(title, fontWeight = FontWeight.Bold) },
         text = { Text(text) },
+        containerColor = MaterialTheme.colorScheme.surface,
         onDismissRequest = onDismiss,
         confirmButton = {
             Button(

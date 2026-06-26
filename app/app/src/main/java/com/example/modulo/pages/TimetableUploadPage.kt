@@ -188,7 +188,7 @@ fun UploadTimetable(
                 .height(300.dp)
                 .clip(RoundedCornerShape(12.dp))
                 .clickable{ galleryLauncher.launch("image/*") }
-                .background(color = MaterialTheme.colorScheme.surfaceContainer),
+                .background(color = MaterialTheme.colorScheme.surface),
             contentAlignment = Alignment.Center
         ) {
             if (imageUri != null) {
@@ -271,6 +271,7 @@ fun EducationDropDownMenu(
 
         ExposedDropdownMenu(
             expanded = isExpanded,
+            containerColor = MaterialTheme.colorScheme.surface,
             onDismissRequest = { isExpanded = false }
         ) {
            EducationLevel.entries.forEach { item ->

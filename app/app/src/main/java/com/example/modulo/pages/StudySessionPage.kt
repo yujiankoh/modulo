@@ -91,7 +91,8 @@ fun StudySessionPage(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues),
+                .padding(paddingValues)
+                .padding(horizontal = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text("Study Numbers", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
