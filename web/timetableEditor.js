@@ -196,16 +196,22 @@ function renderEditorFromState() {
   }
 }
 
-function openEditor() {
+// Exported so the timetable grid's "Edit" button can open it (see timetableView.js).
+export function openEditor() {
   renderEditorFromState();              // load current saved state on every open
-  editorEl.style.display = "block";
+  editorEl.style.display = "flex";      // .tcal-popup centres the card
 }
 
 function closeEditor() {
   editorEl.style.display = "none";      // hide; unsaved edits are discarded
 }
 
-document.getElementById("manualEntryBtn").addEventListener("click", openEditor);
+document.getElementById("editorCloseX").addEventListener("click", closeEditor);
 document.getElementById("closeEditorBtn").addEventListener("click", closeEditor);
 document.getElementById("addModuleBtn").addEventListener("click", () => addModule());
 document.getElementById("saveTimetableBtn").addEventListener("click", saveTimetable);
+// Close on backdrop click or Esc (consistent with the other modals).
+editorEl.addEventListener("click", (e) => { if (e.target === editorEl) closeEditor(); });
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && editorEl.style.display !== "none") closeEditor();
+});

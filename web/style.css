@@ -641,3 +641,8 @@ body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
 .manage-row { padding: 8px 0; border-top: 1px solid var(--border); }
 .manage-row:first-child { border-top: none; }
 .manage-label { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--text); cursor: pointer; }
+
+/* Timetable: grid-header action buttons (Edit + Re-upload) + the editor modal card */
+.cal-header-actions { display: flex; gap: 8px; }
+.tt-editor-card { width: min(720px, 92vw); }   /* wider than the default popup for slot rows */
+.tt-editor-actions { display: flex; align-items: center; gap: 8px; margin-top: 12px; flex-wrap: wrap; }

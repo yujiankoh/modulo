@@ -6,6 +6,7 @@
 
 import { appState } from "./data.js";
 import { startReupload } from "./timetable.js";
+import { openEditor } from "./timetableEditor.js";
 
 const DAYS = ["MON", "TUE", "WED", "THU", "FRI"];
 const DEFAULT_START = 8;
@@ -245,13 +246,23 @@ function renderHeader(showToggle, wk) {
     left.append(nav);
   }
 
+  const edit = document.createElement("button");
+  edit.type = "button";
+  edit.className = "cal-reupload";
+  edit.textContent = "Edit";
+  edit.addEventListener("click", openEditor);
+
   const reupload = document.createElement("button");
   reupload.type = "button";
   reupload.className = "cal-reupload";
   reupload.textContent = "Re-upload timetable";
   reupload.addEventListener("click", startReupload);
 
-  headerEl.append(left, reupload);
+  // Group the actions together on the right.
+  const actions = document.createElement("div");
+  actions.className = "cal-header-actions";
+  actions.append(edit, reupload);
+  headerEl.append(left, actions);
 }
 
 // Place one session block in its day column at the right time + height.

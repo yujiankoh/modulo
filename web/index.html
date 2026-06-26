@@ -157,20 +157,6 @@
         <button id="parseBtn">Parse timetable</button>
         <button id="addWeekBtn">Add another week</button>
         <pre id="parseOutput"></pre>
-
-        <!-- Manual timetable editor (Phase 5). JS fills #moduleList. -->
-        <button id="manualEntryBtn">Enter / edit timetable manually</button>
-        <div id="timetableEditor" style="display: none;">
-          <h3>Edit timetable</h3>
-          <p id="editorHint">Add your modules and their class slots, then Save.</p>
-          <div id="moduleList"></div>
-          <button id="addModuleBtn">+ Add module</button>
-          <div>
-            <button id="saveTimetableBtn">Save timetable</button>
-            <button id="closeEditorBtn">Close</button>
-            <span id="editorStatus"></span>
-          </div>
-        </div>
       </section>
 
       <!-- STUDY SESSION (Phase 10): count-up stopwatch + totals + recent sessions. -->
@@ -253,6 +239,23 @@
        over whichever view is showing (Add-Task from Tasks, day popup from Calendar,
        rating from Study). Hidden by default; their modules toggle display.
        ============================================================================ -->
+
+  <!-- Manual timetable editor (12.5c): opened by the grid header's "Edit" button. Reuses
+       the .tcal-popup overlay; a wider card holds the module/slot rows. JS fills #moduleList. -->
+  <div id="timetableEditor" class="tcal-popup" style="display: none;">
+    <div class="tcal-popup-card tt-editor-card">
+      <button id="editorCloseX" class="tcal-popup-close" type="button">✕</button>
+      <h3>Edit timetable</h3>
+      <p id="editorHint">Add your modules and their class slots, then Save.</p>
+      <div id="moduleList"></div>
+      <button id="addModuleBtn">+ Add module</button>
+      <div class="tt-editor-actions">
+        <button id="saveTimetableBtn">Save timetable</button>
+        <button id="closeEditorBtn">Close</button>
+        <span id="editorStatus"></span>
+      </div>
+    </div>
+  </div>
 
   <!-- Manage modules modal (12.4): tick = shown, untick = hidden (dashboard + sidebar). -->
   <div id="manageModulesModal" class="tcal-popup" style="display: none;">
