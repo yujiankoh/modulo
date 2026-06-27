@@ -7,6 +7,7 @@
 import { appState } from "./data.js";
 import { startReupload } from "./timetable.js";
 import { openEditor } from "./timetableEditor.js";
+import { moduleColor } from "./sidebar.js"; // shared module-colour palette (same as the dots)
 
 const DAYS = ["MON", "TUE", "WED", "THU", "FRI"];
 const DEFAULT_START = 8;
@@ -280,15 +281,34 @@ function addBlock(col, module, slot, startH) {
   // keeps the 1px border inside the height; overflow:hidden clips text in short cards.
   block.style.height = (endMin - startMin) * PX_PER_MIN + "px";
 
+  // Colour the block by its module (same palette as the sidebar dots): a soft tint
+  // background + a left accent bar + a coloured title. `${color}22` = the hex colour at
+  // ~13% opacity (8-digit hex), so it reads as a light wash in either theme.
+  const label = module.code || module.name || "";
+  const color = moduleColor(label);
+  block.style.background = `${color}22`;
+  block.style.borderLeft = `3px solid ${color}`;
+
   const title = document.createElement("div");
   title.className = "cal-block-title";
-  title.textContent = module.code || module.name || "(unnamed)";
+  title.textContent = label || "(unnamed)";
+  title.style.color = color;
 
   const sub = document.createElement("div");
   sub.className = "cal-block-sub";
   sub.textContent = `${abbrevType(slot.sessionType)} · ${slot.start}`;
 
   block.append(title, sub);
+
+  // Location (room/venue), if the parse/edit captured one. Its own line so it clips
+  // gracefully in short blocks (overflow:hidden on .cal-block).
+  if (slot.location) {
+    const loc = document.createElement("div");
+    loc.className = "cal-block-loc";
+    loc.textContent = slot.location;
+    block.append(loc);
+  }
+
   col.append(block);
 }
 
