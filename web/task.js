@@ -250,9 +250,45 @@ function renderTasks() {
 
 // --- Add Task modal: open / close / save -------------------------------------
 const taskModal = document.getElementById("taskModal");
+const OTHER = "__other__"; // sentinel value for the "+ Add other…" option
+
+// Distinct module labels known to the app: from the parsed timetable (code or name) +
+// any module already used on a task. Sorted, de-duplicated (Set drops repeats).
+function knownModules() {
+  const set = new Set();
+  for (const m of appState.timetable?.modules || []) {
+    const label = m.code || m.name;
+    if (label) set.add(label);
+  }
+  for (const t of appState.tasks || []) {
+    if (t.module) set.add(t.module);
+  }
+  return [...set].sort();
+}
+
+// (Re)build the Module dropdown: "— None —", each known module, then "+ Add other…".
+// Resets the selection to None and hides the free-text "other" field.
+function populateModuleSelect() {
+  const sel = document.getElementById("taskModule");
+  sel.innerHTML = "";
+  sel.append(new Option("— None —", ""));                 // new Option(text, value)
+  for (const m of knownModules()) sel.append(new Option(m, m));
+  sel.append(new Option("+ Add other…", OTHER));
+  sel.value = "";
+  document.getElementById("taskModuleOtherField").style.display = "none";
+  document.getElementById("taskModuleOther").value = "";
+}
+
+// Show the free-text field only when "+ Add other…" is picked, and focus it.
+document.getElementById("taskModule").addEventListener("change", (e) => {
+  const isOther = e.target.value === OTHER;
+  document.getElementById("taskModuleOtherField").style.display = isOther ? "" : "none";
+  if (isOther) document.getElementById("taskModuleOther").focus();
+});
 
 function openTaskModal() {
   if (!getStorageMode()) { alert("Choose Google Drive or local mode first."); return; }
+  populateModuleSelect();                        // refresh the module list each open
   taskModal.style.display = "flex";              // CSS .tcal-popup centres the card
   document.getElementById("taskTitle").focus();  // cursor ready in the first field
 }
@@ -277,14 +313,18 @@ document.addEventListener("keydown", (e) => {
 // Save: read the fields, add the task, reset the form, close the modal.
 document.getElementById("addBtn").addEventListener("click", () => {
   const title = document.getElementById("taskTitle").value.trim();
-  const module = document.getElementById("taskModule").value.trim();
+  const moduleSel = document.getElementById("taskModule").value;
+  // If "+ Add other…" is chosen, take the typed name; otherwise use the picked option.
+  const module = moduleSel === OTHER
+    ? document.getElementById("taskModuleOther").value.trim()
+    : moduleSel;
   const due = document.getElementById("taskDue").value;
   const type = document.getElementById("taskType").value;
   if (!title) { alert("Enter a task title."); return; }
   addTask(title, module, due, type);
 
   document.getElementById("taskTitle").value = "";
-  document.getElementById("taskModule").value = "";
+  populateModuleSelect();   // resets the module dropdown to None + hides the other field
   document.getElementById("taskDue").value = "";
   document.getElementById("taskType").value = "assignment";
   closeTaskModal();

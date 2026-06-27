@@ -378,7 +378,15 @@
 
       <label class="task-field">
         <span>Module/Subject</span>
-        <input id="taskModule" type="text" placeholder="e.g. CS2030S (optional)" />
+        <!-- Built by task.js: "— None —", one option per known module, then "+ Add other…". -->
+        <select id="taskModule">
+          <option value="">— None —</option>
+        </select>
+      </label>
+      <!-- Revealed only when "+ Add other…" is chosen above. -->
+      <label class="task-field" id="taskModuleOtherField" style="display: none;">
+        <span>New module/subject</span>
+        <input id="taskModuleOther" type="text" placeholder="e.g. CS2030S" />
       </label>
 
       <label class="task-field">
