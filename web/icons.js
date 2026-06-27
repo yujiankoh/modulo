@@ -6,12 +6,16 @@
 // any icons added by a later dynamic render also get drawn. Already-replaced icons have no
 // data-lucide attribute anymore, so re-running is cheap and idempotent.
 
-function drawIcons() {
+// Exported so modules that swap a button's innerHTML at runtime (e.g. the study-timer
+// play/pause toggle) can redraw the new <i data-lucide> immediately.
+export function drawIcons() {
   // Guard: if the CDN didn't load (offline), skip silently rather than throwing.
   if (window.lucide && typeof window.lucide.createIcons === "function") {
     window.lucide.createIcons();
   }
 }
 
-drawIcons();
+// Defer the first draw to a microtask so it runs AFTER every module's top-level code (e.g.
+// theme.js setting the toggle's moon/sun placeholder) — import order then can't matter.
+queueMicrotask(drawIcons);
 window.addEventListener("modulo:datachanged", drawIcons);

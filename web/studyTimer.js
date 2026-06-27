@@ -7,6 +7,7 @@
 // recomputed from Date.now(), so it's correct the instant we read it.
 
 import { appState, persist, getStorageMode } from "./data.js";
+import { drawIcons } from "./icons.js";
 
 // --- Engine state (private to this module) -----------------------------------
 let running = false;        // is the clock currently counting?
@@ -38,6 +39,16 @@ function render() {
 }
 
 // --- Controls -----------------------------------------------------------------
+// One play/pause toggle button: show "pause" while running, "play" while stopped/paused.
+// (We swap innerHTML, then redraw the Lucide icon since the <i> placeholder is new.)
+const toggleBtn = document.getElementById("timerToggle");
+function updateToggleButton() {
+  toggleBtn.innerHTML = running
+    ? `<i data-lucide="pause"></i>Pause`
+    : `<i data-lucide="play"></i>Start`;
+  drawIcons();
+}
+
 // Start: begin (or resume) counting. Ignore if already running (no double-start).
 function start() {
   if (running) return;
@@ -47,6 +58,7 @@ function start() {
   // it never adds to the count, so throttling/drift can't corrupt the elapsed time.
   tickHandle = setInterval(render, 250);
   render();
+  updateToggleButton();
 }
 
 // Pause: stop counting, banking the current segment into accumulatedMs so it isn't lost.
@@ -58,6 +70,13 @@ function pause() {
   clearInterval(tickHandle);   // stop repainting — nothing is changing while paused
   tickHandle = null;
   render();
+  updateToggleButton();
+}
+
+// One button: pause if running, start/resume otherwise.
+function toggleTimer() {
+  if (running) pause();
+  else start();
 }
 
 // Reset: stop and zero everything back to 00:00:00.
@@ -68,6 +87,7 @@ function reset() {
   startedAt = null;
   accumulatedMs = 0;
   render();
+  updateToggleButton();
 }
 
 // --- Stop & Save: record a study session --------------------------------------
@@ -123,8 +143,7 @@ function cancelRating() {
 
 // Wire the buttons to the engine. Pass the function itself (no "()"), so it's CALLED on
 // click rather than immediately.
-document.getElementById("timerStart").addEventListener("click", start);
-document.getElementById("timerPause").addEventListener("click", pause);
+toggleBtn.addEventListener("click", toggleTimer);
 document.getElementById("timerStop").addEventListener("click", stopAndSave);
 
 // Rating modal: a click on any number button reads its data-rating and saves with it.
