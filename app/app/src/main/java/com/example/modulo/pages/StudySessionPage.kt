@@ -1,6 +1,5 @@
 package com.example.modulo.pages
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -12,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -21,7 +19,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonColors
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -39,7 +36,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
@@ -258,23 +254,5 @@ fun StatCard(title: String, mins: Int, modifier: Modifier = Modifier) {
             Text(title, style = MaterialTheme.typography.labelMedium)
             Text("$mins min", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
         }
-    }
-}
-
-@Preview(
-    showBackground = true,
-    showSystemUi = true,
-)
-@Composable
-fun Layout() {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        StatCard(title = "Today", mins = 12, modifier = Modifier.weight(1f))
-        StatCard(title = "This Week", mins = 30, modifier = Modifier.weight(1f))
-        StatCard(title = "Overall", mins = 500, modifier = Modifier.weight(1f))
     }
 }

@@ -151,7 +151,8 @@ fun RootNavigation(
                 viewModel = viewModel,
                 onNavigateToSettings = { navController.navigate(Settings) },
                 onNavigateToTimetableUpload = { navController.navigate(TimetableUpload) },
-                onNavigateToStudyHistory = { navController.navigate(StudyHistory) }
+                onNavigateToStudyHistory = { navController.navigate(StudyHistory) },
+                onNavigateToTimetable = { navController.navigate(Timetable) }
             )
         }
 
@@ -254,7 +255,8 @@ fun NavGraphBuilder.appNavigation(
     viewModel: AppViewModel,
     onNavigateToSettings: () -> Unit,
     onNavigateToTimetableUpload: () -> Unit,
-    onNavigateToStudyHistory: () -> Unit
+    onNavigateToStudyHistory: () -> Unit,
+    onNavigateToTimetable: () -> Unit
 ) {
     composable<AppGraph> {
         val navController = rememberNavController()
@@ -272,7 +274,8 @@ fun NavGraphBuilder.appNavigation(
                     HomePage(
                         viewModel = viewModel,
                         onUploadTimetable = onNavigateToTimetableUpload,
-                        onSettingsClick = onNavigateToSettings
+                        onSettingsClick = onNavigateToSettings,
+                        onTimetableClick = onNavigateToTimetable
                     )
                 }
 

@@ -272,25 +272,7 @@ fun TimetablePage(
                 val slotsToShow = allDisplaySlots.filter { it.week == "all" || it.week == activeWeekType }
                 val dayNames = listOf("MON", "TUE", "WED", "THU", "FRI")
 
-                // Calculate the start and end timing of timetable (minimum 1000 - 1600)
-                val allTimes = slotsToShow.flatMap {
-                    listOf(parseTimeString(it.start), parseTimeString(it.end))
-                }
-                val earliestClass = allTimes.minOrNull() ?: LocalTime.of(10, 0)
-                val latestClass = allTimes.maxOrNull() ?: LocalTime.of(16, 0)
-                val minTime = if (earliestClass.withMinute(0).isAfter(LocalTime.of(10, 0))) {
-                    LocalTime.of(10, 0)
-                } else {
-                    earliestClass.withMinute(0)
-                }
-                val maxTime = if (latestClass.minute == 0) {
-                    latestClass
-                } else {
-                    latestClass.withMinute(0).plusHours(1)
-                }.let {
-                    if (it.isBefore(LocalTime.of(16, 0))) LocalTime.of(16, 0) else it
-                }
-                val totalHours = ChronoUnit.HOURS.between(minTime, maxTime).toInt()
+                val (minTime, maxTime, totalHours) = getTimeDetails(slotsToShow)
 
                 // Grid dimensions
                 val hourWidth = 120.dp
@@ -298,7 +280,7 @@ fun TimetablePage(
                 val dayHeight = 90.dp
                 val timeHeaderHeight = 30.dp
 
-                // Scroll State & Auto-Scroll to Current Time
+                // Auto-scroll to current time
                 val scrollState = rememberScrollState()
                 val verticalScrollState = rememberScrollState()
                 val screenSize = LocalWindowInfo.current.containerSize
@@ -361,7 +343,7 @@ fun TimetablePage(
                                 .height(gridTotalHeight + timeHeaderHeight + 2.dp)
                         ) {
                             // Horizontal dividing lines
-                            for (i in 0..dayNames.size + 1) {
+                            for (i in 0..dayNames.size) {
                                 val yOffset = timeHeaderHeight + (dayHeight * i)
                                 Box(modifier = Modifier.offset(y = yOffset).width(gridTotalWidth).height(1.dp).background(MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)))
                             }
@@ -423,6 +405,30 @@ fun TimetablePage(
             }
         }
     }
+}
+
+// Calculate the start and end timing of timetable (minimum 1000 - 1600)
+fun getTimeDetails(slots: List<DisplaySlot>): Triple<LocalTime, LocalTime, Int> {
+    val allTimes = slots.flatMap {
+        listOf(parseTimeString(it.start), parseTimeString(it.end))
+    }
+    val earliestClass = allTimes.minOrNull() ?: LocalTime.of(10, 0)
+    val latestClass = allTimes.maxOrNull() ?: LocalTime.of(16, 0)
+    val minTime = if (earliestClass.withMinute(0).isAfter(LocalTime.of(10, 0))) {
+        LocalTime.of(10, 0)
+    } else {
+        earliestClass.withMinute(0)
+    }
+    val maxTime = if (latestClass.minute == 0) {
+        latestClass
+    } else {
+        latestClass.withMinute(0).plusHours(1)
+    }.let {
+        if (it.isBefore(LocalTime.of(16, 0))) LocalTime.of(16, 0) else it
+    }
+    val totalHours = ChronoUnit.HOURS.between(minTime, maxTime).toInt()
+
+    return Triple(minTime, maxTime, totalHours)
 }
 
 data class DisplaySlot(
