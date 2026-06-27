@@ -302,7 +302,7 @@ fun TimetablePage(
                 val scrollState = rememberScrollState()
                 val verticalScrollState = rememberScrollState()
                 val screenSize = LocalWindowInfo.current.containerSize
-                val halfScreenWidthPx = with(LocalDensity.current) { (screenSize.width.toDp() / 2).toPx() }
+                val halfScreenWidthPx = with(LocalDensity.current) { ((screenSize.width.toDp() - 72.dp) / 2).toPx() }
                 val currentTime = LocalTime.now()
 
                 LaunchedEffect(Unit) {
@@ -358,10 +358,10 @@ fun TimetablePage(
                         Box(
                             modifier = Modifier
                                 .width(gridTotalWidth)
-                                .height(gridTotalHeight + timeHeaderHeight)
+                                .height(gridTotalHeight + timeHeaderHeight + 2.dp)
                         ) {
                             // Horizontal dividing lines
-                            for (i in 0..dayNames.size) {
+                            for (i in 0..dayNames.size + 1) {
                                 val yOffset = timeHeaderHeight + (dayHeight * i)
                                 Box(modifier = Modifier.offset(y = yOffset).width(gridTotalWidth).height(1.dp).background(MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)))
                             }
