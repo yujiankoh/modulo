@@ -39,15 +39,15 @@
       <nav id="nav">
         <!-- Each link's href is its route. The text after # must match a #view-<route>
              section id below (router.js maps "dashboard" -> #view-dashboard). -->
-        <a class="nav-link" href="#dashboard">Dashboard</a>
-        <a class="nav-link" href="#calendar">Calendar</a>
-        <a class="nav-link" href="#tasks">All Tasks</a>
-        <a class="nav-link" href="#timetable">Timetable</a>
-        <a class="nav-link" href="#study">Study Session</a>
+        <a class="nav-link" href="#dashboard"><i data-lucide="layout-dashboard"></i>Dashboard</a>
+        <a class="nav-link" href="#calendar"><i data-lucide="calendar"></i>Calendar</a>
+        <a class="nav-link" href="#tasks"><i data-lucide="list-checks"></i>All Tasks</a>
+        <a class="nav-link" href="#timetable"><i data-lucide="calendar-clock"></i>Timetable</a>
+        <a class="nav-link" href="#study"><i data-lucide="timer"></i>Study Session</a>
         <!-- Modules list (12.4d): sidebar.js fills this with the distinct modules from the
              timetable + tasks, each with a colour dot. Empty until there are any. -->
         <div id="moduleNav" class="module-nav"></div>
-        <a class="nav-link nav-link--bottom" href="#settings">Settings</a>
+        <a class="nav-link nav-link--bottom" href="#settings"><i data-lucide="settings"></i>Settings</a>
       </nav>
 
       <!-- Light/dark toggle (theme.js updates the label). -->
@@ -433,6 +433,9 @@
     </div>
   </div>
 
+  <!-- Lucide icons (CDN, UMD build): exposes a global `lucide`. icons.js calls
+       lucide.createIcons() to replace every <i data-lucide="name"> with its <svg>. -->
+  <script src="https://unpkg.com/lucide@latest"></script>
   <script type="module" src="main.js"></script>
 </body>
 </html>

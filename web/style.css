@@ -557,11 +557,17 @@ body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
 .brand-sub { font-size: 11px; letter-spacing: 0.06em; color: var(--text-muted); margin: 0 8px 16px; }
 #nav { display: flex; flex-direction: column; gap: 2px; flex: 1; }  /* fill the height */
 .nav-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   text-decoration: none;
   color: var(--text);
   padding: 9px 12px;
   border-radius: 10px;
 }
+/* Lucide replaces each <i data-lucide> with an <svg>; size it + stop it shrinking. The
+   icon's stroke is currentColor, so it inherits the link colour (incl. the active blue). */
+.nav-link svg { width: 18px; height: 18px; flex: none; }
 .nav-link:hover { background: var(--hover); }
 .nav-link.is-active { background: var(--primary-soft); color: var(--primary); font-weight: 600; }  /* current view */
 .nav-link--bottom { margin-top: auto; }                         /* push Settings down */

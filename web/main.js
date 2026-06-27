@@ -16,6 +16,7 @@ import "./sidebar.js"; // side-effect import: sidebar modules list + account chi
 import "./handbook.js"; // side-effect import: handbook onboarding modal (Phase 13)
 import "./router.js"; // side-effect import: SPA view-switcher + hash routing (Phase 12)
 import "./theme.js"; // side-effect import: light/dark theme toggle (Phase 12 polish)
+import "./icons.js"; // side-effect import: renders Lucide icons (data-lucide → <svg>)
 
 // Runs after the page + Google's library have finished loading.
 window.onload = () => {
