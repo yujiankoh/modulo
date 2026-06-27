@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -90,7 +91,8 @@ fun AddTaskPage(
             OutlinedTextField(
                 state = inputTitle,
                 label = { Text("Title") },
-                modifier = Modifier.fillMaxWidth(0.7f)
+                modifier = Modifier.fillMaxWidth(0.7f),
+                shape = RoundedCornerShape(12.dp)
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -143,7 +145,8 @@ fun AddTaskPage(
                     top = ButtonDefaults.ContentPadding.calculateTopPadding(),
                     end = ButtonDefaults.ContentPadding.calculateEndPadding(layoutDirection = androidx.compose.ui.unit.LayoutDirection.Ltr),
                     bottom = ButtonDefaults.ContentPadding.calculateBottomPadding()
-                )
+                ),
+                shape = RoundedCornerShape(12.dp)
             ) {
                 Icon(painter = painterResource(R.drawable.plus), contentDescription = "Add")
                 Spacer(modifier = Modifier.padding(6.dp))
@@ -177,13 +180,15 @@ fun ModuleDropDownMenu(
             singleLine = true,
             label = { Text("Module") },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isExpanded) },
-            modifier = modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
+            modifier = modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
+            shape = RoundedCornerShape(12.dp)
         )
 
         ExposedDropdownMenu(
             expanded = isExpanded,
             containerColor = MaterialTheme.colorScheme.surface,
-            onDismissRequest = { isExpanded = false }
+            onDismissRequest = { isExpanded = false },
+            shape = RoundedCornerShape(12.dp)
         ) {
             modules?.forEach { item ->
                 DropdownMenuItem(
@@ -228,13 +233,15 @@ fun TaskTypeDropDownMenu(
             label = { Text("Task Type") },
             singleLine = true,
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isExpanded) },
-            modifier = modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
+            modifier = modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
+            shape = RoundedCornerShape(12.dp)
         )
 
         ExposedDropdownMenu(
             expanded = isExpanded,
             containerColor = MaterialTheme.colorScheme.surface,
-            onDismissRequest = { isExpanded = false }
+            onDismissRequest = { isExpanded = false },
+            shape = RoundedCornerShape(12.dp)
         ) {
             taskTypes.forEach { item ->
                 DropdownMenuItem(
@@ -279,7 +286,8 @@ fun DatePickerMenu(
         placeholder = { Text("DD/MM/YYYY") },
         readOnly = true,
         interactionSource = interactionSource,
-        modifier = modifier
+        modifier = modifier,
+        shape = RoundedCornerShape(12.dp)
     )
 
     if (showCalendar) {
@@ -289,7 +297,7 @@ fun DatePickerMenu(
                 containerColor = MaterialTheme.colorScheme.surface
             ),
             confirmButton = {
-                TextButton(
+                Button(
                     onClick = {
                         showCalendar = false
                         datePickerState.selectedDateMillis?.let { millis ->
@@ -299,14 +307,17 @@ fun DatePickerMenu(
                                 .toLocalDate()
                             onDateSelected(localDate)
                         }
-                    }
+                    },
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.padding(end = 8.dp, bottom = 4.dp)
                 ) {
                     Text("OK")
                 }
             },
             dismissButton = {
                 TextButton(
-                    onClick = { showCalendar = false }
+                    onClick = { showCalendar = false },
+                    shape = RoundedCornerShape(12.dp)
                 ) {
                     Text("Cancel")
                 }

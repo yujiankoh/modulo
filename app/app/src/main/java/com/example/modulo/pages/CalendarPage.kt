@@ -376,7 +376,8 @@ fun ViewCalendarCell(
 
                 Button(
                     onClick = onDismiss,
-                    modifier = Modifier.align(Alignment.End)
+                    modifier = Modifier.align(Alignment.End),
+                    shape = RoundedCornerShape(12.dp)
                 ) {
                     Text("Close")
                 }

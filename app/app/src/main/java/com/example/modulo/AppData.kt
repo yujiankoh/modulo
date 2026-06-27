@@ -133,19 +133,41 @@ sealed interface TimetableState {
 data class ModuleColor(val container: Color, val onContainer: Color)
 
 val lightColors = listOf(
-    ModuleColor(Color(0xFFE3F2FD), Color(0xFF0D47A1)), // Blue
-    ModuleColor(Color(0xFFFCE4EC), Color(0xFF880E4F)), // Pink
-    ModuleColor(Color(0xFFE8F5E9), Color(0xFF1B5E20)), // Green
-    ModuleColor(Color(0xFFFFF3E0), Color(0xFFE65100)), // Orange
-    ModuleColor(Color(0xFFF3E5F5), Color(0xFF4A148C))  // Purple
+    ModuleColor(Color(0xFF2F6DF0), Color(0xFFFFFFFF)),
+    ModuleColor(Color(0xFF1C7ED6), Color(0xFFFFFFFF)),
+    ModuleColor(Color(0xFF1B6EC2), Color(0xFFFFFFFF)),
+    ModuleColor(Color(0xFF3B5BDB), Color(0xFFFFFFFF)),
+    ModuleColor(Color(0xFF4263EB), Color(0xFFFFFFFF)),
+    ModuleColor(Color(0xFF5C7CFA), Color(0xFFFFFFFF)),
+    ModuleColor(Color(0xFF6741D9), Color(0xFFFFFFFF)),
+    ModuleColor(Color(0xFF7048E8), Color(0xFFFFFFFF)),
+    ModuleColor(Color(0xFF5F3DC4), Color(0xFFFFFFFF)),
+    ModuleColor(Color(0xFF862E9C), Color(0xFFFFFFFF)),
+    ModuleColor(Color(0xFF1098AD), Color(0xFFFFFFFF)),
+    ModuleColor(Color(0xFF0C8599), Color(0xFFFFFFFF)),
+    ModuleColor(Color(0xFF0E8F9D), Color(0xFFFFFFFF)),
+    ModuleColor(Color(0xFF087F8C), Color(0xFFFFFFFF)),
+    ModuleColor(Color(0xFF0CA678), Color(0xFFFFFFFF)),
+    ModuleColor(Color(0xFF099268), Color(0xFFFFFFFF))
 )
 
 val darkColors = listOf(
-    ModuleColor(Color(0xFF0D47A1), Color(0xFFE3F2FD)), // Dark Blue
-    ModuleColor(Color(0xFF880E4F), Color(0xFFFCE4EC)), // Dark Pink
-    ModuleColor(Color(0xFF1B5E20), Color(0xFFE8F5E9)), // Dark Green
-    ModuleColor(Color(0xFFE65100), Color(0xFFFFF3E0)), // Dark Orange
-    ModuleColor(Color(0xFF4A148C), Color(0xFFF3E5F5))  // Dark Purple
+    ModuleColor(Color(0xFF4DABF7), Color(0xFF001D3D)),
+    ModuleColor(Color(0xFF74C0FC), Color(0xFF001D3D)),
+    ModuleColor(Color(0xFF5C7CFA), Color(0xFF00104B)),
+    ModuleColor(Color(0xFF748FFC), Color(0xFF00104B)),
+    ModuleColor(Color(0xFF9775FA), Color(0xFF25005B)),
+    ModuleColor(Color(0xFF845EF7), Color(0xFF1A004B)),
+    ModuleColor(Color(0xFFBE4BDB), Color(0xFF30004A)),
+    ModuleColor(Color(0xFFCC5DE8), Color(0xFF370054)),
+    ModuleColor(Color(0xFF22B8CF), Color(0xFF002026)),
+    ModuleColor(Color(0xFF3BC9DB), Color(0xFF002026)),
+    ModuleColor(Color(0xFF66D9E8), Color(0xFF002026)),
+    ModuleColor(Color(0xFF20C997), Color(0xFF002014)),
+    ModuleColor(Color(0xFF12B886), Color(0xFF002014)),
+    ModuleColor(Color(0xFF38D9A9), Color(0xFF002014)),
+    ModuleColor(Color(0xFF40C057), Color(0xFF002204)),
+    ModuleColor(Color(0xFF51CF66), Color(0xFF002204))
 )
 
 val emojis = arrayOf("\uD83D\uDDD1\uFE0F", "\uD83D\uDCA9", "\uD83D\uDE10", "\uD83D\uDD25", "\uD83D\uDCA1")

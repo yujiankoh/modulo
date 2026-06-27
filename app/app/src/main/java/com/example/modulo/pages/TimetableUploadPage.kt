@@ -13,10 +13,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -43,10 +41,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -77,15 +72,6 @@ fun UploadTimetablePage(
 ) {
     val context = LocalContext.current
     var selectedEducation by remember { mutableStateOf(EducationLevel.UNIVERSITY) }
-
-    var failCount by remember { mutableIntStateOf(0) }
-    val timetableState by viewModel.timetableState.collectAsState()
-
-    LaunchedEffect(timetableState) {
-        if (timetableState is TimetableState.Error) {
-            failCount++
-        }
-    }
 
     Scaffold { paddingValues ->
         Column(
@@ -144,10 +130,11 @@ fun UploadTimetablePage(
                     .height(48.dp),
                 contentAlignment = Alignment.Center
             ) {
-                if (failCount >= 0) {
-                    TextButton(onClick = { onManualClick(selectedEducation) } ) {
-                        Text("Having trouble? Enter timetable manually")
-                    }
+                TextButton(
+                    onClick = { onManualClick(selectedEducation) } ,
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("Having trouble? Enter timetable manually")
                 }
             }
         }
@@ -186,7 +173,7 @@ fun UploadTimetable(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(300.dp)
-                .clip(RoundedCornerShape(12.dp))
+                .clip(RoundedCornerShape(20.dp))
                 .clickable{ galleryLauncher.launch("image/*") }
                 .background(color = MaterialTheme.colorScheme.surface),
             contentAlignment = Alignment.Center
@@ -234,12 +221,8 @@ fun UploadTimetable(
                 }
             },
             enabled = imageUri != null,
-            contentPadding = PaddingValues(
-                start = 12.dp,
-                top = ButtonDefaults.ContentPadding.calculateTopPadding(),
-                end = ButtonDefaults.ContentPadding.calculateEndPadding(layoutDirection = androidx.compose.ui.unit.LayoutDirection.Ltr),
-                bottom = ButtonDefaults.ContentPadding.calculateBottomPadding()
-            )
+            contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
+            shape = RoundedCornerShape(12.dp)
         ) {
             Icon(painter = painterResource(R.drawable.upload), contentDescription = "Upload")
             Spacer(modifier = Modifier.padding(6.dp))
@@ -266,13 +249,15 @@ fun EducationDropDownMenu(
             readOnly = true,
             label = { Text("Education Level") },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isExpanded) },
-            modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
+            modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
+            shape = RoundedCornerShape(12.dp)
         )
 
         ExposedDropdownMenu(
             expanded = isExpanded,
             containerColor = MaterialTheme.colorScheme.surface,
-            onDismissRequest = { isExpanded = false }
+            onDismissRequest = { isExpanded = false },
+            shape = RoundedCornerShape(12.dp)
         ) {
            EducationLevel.entries.forEach { item ->
                 DropdownMenuItem(
@@ -314,7 +299,7 @@ fun TimetableStateOverlay(
                 modifier = modifier
                     .padding(16.dp)
                     .fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(20.dp),
                 elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
             ) {
                 Row(
@@ -348,12 +333,18 @@ fun TimetableStateOverlay(
                     }
                 },
                 confirmButton = {
-                    Button(onClick = { viewModel.saveTimetable(state.timetable) }) {
+                    Button(
+                        onClick = { viewModel.saveTimetable(state.timetable) },
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
                         Text("Confirm Timetable")
                     }
                 },
                 dismissButton = {
-                    TextButton(onClick = { viewModel.clearTimetableState() }) {
+                    TextButton(
+                        onClick = { viewModel.clearTimetableState() },
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
                         Text("Discard")
                     }
                 }
@@ -385,10 +376,10 @@ fun MissingTimetableBanner(onUploadClicked: () -> Unit) {
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp),
         colors = CardDefaults.cardColors(
-            // Uses a soft tinted background to make it stand out from normal tasks
             containerColor = MaterialTheme.colorScheme.error
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        shape = RoundedCornerShape(20.dp)
     ) {
         Row(
             modifier = Modifier.padding(16.dp),

@@ -160,12 +160,8 @@ fun TimetablePage(
                 // Reupload Button
                 Button(
                     onClick = onUploadTimetable,
-                    contentPadding = PaddingValues(
-                        start = 8.dp,
-                        top = ButtonDefaults.ContentPadding.calculateTopPadding(),
-                        end = ButtonDefaults.ContentPadding.calculateEndPadding(layoutDirection = androidx.compose.ui.unit.LayoutDirection.Ltr),
-                        bottom = ButtonDefaults.ContentPadding.calculateBottomPadding()
-                    )
+                    contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
+                    shape = RoundedCornerShape(12.dp)
                 ) {
                     Icon(painter = painterResource(R.drawable.rotate), contentDescription = "Reupload")
                     Spacer(modifier = Modifier.padding(6.dp))

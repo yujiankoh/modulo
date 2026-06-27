@@ -108,6 +108,7 @@ fun AllTaskPage(
                             selected = currentSort == option,
                             onClick = { currentSort = option },
                             label = { Text(option.displayName) },
+                            shape = RoundedCornerShape(8.dp),
                             colors = FilterChipDefaults.filterChipColors(
                                 selectedContainerColor = ModuloTheme.colors.pillBg,
                                 selectedLabelColor = MaterialTheme.colorScheme.primary
@@ -127,6 +128,7 @@ fun AllTaskPage(
                                 selected = activeModuleFilter == null,
                                 onClick = { activeModuleFilter = null },
                                 label = { Text("All") },
+                                shape = RoundedCornerShape(8.dp),
                                 colors = FilterChipDefaults.filterChipColors(
                                     selectedContainerColor = ModuloTheme.colors.pillBg,
                                     selectedLabelColor = MaterialTheme.colorScheme.primary
@@ -140,6 +142,7 @@ fun AllTaskPage(
                                 selected = activeModuleFilter == moduleCode,
                                 onClick = { activeModuleFilter = moduleCode },
                                 label = { Text(moduleCode) },
+                                shape = RoundedCornerShape(8.dp),
                                 colors = FilterChipDefaults.filterChipColors(
                                     selectedContainerColor = ModuloTheme.colors.pillBg,
                                     selectedLabelColor = MaterialTheme.colorScheme.primary
@@ -152,7 +155,7 @@ fun AllTaskPage(
 
             SecondaryTabRow(
                 selectedTabIndex = selectedTabIndex,
-                containerColor = MaterialTheme.colorScheme.background
+                containerColor = MaterialTheme.colorScheme.background,
             ) {
                 Tab(
                     selected = selectedTabIndex == 0,

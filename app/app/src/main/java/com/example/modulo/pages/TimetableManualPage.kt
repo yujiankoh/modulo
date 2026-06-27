@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -117,12 +118,8 @@ fun TimetableManualPage(
                             it.name.isNotBlank()
                         }
                     },
-                    contentPadding = PaddingValues(
-                        start = 12.dp,
-                        top = ButtonDefaults.ContentPadding.calculateTopPadding(),
-                        end = ButtonDefaults.ContentPadding.calculateEndPadding(layoutDirection = androidx.compose.ui.unit.LayoutDirection.Ltr),
-                        bottom = ButtonDefaults.ContentPadding.calculateBottomPadding()
-                    )
+                    contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
+                    shape = RoundedCornerShape(12.dp)
                 ) {
                     Icon(painter = painterResource(R.drawable.save), contentDescription = "Save")
                     Spacer(modifier = Modifier.padding(6.dp))
@@ -166,7 +163,7 @@ fun TimetableManualPage(
                                 )
                             )
                         },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
                     ) {
                         Icon(painter = painterResource(R.drawable.plus), contentDescription = "Add Module")
                         Spacer(Modifier.width(8.dp))
@@ -253,7 +250,8 @@ fun ModuleEntryCard(
 
     ElevatedCard(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface)
+        colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface),
+        shape = RoundedCornerShape(20.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
@@ -275,7 +273,8 @@ fun ModuleEntryCard(
                     label = { Text("Module Code") },
                     placeholder = { Text("MA100...") },
                     keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp)
                 )
             }
 
@@ -288,7 +287,8 @@ fun ModuleEntryCard(
                 label = { Text(if (isHigherEd) "Module Name" else "Subject") },
                 placeholder = { Text(if (isHigherEd) "Introduction to..." else "Math...") },
                 keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp)
             )
 
             Spacer(Modifier.height(16.dp))
@@ -319,7 +319,8 @@ fun ModuleEntryCard(
                     val newSlots = module.slots.toMutableList()
                     newSlots.add(FormSlot(sessionType = getDefaultSessionType(educationLevel)))
                     onModuleChange(module.copy(slots = newSlots))
-                }
+                },
+                shape = RoundedCornerShape(12.dp)
             ) {
                 Icon(painter = painterResource(R.drawable.plus), contentDescription = "Add Slot")
                 Spacer(Modifier.width(4.dp))
@@ -348,7 +349,8 @@ fun SlotEntryRow(
 
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background),
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp)
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Row(
@@ -399,7 +401,8 @@ fun SlotEntryRow(
                     onValueChange = { onSlotChange(slot.copy(classNo = it.uppercase())) },
                     label = { Text("Class Code (Optional)", maxLines = 1, overflow = TextOverflow.Ellipsis) },
                     keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters),
-                    modifier = Modifier.weight(3f)
+                    modifier = Modifier.weight(3f),
+                    shape = RoundedCornerShape(12.dp)
                 )
             }
 
@@ -411,7 +414,8 @@ fun SlotEntryRow(
                     onValueChange = { onSlotChange(slot.copy(location = it)) },
                     label = { Text("Location (Optional)", maxLines = 1, overflow = TextOverflow.Ellipsis) },
                     singleLine = true,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(12.dp)
                 )
                 Spacer(Modifier.width(8.dp))
                 FormDropDownMenu(
@@ -451,13 +455,15 @@ fun FormDropDownMenu(
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isExpanded) },
             modifier = Modifier
                 .fillMaxWidth()
-                .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
+                .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
+            shape = RoundedCornerShape(12.dp)
         )
 
         ExposedDropdownMenu(
             expanded = isExpanded,
             containerColor = MaterialTheme.colorScheme.surface,
-            onDismissRequest = { isExpanded = false }
+            onDismissRequest = { isExpanded = false },
+            shape = RoundedCornerShape(12.dp)
         ) {
             itemOptions.forEach { item ->
                 DropdownMenuItem(
@@ -506,7 +512,8 @@ fun TimePickerMenu(
                 disabledTextColor = MaterialTheme.colorScheme.onSurface,
                 disabledBorderColor = MaterialTheme.colorScheme.outline,
                 disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            ),
+            shape = RoundedCornerShape(12.dp)
         )
     }
 
@@ -515,26 +522,30 @@ fun TimePickerMenu(
             containerColor = MaterialTheme.colorScheme.surface,
             onDismissRequest = { showDialog = false },
             confirmButton = {
-                TextButton(onClick = {
-                    val rawHour = timePickerState.hour
-                    val rawMinute = timePickerState.minute
+                Button(
+                    onClick = {
+                        val rawHour = timePickerState.hour
+                        val rawMinute = timePickerState.minute
 
-                    // Round to the nearest 15 minutes
-                    var roundedMinute = ((rawMinute / 15.0).roundToInt() * 15)
-                    var finalHour = rawHour
+                        // Round to the nearest 15 minutes
+                        var roundedMinute = ((rawMinute / 15.0).roundToInt() * 15)
+                        var finalHour = rawHour
 
-                    if (roundedMinute == 60) {
-                        roundedMinute = 0
-                        finalHour = (finalHour + 1) % 24 // Keeps it within 0-23
-                    }
+                        if (roundedMinute == 60) {
+                            roundedMinute = 0
+                            finalHour = (finalHour + 1) % 24 // Keeps it within 0-23
+                        }
 
-                    val h = finalHour.toString().padStart(2, '0')
-                    val m = roundedMinute.toString().padStart(2, '0')
+                        val h = finalHour.toString().padStart(2, '0')
+                        val m = roundedMinute.toString().padStart(2, '0')
 
-                    onTimeSelected("$h:$m")
-                    showDialog = false
-                }) {
-                    Text("OK")
+                        onTimeSelected("$h:$m")
+                        showDialog = false
+                    },
+                    modifier = Modifier.padding(end = 8.dp, bottom = 4.dp),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("Override")
                 }
             },
             dismissButton = {

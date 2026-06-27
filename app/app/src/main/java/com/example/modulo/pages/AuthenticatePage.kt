@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -29,7 +30,8 @@ fun AuthenticatePage(
         Spacer(modifier = Modifier.height(16.dp))
 
         Button(
-            onClick = { onSyncWithDriveClick() }
+            onClick = { onSyncWithDriveClick() },
+            shape = RoundedCornerShape(12.dp)
         ) {
             Text("Sync with Google Drive")
         }

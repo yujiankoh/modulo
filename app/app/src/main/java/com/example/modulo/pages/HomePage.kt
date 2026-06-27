@@ -21,7 +21,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -45,7 +44,6 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.example.modulo.AppViewModel
@@ -150,7 +148,8 @@ fun SectionTitle(
 
         if (subtext.isNotBlank()) {
             TextButton(
-                onClick = onSubtext
+                onClick = onSubtext,
+                shape = RoundedCornerShape(12.dp)
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically
@@ -269,9 +268,8 @@ fun TodaySchedule(
 
     // Auto-scroll to current time
     val scrollState = rememberScrollState()
-    val verticalScrollState = rememberScrollState()
     val screenSize = LocalWindowInfo.current.containerSize
-    val halfScreenWidthPx = with(LocalDensity.current) { ((screenSize.width.toDp()) / 2).toPx() }
+    val halfScreenWidthPx = with(LocalDensity.current) { ((screenSize.width.toDp() - 60.dp) / 2).toPx() }
     val currentTime = LocalTime.now()
 
     val (minTime, maxTime, totalHours) = getTimeDetails(slotsToday)
@@ -285,7 +283,7 @@ fun TodaySchedule(
         }
     }
 
-    SectionTitle(text = "Today's Schedule", subtext = "View Timetable", onSubtext = onTimetableClick)
+    SectionTitle(text = "Today's schedule", subtext = "View Timetable", onSubtext = onTimetableClick)
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -455,7 +453,7 @@ fun Deadlines(
     Row(
         modifier = Modifier.fillMaxWidth()
     ) {
-        SectionTitle("Upcoming Deadlines: ${dueTasks.size}")
+        SectionTitle("Tasks due soon")
     }
 
     LazyColumn(

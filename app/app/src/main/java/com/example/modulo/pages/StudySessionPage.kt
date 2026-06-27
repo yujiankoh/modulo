@@ -109,12 +109,8 @@ fun StudySessionPage(
             Spacer(modifier = Modifier.height(16.dp))
             Button(
                 onClick = onOpenHistory,
-                contentPadding = PaddingValues(
-                    start = 12.dp,
-                    top = ButtonDefaults.ContentPadding.calculateTopPadding(),
-                    end = ButtonDefaults.ContentPadding.calculateEndPadding(layoutDirection = androidx.compose.ui.unit.LayoutDirection.Ltr),
-                    bottom = ButtonDefaults.ContentPadding.calculateBottomPadding()
-                )
+                contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
+                shape = RoundedCornerShape(12.dp)
             ) {
                 Icon(painter = painterResource(R.drawable.file_clock), contentDescription = "History")
                 Spacer(modifier = Modifier.padding(6.dp))
@@ -220,10 +216,13 @@ fun StudySessionPage(
                     }
                 },
                 confirmButton = {
-                    Button(onClick = {
-                        viewModel.saveSession(rating)
-                        showConfirmDialog = false
-                    }) {
+                    Button(
+                        onClick = {
+                            viewModel.saveSession(rating)
+                            showConfirmDialog = false
+                        },
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
                         Text("Save Session")
                     }
                 },
@@ -245,6 +244,7 @@ fun StatCard(title: String, mins: Int, modifier: Modifier = Modifier) {
     Card(
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        shape = RoundedCornerShape(20.dp),
         modifier = modifier
     ) {
         Column(
