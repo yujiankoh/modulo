@@ -33,18 +33,21 @@
     <!-- ---- Left navigation bar (persistent on every view) ---- -->
     <aside id="sidebar">
       <div class="brand">MODULO</div>
+      <!-- Handbook header (Phase 13): "HANDBOOK · AY25/26 · S1". sidebar.js fills it from
+           appState via handbookHeaderLabel(); hidden until the handbook is set up. -->
+      <div id="handbookHeader" class="brand-sub" style="display: none;"></div>
       <nav id="nav">
         <!-- Each link's href is its route. The text after # must match a #view-<route>
              section id below (router.js maps "dashboard" -> #view-dashboard). -->
-        <a class="nav-link" href="#dashboard">Dashboard</a>
-        <a class="nav-link" href="#calendar">Calendar</a>
-        <a class="nav-link" href="#tasks">All Tasks</a>
-        <a class="nav-link" href="#timetable">Timetable</a>
-        <a class="nav-link" href="#study">Study Session</a>
+        <a class="nav-link" href="#dashboard"><i data-lucide="layout-dashboard"></i>Dashboard</a>
+        <a class="nav-link" href="#calendar"><i data-lucide="calendar"></i>Calendar</a>
+        <a class="nav-link" href="#tasks"><i data-lucide="list-checks"></i>All Tasks</a>
+        <a class="nav-link" href="#timetable"><i data-lucide="calendar-clock"></i>Timetable</a>
+        <a class="nav-link" href="#study"><i data-lucide="timer"></i>Study Session</a>
         <!-- Modules list (12.4d): sidebar.js fills this with the distinct modules from the
              timetable + tasks, each with a colour dot. Empty until there are any. -->
         <div id="moduleNav" class="module-nav"></div>
-        <a class="nav-link nav-link--bottom" href="#settings">Settings</a>
+        <a class="nav-link nav-link--bottom" href="#settings"><i data-lucide="settings"></i>Settings</a>
       </nav>
 
       <!-- Light/dark toggle (theme.js updates the label). -->
@@ -69,7 +72,7 @@
            still opens the modal). No search bar (per decision). -->
       <header id="topbar">
         <a id="status" class="topbar-status" href="#settings">Not connected</a>
-        <button id="openAddTask" class="btn-primary">+ Add Task</button>
+        <button id="openAddTask" class="btn-primary"><i data-lucide="plus"></i>Add Task</button>
       </header>
 
       <!-- DASHBOARD (Phase 12.3): at-a-glance home. dashboard.js fills these from
@@ -164,8 +167,8 @@
           <h3>Add your timetable</h3>
           <p>Upload a photo to parse it automatically, or enter it by hand.</p>
           <div class="tt-empty-actions">
-            <button id="ttEmptyUpload" class="btn-primary" type="button">Upload timetable</button>
-            <button id="ttEmptyManual" type="button">Enter manually</button>
+            <button id="ttEmptyUpload" class="btn-primary" type="button"><i data-lucide="upload"></i>Upload timetable</button>
+            <button id="ttEmptyManual" type="button"><i data-lucide="pencil"></i>Enter manually</button>
           </div>
         </div>
       </section>
@@ -176,9 +179,8 @@
         <div class="card study-card">
           <div id="timerDisplay">00:00:00</div>
           <div id="timerControls">
-            <button id="timerStart" type="button">Start</button>
-            <button id="timerPause" type="button">Pause</button>
-            <button id="timerStop" class="btn-primary" type="button">Stop &amp; Save</button>
+            <button id="timerToggle" type="button"><i data-lucide="play"></i>Start</button>
+            <button id="timerStop" class="btn-primary" type="button"><i data-lucide="square"></i>Stop &amp; Save</button>
           </div>
 
           <!-- Study-time totals: derived live from studySessions on redraw. -->
@@ -201,9 +203,9 @@
         <h2>Settings</h2>
         <!-- The connection status now shows in the top bar (#status moved there). -->
         <div class="card settings-card">
-          <button id="connectBtn">Connect Google Drive</button>
-          <button id="localBtn">Use this device only</button>
-          <button id="reloadBtn">Reload from Drive</button>
+          <button id="connectBtn"><i data-lucide="cloud"></i>Connect Google Drive</button>
+          <button id="localBtn"><i data-lucide="monitor"></i>Use this device only</button>
+          <button id="reloadBtn"><i data-lucide="refresh-cw"></i>Reload from Drive</button>
         </div>
 
         <h3 class="settings-heading">Appearance</h3>
@@ -211,38 +213,14 @@
           <button id="themeToggle" type="button">Switch to dark mode</button>
         </div>
 
-        <!-- Timetable setup (INTERIM — moves into the handbook, Phase 13). Education level
-             + term dates live here for now; the timetable parser + grid read them. -->
-        <h3 class="settings-heading">Timetable setup</h3>
-        <div class="card">
-          <label class="task-field">
-            <span>Education level</span>
-            <select id="eduLevel">
-              <option value="">— select —</option>
-              <option value="primary">Primary school</option>
-              <option value="secondary">Secondary school</option>
-              <option value="jc">Junior College</option>
-              <option value="poly">Polytechnic</option>
-              <option value="university">University</option>
-            </select>
-          </label>
-          <label class="task-field">
-            <span>Term start (Week 1 Monday)</span>
-            <input id="termStart" type="date" />
-          </label>
-          <label class="task-field">
-            <span>Term end</span>
-            <input id="termEnd" type="date" />
-          </label>
-          <div class="task-field">
-            <span>Recess / holiday</span>
-            <div class="settings-break-row">
-              <input id="breakStart" type="date" />
-              <span class="settings-break-to">to</span>
-              <input id="breakEnd" type="date" />
-              <button id="addBreakBtn" type="button">Add break</button>
-            </div>
-            <div id="breakList"></div>
+        <!-- Handbook (Phase 13): a read-only SUMMARY of the per-semester setup. handbook.js
+             fills #handbookSummary from appState; Edit opens the handbook modal (with the
+             education level shown locked). The raw inputs now live inside that modal. -->
+        <h3 class="settings-heading">Handbook</h3>
+        <div class="card hb-card">
+          <div id="handbookSummary"></div>
+          <div class="task-modal-actions">
+            <button id="editHandbookBtn" type="button"><i data-lucide="pencil"></i>Edit</button>
           </div>
         </div>
       </section>
@@ -256,18 +234,92 @@
        rating from Study). Hidden by default; their modules toggle display.
        ============================================================================ -->
 
+  <!-- Handbook / onboarding modal (Phase 13): captures education level (locked after first
+       run), a level-aware academic year, semester, and term dates. Auto-opens on first run;
+       afterwards it's the "Edit handbook" editor (level shown locked). Reuses .tcal-popup. -->
+  <div id="handbookModal" class="tcal-popup" style="display: none;">
+    <div class="tcal-popup-card">
+      <button id="hbCloseX" class="tcal-popup-close" type="button"><i data-lucide="x"></i></button>
+      <h3 id="hbTitle">Set up your handbook</h3>
+      <p id="hbIntro" class="module-modal-placeholder">A few details about your studies. You can
+        change these later — except your education level, which is fixed once set.</p>
+
+      <!-- Education level: a dropdown on first run; handbook.js swaps this for locked text
+           (#hbLevelLocked) once handbookSetup is true. -->
+      <label class="task-field" id="hbLevelField">
+        <span>Education level</span>
+        <select id="hbLevel">
+          <option value="">— select —</option>
+          <option value="primary">Primary school</option>
+          <option value="secondary">Secondary school</option>
+          <option value="jc">Junior College</option>
+          <option value="poly">Polytechnic</option>
+          <option value="university">University</option>
+        </select>
+      </label>
+      <div class="task-field" id="hbLevelLockedField" style="display: none;">
+        <span>Education level</span>
+        <div id="hbLevelLocked" class="hb-locked"></div>
+        <div class="hb-locked-note">Your education level is fixed and can't be changed.</div>
+      </div>
+
+      <!-- Academic year: a single START-YEAR number; handbook.js relabels it + previews how
+           it'll be stored per level (tertiary "25/26" vs school "2026"). -->
+      <label class="task-field">
+        <span id="hbYearLabel">Academic year</span>
+        <input id="hbYear" type="number" min="2000" max="2100" step="1" placeholder="e.g. 2026" />
+      </label>
+      <p id="hbYearPreview" class="hb-preview"></p>
+
+      <label class="task-field">
+        <span>Semester</span>
+        <select id="hbSemester">
+          <option value="1">Semester 1</option>
+          <option value="2">Semester 2</option>
+        </select>
+      </label>
+
+      <label class="task-field">
+        <span>Term start (Week 1 Monday)</span>
+        <input id="hbTermStart" type="date" />
+      </label>
+      <label class="task-field">
+        <span>Term end</span>
+        <input id="hbTermEnd" type="date" />
+      </label>
+
+      <!-- Recess / holiday editor (relocated from Settings, Phase 13). Same ids as before,
+           so the breaks logic in timetable.js keeps working unchanged. -->
+      <div class="task-field">
+        <span>Recess / holiday</span>
+        <div class="settings-break-row">
+          <input id="breakStart" type="date" />
+          <span class="settings-break-to">to</span>
+          <input id="breakEnd" type="date" />
+          <button id="addBreakBtn" type="button">Add break</button>
+        </div>
+        <div id="breakList"></div>
+      </div>
+
+      <div class="task-modal-actions">
+        <button id="hbSaveBtn" class="btn-primary" type="button"><i data-lucide="save"></i>Save handbook</button>
+      </div>
+      <p id="hbError" class="hb-error"></p>
+    </div>
+  </div>
+
   <!-- Upload timetable modal (12.5d): opened by Re-upload / the empty-state Upload button.
        Education level lives in Settings now; the hint shows the current level. -->
   <div id="uploadModal" class="tcal-popup" style="display: none;">
     <div class="tcal-popup-card">
-      <button id="uploadCloseX" class="tcal-popup-close" type="button">✕</button>
+      <button id="uploadCloseX" class="tcal-popup-close" type="button"><i data-lucide="x"></i></button>
       <h3>Upload timetable</h3>
       <p id="uploadLevelHint" class="module-modal-placeholder"></p>
       <input id="timetableImage" type="file" accept="image/*" />
       <img id="timetablePreview" alt="preview" style="max-width: 100%; display: none; margin-top: 10px; border-radius: 8px;" />
       <div class="tt-upload-actions">
-        <button id="parseBtn" class="btn-primary" type="button">Parse timetable</button>
-        <button id="addWeekBtn" type="button">Add another week</button>
+        <button id="parseBtn" class="btn-primary" type="button"><i data-lucide="sparkles"></i>Parse timetable</button>
+        <button id="addWeekBtn" type="button"><i data-lucide="plus"></i>Add another week</button>
       </div>
       <pre id="parseOutput"></pre>
     </div>
@@ -277,13 +329,13 @@
        the .tcal-popup overlay; a wider card holds the module/slot rows. JS fills #moduleList. -->
   <div id="timetableEditor" class="tcal-popup" style="display: none;">
     <div class="tcal-popup-card tt-editor-card">
-      <button id="editorCloseX" class="tcal-popup-close" type="button">✕</button>
+      <button id="editorCloseX" class="tcal-popup-close" type="button"><i data-lucide="x"></i></button>
       <h3>Edit timetable</h3>
       <p id="editorHint">Add your modules and their class slots, then Save.</p>
       <div id="moduleList"></div>
-      <button id="addModuleBtn">+ Add module</button>
+      <button id="addModuleBtn"><i data-lucide="plus"></i>Add module</button>
       <div class="tt-editor-actions">
-        <button id="saveTimetableBtn">Save timetable</button>
+        <button id="saveTimetableBtn"><i data-lucide="save"></i>Save timetable</button>
         <button id="closeEditorBtn">Close</button>
         <span id="editorStatus"></span>
       </div>
@@ -293,7 +345,7 @@
   <!-- Manage modules modal (12.4): tick = shown, untick = hidden (dashboard + sidebar). -->
   <div id="manageModulesModal" class="tcal-popup" style="display: none;">
     <div class="tcal-popup-card">
-      <button id="manageModulesClose" class="tcal-popup-close" type="button">✕</button>
+      <button id="manageModulesClose" class="tcal-popup-close" type="button"><i data-lucide="x"></i></button>
       <h3>Show / hide modules</h3>
       <p class="module-modal-placeholder">Untick a module to hide it from the dashboard and sidebar.</p>
       <ul id="manageModulesList" class="dash-list"></ul>
@@ -304,7 +356,7 @@
        + that module's tasks. dashboard.js fills the title + #moduleModalTasks. -->
   <div id="moduleModal" class="tcal-popup" style="display: none;">
     <div class="tcal-popup-card">
-      <button id="moduleModalClose" class="tcal-popup-close" type="button">✕</button>
+      <button id="moduleModalClose" class="tcal-popup-close" type="button"><i data-lucide="x"></i></button>
       <h3 id="moduleModalTitle"></h3>
       <div class="module-modal-label">My notes</div>
       <p class="module-modal-placeholder">Notes &amp; files are coming soon.</p>
@@ -316,7 +368,7 @@
   <!-- Add Task modal (reuses the .tcal-popup overlay/card styles). -->
   <div id="taskModal" class="tcal-popup" style="display: none;">
     <div class="tcal-popup-card">
-      <button id="taskModalClose" class="tcal-popup-close" type="button">✕</button>
+      <button id="taskModalClose" class="tcal-popup-close" type="button"><i data-lucide="x"></i></button>
       <h3>Add a task</h3>
 
       <label class="task-field">
@@ -326,7 +378,15 @@
 
       <label class="task-field">
         <span>Module/Subject</span>
-        <input id="taskModule" type="text" placeholder="e.g. CS2030S (optional)" />
+        <!-- Built by task.js: "— None —", one option per known module, then "+ Add other…". -->
+        <select id="taskModule">
+          <option value="">— None —</option>
+        </select>
+      </label>
+      <!-- Revealed only when "+ Add other…" is chosen above. -->
+      <label class="task-field" id="taskModuleOtherField" style="display: none;">
+        <span>New module/subject</span>
+        <input id="taskModuleOther" type="text" placeholder="e.g. CS2030S" />
       </label>
 
       <label class="task-field">
@@ -348,7 +408,7 @@
 
       <div class="task-modal-actions">
         <button id="cancelAddTask" type="button">Cancel</button>
-        <button id="addBtn" type="button">Add Task</button>
+        <button id="addBtn" type="button"><i data-lucide="plus"></i>Add Task</button>
       </div>
     </div>
   </div>
@@ -356,7 +416,7 @@
   <!-- Day popup (Phase 7.3): opened by clicking a calendar day; lists that day's tasks. -->
   <div id="dayPopup" class="tcal-popup" style="display: none;">
     <div class="tcal-popup-card">
-      <button id="dayPopupClose" class="tcal-popup-close" type="button">✕</button>
+      <button id="dayPopupClose" class="tcal-popup-close" type="button"><i data-lucide="x"></i></button>
       <h3 id="dayPopupTitle"></h3>
       <div id="dayPopupBody"></div>
     </div>
@@ -366,7 +426,7 @@
        saves null; closing (✕ / backdrop / Esc) cancels the save and keeps the timer paused. -->
   <div id="ratingModal" class="tcal-popup" style="display: none;">
     <div class="tcal-popup-card">
-      <button id="ratingClose" class="tcal-popup-close" type="button">✕</button>
+      <button id="ratingClose" class="tcal-popup-close" type="button"><i data-lucide="x"></i></button>
       <h3>How did that session go?</h3>
       <p id="ratingSummary"></p>
       <div id="ratingButtons">
@@ -380,6 +440,9 @@
     </div>
   </div>
 
+  <!-- Lucide icons (CDN, UMD build): exposes a global `lucide`. icons.js calls
+       lucide.createIcons() to replace every <i data-lucide="name"> with its <svg>. -->
+  <script src="https://unpkg.com/lucide@latest"></script>
   <script type="module" src="main.js"></script>
 </body>
 </html>

@@ -12,6 +12,7 @@
   --pill-bg: #eef1f8;     /* neutral due-date pills */
   --hover: #f2f5fd;       /* faint hover background */
   --today: #f3f7ff;       /* today highlight tint */
+  --danger: #d23b53;      /* validation/error text */
   /* Soft layered card elevation: a tight contact shadow + a wider ambient one. */
   --shadow: 0 1px 2px rgba(20, 30, 60, 0.04), 0 4px 14px rgba(20, 30, 60, 0.06);
 }
@@ -29,6 +30,7 @@
   --pill-bg: #20283b;
   --hover: #1c2438;
   --today: #16233f;
+  --danger: #f2728a;      /* validation/error text (brighter for dark bg) */
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 6px 18px rgba(0, 0, 0, 0.4);
 }
 
@@ -36,6 +38,10 @@ body { font-family: "Inter", system-ui, sans-serif; padding: 2rem; }
 /* Base button: white, bordered, rounded. .btn-primary (blue) overrides this; the close
    ✕ / chevron buttons set their own transparent style. */
 button {
+  display: inline-flex;          /* lets an icon + label sit on one centred row */
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   padding: 0.5rem 0.9rem;
   font-size: 0.95rem;
   cursor: pointer;
@@ -45,6 +51,8 @@ button {
   border-radius: 8px;
 }
 button:hover { border-color: var(--border-strong); }
+/* Lucide icon inside any button: small + non-shrinking (stroke = currentColor). */
+button svg { width: 16px; height: 16px; flex: none; }
 /* Selects (filters, type pickers): match the button look. */
 select {
   padding: 6px 10px;
@@ -450,6 +458,18 @@ select {
 .task-field > select { padding: 6px 8px; font-size: 14px; }
 .task-modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
 
+/* Handbook onboarding (Phase 13): live academic-year preview + validation error line. */
+.hb-preview { font-size: 12px; color: var(--text-muted); margin: -8px 0 12px; min-height: 14px; }
+.hb-error { font-size: 12px; color: var(--danger); margin: 8px 0 0; min-height: 14px; }
+.hb-locked { font-size: 14px; color: var(--text); padding: 6px 8px; background: var(--hover); border-radius: 8px; }
+.hb-locked-note { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+/* Read-only handbook summary rows in Settings: fixed label column + value beside it. */
+.hb-card { max-width: 480px; }
+.hb-row { display: grid; grid-template-columns: 140px 1fr; gap: 12px; padding: 8px 0; border-top: 1px solid var(--border); font-size: 14px; }
+.hb-row:first-child { border-top: none; }
+.hb-row-k { color: var(--text-muted); }
+.hb-row-v { color: var(--text); }
+
 /* Step 9.4: bucketed task list — group headers, rows, and the relative-date pill.
    Layout only; the mockup's polish (cards, colours, fonts) lands in Phase 12. */
 /* UI upgrade (layout): task toolbar — actions left, filters/sort right. */
@@ -539,14 +559,21 @@ body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
   height: 100vh;
   overflow-y: auto;
 }
-.brand { font-weight: 700; letter-spacing: 2px; margin: 4px 8px 18px; color: var(--text); }
+.brand { font-weight: 700; letter-spacing: 2px; margin: 4px 8px 6px; color: var(--text); }
+.brand-sub { font-size: 11px; letter-spacing: 0.06em; color: var(--text-muted); margin: 0 8px 16px; }
 #nav { display: flex; flex-direction: column; gap: 2px; flex: 1; }  /* fill the height */
 .nav-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   text-decoration: none;
   color: var(--text);
   padding: 9px 12px;
   border-radius: 10px;
 }
+/* Lucide replaces each <i data-lucide> with an <svg>; size it + stop it shrinking. The
+   icon's stroke is currentColor, so it inherits the link colour (incl. the active blue). */
+.nav-link svg { width: 18px; height: 18px; flex: none; }
 .nav-link:hover { background: var(--hover); }
 .nav-link.is-active { background: var(--primary-soft); color: var(--primary); font-weight: 600; }  /* current view */
 .nav-link--bottom { margin-top: auto; }                         /* push Settings down */

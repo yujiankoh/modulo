@@ -5,26 +5,8 @@ import { appState, persist } from "./data.js";
 
 let selectedImage = null;   // will hold { base64, mimeType } once an image is chosen
 
-// Education level: save the choice so it syncs and the parser can use it.
-const eduLevelEl = document.getElementById("eduLevel");
-eduLevelEl.addEventListener("change", () => {
-  appState.educationLevel = eduLevelEl.value || null;
-  persist();
-});
-
-// Term-start anchor (Week 1 Monday): save it so the weekly grid can show real dates.
-const termStartEl = document.getElementById("termStart");
-termStartEl.addEventListener("change", () => {
-  appState.termStart = termStartEl.value || null;
-  persist();
-});
-
-// Term end: weeks past it are "outside term" (no week number, no classes).
-const termEndEl = document.getElementById("termEnd");
-termEndEl.addEventListener("change", () => {
-  appState.termEnd = termEndEl.value || null;
-  persist();
-});
+// Education level + term start/end are now captured by the handbook modal (handbook.js),
+// not here — those inputs moved out of Settings in Phase 13.
 
 // Recess / holiday breaks: a list of { start, end } date ranges. Stored on appState.breaks;
 // each is a removable chip. Weeks overlapping a range are skipped in academic numbering.

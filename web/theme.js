@@ -9,13 +9,17 @@ function currentTheme() {
   return document.documentElement.dataset.theme === "dark" ? "dark" : "light";
 }
 
-// Keep both toggles' labels matching the active theme.
+// Keep both toggles' labels matching the active theme. The icon shows what you'll switch
+// TO: a sun while in dark mode, a moon while in light mode. We set innerHTML with a fresh
+// <i data-lucide> placeholder; icons.js (re)draws it on the modulo:datachanged that
+// applyTheme fires (and once at startup).
 function updateLabels(theme) {
   const dark = theme === "dark";
+  const icon = dark ? "sun" : "moon";
   const side = document.getElementById("themeToggleSide");
   const settings = document.getElementById("themeToggle");
-  if (side) side.textContent = dark ? "☀ Light mode" : "🌙 Dark mode";
-  if (settings) settings.textContent = dark ? "Switch to light mode" : "Switch to dark mode";
+  if (side) side.innerHTML = `<i data-lucide="${icon}"></i>${dark ? "Light mode" : "Dark mode"}`;
+  if (settings) settings.innerHTML = `<i data-lucide="${icon}"></i>${dark ? "Switch to light mode" : "Switch to dark mode"}`;
 }
 
 // Set the theme on <html> (CSS [data-theme="dark"] reacts), remember it, refresh labels.

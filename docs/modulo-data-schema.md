@@ -22,6 +22,9 @@ breaks even though the file transfers fine.
 {
   "schemaVersion": 2,
   "educationLevel": "university",
+  "academicYear": "25/26",
+  "semester": 2,
+  "handbookSetup": true,
   "termStart": "2026-05-18",
   "termEnd": "2026-08-07",
   "breaks": [{ "start": "2026-06-29", "end": "2026-07-05" }],
@@ -70,7 +73,10 @@ breaks even though the file transfers fine.
 | Field            | Type              | Required | Description |
 |------------------|-------------------|----------|-------------|
 | `schemaVersion`  | number            | yes      | The structure version. Currently `2`. Bump when the structure changes. |
-| `educationLevel` | string \| null    | yes      | The user's level: `primary`, `secondary`, `jc`, `poly`, `university`, or `null` if unset. Drives how the timetable parser reads the image. |
+| `educationLevel` | string \| null    | yes      | The user's level: `primary`, `secondary`, `jc`, `poly`, `university`, or `null` if unset. Drives how the timetable parser reads the image. **Set once during handbook onboarding, then locked** (immutable) — it determines the timetable schema/editor rules. |
+| `academicYear`   | string \| null    | no       | Academic year (Phase 13 handbook). **Format is level-aware:** tertiary (`university`/`poly`) spans two years → `"YY/YY"` e.g. `"25/26"`; school (`primary`/`secondary`/`jc`) is a single calendar year → `"YYYY"` e.g. `"2026"`. Drives the sidebar "HANDBOOK · …" header (rendered per level). `null` until onboarding. Web-only for now. |
+| `semester`       | number \| null    | no       | Current semester, `1` or `2` (Phase 13 handbook). Drives the sidebar header. `null` until onboarding. Web-only for now. |
+| `handbookSetup`  | boolean           | no       | `true` once the user has completed handbook onboarding (Phase 13). Gates the first-run setup modal. Defaults `false`; pre-Phase-13 files (no flag) are treated as set up iff `educationLevel` is already chosen. Web-only for now. |
 | `termStart`      | string (`YYYY-MM-DD`) \| null | no | Week-1 Monday anchor for the dated weekly timetable view. `null` until the user sets it. Used to map the recurring weekly timetable onto real dates + derive odd/even week parity. Web-only for now; the app may ignore it. |
 | `termEnd`        | string (`YYYY-MM-DD`) \| null | no | Last day of term. Weeks after it (and before `termStart`) are "outside term" — shown with dates but no week number/classes. `null` until set. Web-only for now. |
 | `breaks`         | array of `{ start, end }` (each `YYYY-MM-DD`) | no | Recess/holiday date ranges. Any week overlapping a range is non-academic: skipped in week numbering (so parity continues across it) and shows no classes. Defaults to `[]`. Web-only for now. |
@@ -200,7 +206,10 @@ finer-grained merging later. Do NOT build conflict resolution yet — last-write
 ```javascript
 let appState = {
   schemaVersion: 2,
-  educationLevel: null,   // "primary" | "secondary" | "jc" | "poly" | "university"
+  educationLevel: null,   // "primary" | "secondary" | "jc" | "poly" | "university" — set once, then locked
+  academicYear: null,     // level-aware: "YY/YY" (uni/poly) or "YYYY" (school) — Phase 13 handbook
+  semester: null,         // 1 | 2 (Phase 13 handbook) — sidebar header
+  handbookSetup: false,   // true once onboarding done (Phase 13) — gates first-run modal
   termStart: null,        // "YYYY-MM-DD" Week-1 Monday anchor, or null
   termEnd: null,          // "YYYY-MM-DD" last day of term, or null
   breaks: [],             // ["YYYY-MM-DD", ...] recess/holiday week Mondays
@@ -224,6 +233,9 @@ import kotlinx.serialization.Serializable
 data class ModuloData(
     val schemaVersion: Int = 2,
     val educationLevel: String? = null,
+    val academicYear: String? = null,  // level-aware: "YY/YY" (uni/poly) or "YYYY" (school) (Phase 13; web-only)
+    val semester: Int? = null,         // 1 or 2 (Phase 13 handbook; web-only for now)
+    val handbookSetup: Boolean = false, // true once web onboarding done (Phase 13; web-only for now)
     val termStart: String? = null,     // "YYYY-MM-DD" Week-1 Monday anchor (web-only for now)
     val termEnd: String? = null,       // "YYYY-MM-DD" last day of term (web-only for now)
     val breaks: List<Break> = emptyList(), // recess/holiday date ranges (web-only for now)
@@ -302,3 +314,4 @@ data class Slot(
 | 2       | 2026-06-23 | Added top-level `termEnd` (`YYYY-MM-DD`, default `null`) and `breaks` (recess/holiday `{ start, end }` date ranges, default `[]`) for term bounds + non-academic weeks (Phase 8). Any week overlapping a break range is skipped in numbering. Additive + defaulted; `schemaVersion` stays 2. Web-only for now. |
 | 2       | 2026-06-24 | Added top-level `studySessions` (array of StudySession `{ id, start, end, durationMins, rating, createdAt }`, default `[]`) for the Phase 10 study timer. Feeds daily/weekly/cumulative study-time totals + the calendar's per-day average rating (and the MS3 study game). Additive + defaulted, so old files still load; `schemaVersion` stays 2. **Ling Song: heads-up — additive contract change.** |
 | 2       | 2026-06-25 | Added top-level `hiddenModules` (array of strings, default `[]`) — module labels the web app hides from the dashboard + sidebar (Phase 12). Additive + defaulted; `schemaVersion` stays 2. Web-only (app may ignore). |
+| 2       | 2026-06-27 | Added top-level `academicYear` (string `"YY/YY"`, default `null`), `semester` (number `1`/`2`, default `null`), and `handbookSetup` (boolean, default `false`) for the Phase 13 handbook/onboarding. Drive the sidebar header + gate the first-run setup modal. Additive + defaulted, so old files still load; `schemaVersion` stays 2. Web-only for now. **Ling Song: heads-up — additive contract change.** |

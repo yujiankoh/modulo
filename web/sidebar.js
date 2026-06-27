@@ -3,6 +3,7 @@
 // chip (current storage mode). Reads appState; redraws on modulo:datachanged.
 
 import { appState, getStorageMode } from "./data.js";
+import { handbookHeaderLabel } from "./handbook.js";
 
 // A fixed palette + a stable assignment: the same module name always maps to the same
 // colour (sum of char codes mod palette length), independent of order. Exported so other
@@ -85,7 +86,20 @@ function renderAccount() {
   }
 }
 
+// Render the "HANDBOOK · AY25/26 · S1" header (hidden until the handbook is set up).
+function renderHandbookHeader() {
+  const el = document.getElementById("handbookHeader");
+  const label = handbookHeaderLabel();   // "" until academicYear + semester are set
+  if (label) {
+    el.textContent = `HANDBOOK · ${label}`;
+    el.style.display = "";
+  } else {
+    el.style.display = "none";
+  }
+}
+
 function render() {
+  renderHandbookHeader();
   renderModules();
   renderAccount();
 }

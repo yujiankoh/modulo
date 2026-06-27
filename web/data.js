@@ -17,6 +17,9 @@ let storageMode = null;            // "drive" | "local" | null — private to th
 export let appState = {
   schemaVersion: 2,        // was 1 — we finalized the timetable structure + added educationLevel
   educationLevel: null,
+  academicYear: null,      // Phase 13: e.g. "25/26" — handbook; drives the sidebar header
+  semester: null,          // Phase 13: 1 or 2 — handbook; drives the sidebar header
+  handbookSetup: false,    // Phase 13: true once onboarding is done (gates the first-run modal)
   termStart: null,         // "YYYY-MM-DD" Week-1 Monday anchor (Phase 8); null until set
   termEnd: null,           // "YYYY-MM-DD" last day of term; weeks past it are "outside term"
   breaks: [],              // [{ start, end }] date ranges of recess/holiday (non-academic) weeks
@@ -68,16 +71,17 @@ export async function loadInitialData() {
   }
   if (saved) {
     appState = saved;
-    const eduEl = document.getElementById("eduLevel");
-    if (appState.educationLevel) eduEl.value = appState.educationLevel;
-    const termEl = document.getElementById("termStart");
-    if (appState.termStart) termEl.value = appState.termStart;
-    const termEndEl = document.getElementById("termEnd");
-    if (appState.termEnd) termEndEl.value = appState.termEnd;
+    // (Phase 13) The education-level + term-date inputs moved into the handbook modal,
+    // which reads appState directly when opened — no DOM restore needed here.
     if (!appState.tasks) appState.tasks = [];
     if (!appState.breaks) appState.breaks = []; // default for files saved before Phase 8
     if (!appState.studySessions) appState.studySessions = []; // default for files saved before Phase 10
     if (!appState.hiddenModules) appState.hiddenModules = []; // default for files saved before Phase 12
+    if (appState.academicYear === undefined) appState.academicYear = null; // Phase 13
+    if (appState.semester === undefined) appState.semester = null;         // Phase 13
+    // Migrate files saved before Phase 13: no handbookSetup flag. If a level was already
+    // chosen, treat the handbook as done (don't re-nag); otherwise it's a fresh first run.
+    if (appState.handbookSetup === undefined) appState.handbookSetup = !!appState.educationLevel;
   }
   // Announce the load; every view (task list, calendar, timetable) redraws from this.
   window.dispatchEvent(new Event("modulo:datachanged"));
