@@ -1,15 +1,156 @@
-body { font-family: system-ui, sans-serif; padding: 2rem; }
-button { padding: 0.6rem 1rem; font-size: 1rem; cursor: pointer; }
+/* === Design tokens (Phase 12.4): the blue scheme. Change a value here and the whole
+   app follows. Used via var(--name) throughout the stylesheet. === */
+:root {
+  --bg: #eceffb;          /* app background (soft periwinkle) */
+  --surface: #ffffff;     /* cards + sidebar */
+  --primary: #2f6bf6;     /* buttons, active states, the filled stat card */
+  --primary-soft: #e6edfe;/* active nav pill + accent pill backgrounds */
+  --text: #20263a;        /* headings / near-navy body text */
+  --text-muted: #8890a4;  /* secondary text */
+  --border: #e7eaf3;      /* card + divider borders */
+  --border-strong: #cfd6e8;/* slightly stronger border (hover) */
+  --pill-bg: #eef1f8;     /* neutral due-date pills */
+  --hover: #f2f5fd;       /* faint hover background */
+  --today: #f3f7ff;       /* today highlight tint */
+  /* Soft layered card elevation: a tight contact shadow + a wider ambient one. */
+  --shadow: 0 1px 2px rgba(20, 30, 60, 0.04), 0 4px 14px rgba(20, 30, 60, 0.06);
+}
+
+/* === Dark theme: same tokens, dark values. Toggled via data-theme="dark" on <html>. === */
+[data-theme="dark"] {
+  --bg: #0e1524;
+  --surface: #161e30;
+  --primary: #3b82f6;
+  --primary-soft: #1e2b48;
+  --text: #e7eaf2;
+  --text-muted: #8a93a8;
+  --border: #232c42;
+  --border-strong: #2e3a57;
+  --pill-bg: #20283b;
+  --hover: #1c2438;
+  --today: #16233f;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 6px 18px rgba(0, 0, 0, 0.4);
+}
+
+body { font-family: "Inter", system-ui, sans-serif; padding: 2rem; }
+/* Base button: white, bordered, rounded. .btn-primary (blue) overrides this; the close
+   ✕ / chevron buttons set their own transparent style. */
+button {
+  padding: 0.5rem 0.9rem;
+  font-size: 0.95rem;
+  cursor: pointer;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+button:hover { border-color: var(--border-strong); }
+/* Selects (filters, type pickers): match the button look. */
+select {
+  padding: 6px 10px;
+  font-size: 13px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+/* Generic surface card (Study Session + Settings views). */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px 18px;
+  box-shadow: var(--shadow);
+}
+
+/* Study Session view */
+.study-card { max-width: 420px; }
+#timerDisplay { font-size: 44px; font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; }
+#timerControls { display: flex; gap: 8px; margin-top: 10px; }
+#timerTotals { display: flex; gap: 20px; margin-top: 16px; font-size: 13px; color: var(--text-muted); }
+#timerTotals strong { color: var(--text); font-size: 15px; }
+#sessionNote { font-size: 12px; color: var(--text-muted); margin: 14px 0 6px; }
+#sessionList {
+  list-style: none;
+  margin: 0;
+  padding: 8px 18px;
+  max-width: 560px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+}
+#sessionList li { padding: 6px 0; border-top: 1px solid var(--border); font-size: 14px; color: var(--text); }
+#sessionList li:first-child { border-top: none; }
+
+/* Settings view */
+.settings-card { display: flex; gap: 10px; flex-wrap: wrap; max-width: 520px; }
+.settings-heading { margin: 22px 0 8px; font-size: 15px; font-weight: 600; color: var(--text); }
+.settings-break-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.settings-break-to { color: var(--text-muted); font-size: 13px; }
+.card .task-field:last-child { margin-bottom: 0; }   /* trim the last field's gap inside the card */
+
+/* Sidebar MODULES list (12.4d) */
+.module-nav { margin-top: 18px; }
+.module-nav-label { font-size: 11px; letter-spacing: 0.08em; color: var(--text-muted); padding: 0 12px; margin-bottom: 6px; }
+.module-row { display: flex; align-items: center; gap: 10px; padding: 6px 12px; font-size: 14px; color: var(--text); }
+.module-dot { width: 9px; height: 9px; border-radius: 50%; flex: none; } /* colour set inline per module */
+
+/* Sidebar account chip (12.4d): pinned at the bottom of the sidebar card. */
+.account-chip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 10px;
+  border-radius: 12px;
+  background: var(--hover);
+  text-decoration: none;
+}
+.account-chip:hover { background: var(--pill-bg); }
+.account-avatar {
+  width: 32px;
+  height: 32px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+}
+.account-info { display: flex; flex-direction: column; line-height: 1.25; }
+.account-name { font-size: 13px; font-weight: 600; color: var(--text); }
+.account-sub { font-size: 11px; color: var(--text-muted); }
+
+/* Sidebar light/dark toggle (12 polish: night mode) */
+.theme-toggle-side {
+  align-self: flex-start;
+  margin: 4px 0;
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 13px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.theme-toggle-side:hover { background: var(--hover); }
 
 /* --- Phase 6: timetable calendar grid --- */
 #timetableCalendar {
   display: grid;
   grid-template-columns: 56px repeat(5, 1fr);  /* time gutter + 5 day columns */
-  border: 1px solid #e7e3da;
+  border: 1px solid var(--border);
   border-radius: 12px;
   overflow: hidden;
   margin: 8px 0 28px;           /* bottom gap so the next button doesn't crowd 19:00 */
-  background: #fff;
+  background: var(--surface);
+  box-shadow: var(--shadow);
 }
 
 /* header strip above the grid */
@@ -21,56 +162,56 @@ button { padding: 0.6rem 1rem; font-size: 1rem; cursor: pointer; }
   margin-top: 20px;
 }
 .cal-header-left { display: flex; align-items: center; gap: 10px; }
-.cal-title { font-size: 20px; font-weight: 600; color: #2b2820; }
+.cal-title { font-size: 20px; font-weight: 600; color: var(--text); }
 .cal-week-btn {
   padding: 4px 12px;
   font-size: 12px;
-  border: 1px solid #d9d4c8;
+  border: 1px solid var(--border);
   border-radius: 999px;
-  background: #fff;
-  color: #6b665c;
+  background: var(--surface);
+  color: var(--text-muted);
 }
-.cal-week-btn.is-active { background: #2b2820; border-color: #2b2820; color: #fff; }
+.cal-week-btn.is-active { background: var(--primary); border-color: var(--primary); color: #fff; }
 .cal-reupload {
   padding: 7px 16px;
   font-size: 13px;
-  border: 1px solid #d9d4c8;
+  border: 1px solid var(--border);
   border-radius: 999px;
-  background: #fff;
-  color: #2b2820;
+  background: var(--surface);
+  color: var(--text);
 }
 
 /* current-day highlight */
-.cal-dayhead--today { background: #faf6ee; }
+.cal-dayhead--today { background: var(--today); }
 .cal-col--today {
   /* hour line at the TOP of each 64px band so it aligns with on-the-hour card tops */
   background: repeating-linear-gradient(
-    to bottom, #efe9dc 0, #efe9dc 1px, #faf6ee 1px, #faf6ee 64px
+    to bottom, var(--primary-soft) 0, var(--primary-soft) 1px, var(--today) 1px, var(--today) 64px
   );
 }
-.cal-corner { border-bottom: 1px solid #e7e3da; }
+.cal-corner { border-bottom: 1px solid var(--border); }
 .cal-dayhead {
   padding: 10px 12px;
   font-size: 12px;
   letter-spacing: 0.08em;
-  color: #6b665c;
-  border-bottom: 1px solid #e7e3da;
-  border-left: 1px solid #f0ece3;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+  border-left: 1px solid var(--border);
 }
 /* Phase 8: dated weekly view — week eyebrow + two-line day headers (code + date) */
-.tt-eyebrow { font-size: 11px; letter-spacing: 0.12em; color: #9a948a; margin-bottom: 2px; }
-.tt-dayhead-code { font-size: 11px; letter-spacing: 0.08em; color: #6b665c; }
-.tt-dayhead-date { font-size: 18px; color: #2b2820; margin-top: 2px; }
+.tt-eyebrow { font-size: 11px; letter-spacing: 0.12em; color: var(--text-muted); margin-bottom: 2px; }
+.tt-dayhead-code { font-size: 11px; letter-spacing: 0.08em; color: var(--text-muted); }
+.tt-dayhead-date { font-size: 18px; color: var(--text); margin-top: 2px; }
 
 /* Phase 8.4: week navigation (replaces the manual odd/even toggle in the dated view) */
 .tt-nav { display: inline-flex; align-items: center; gap: 6px; margin-left: 12px; }
 .tt-arrow, .tt-thisweek {
   padding: 6px 12px;
   font-size: 14px;
-  border: 1px solid #d9d4c8;
+  border: 1px solid var(--border);
   border-radius: 8px;
-  background: #fff;
-  color: #2b2820;
+  background: var(--surface);
+  color: var(--text);
   cursor: pointer;
 }
 .tt-arrow:disabled { opacity: 0.4; cursor: default; } /* greyed out at the term bounds */
@@ -84,7 +225,7 @@ button { padding: 0.6rem 1rem; font-size: 1rem; cursor: pointer; }
   margin: 0 6px 6px 0;
   padding: 3px 6px 3px 10px;
   font-size: 12px;
-  background: #efe9dc;
+  background: var(--pill-bg);
   border-radius: 999px;
 }
 .break-chip button {
@@ -92,7 +233,7 @@ button { padding: 0.6rem 1rem; font-size: 1rem; cursor: pointer; }
   border: none;
   background: transparent;
   font-size: 12px;
-  color: #6b665c;
+  color: var(--text-muted);
   cursor: pointer;
 }
 .cal-gutter { position: relative; }
@@ -101,16 +242,16 @@ button { padding: 0.6rem 1rem; font-size: 1rem; cursor: pointer; }
   right: 6px;
   transform: translateY(-50%);   /* centre the label on its hour line */
   font-size: 11px;
-  color: #9a948a;
+  color: var(--text-muted);
 }
 .cal-hour--first { transform: none; }  /* top-aligned so it clears the header border */
 .cal-col {
   position: relative;
-  border-left: 1px solid #f0ece3;
+  border-left: 1px solid var(--border);
   /* faint hour line at the TOP of each band (HOUR_PX = 64px in timetableView.js),
      so on-the-hour card tops sit exactly on the line */
   background: repeating-linear-gradient(
-    to bottom, #f0ece3 0, #f0ece3 1px, #fff 1px, #fff 64px
+    to bottom, var(--border) 0, var(--border) 1px, var(--surface) 1px, var(--surface) 64px
   );
 }
 .cal-block {
@@ -120,13 +261,13 @@ button { padding: 0.6rem 1rem; font-size: 1rem; cursor: pointer; }
   box-sizing: border-box;       /* padding/border counts inside left/right, no overflow */
   padding: 3px 8px;
   line-height: 1.2;             /* tighter so 30-min blocks fit two lines */
-  background: #fff;
-  border: 1px solid #d9d4c8;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 8px;
   overflow: hidden;             /* clip text in very short blocks */
 }
-.cal-block-title { font-size: 12px; font-weight: 600; color: #2b2820; }
-.cal-block-sub { font-size: 11px; color: #8a847a; }
+.cal-block-title { font-size: 12px; font-weight: 600; color: var(--text); }
+.cal-block-sub { font-size: 11px; color: var(--text-muted); }
 
 /* --- Phase 7: task calendar (month grid) --- */
 #taskCalendarHeader {
@@ -137,7 +278,7 @@ button { padding: 0.6rem 1rem; font-size: 1rem; cursor: pointer; }
   gap: 12px;
 }
 .tcal-header-left { position: relative; } /* anchor for the absolute picker popover */
-.tcal-title { font-size: 34px; color: #2b2820; }
+.tcal-title { font-size: 34px; color: var(--text); }
 .tcal-title em { font-style: italic; font-weight: 600; }
 
 /* title row: month + year are plain text, chevron sits beside them */
@@ -161,7 +302,7 @@ button { padding: 0.6rem 1rem; font-size: 1rem; cursor: pointer; }
   height: 0;
   border-left: 6px solid transparent;
   border-right: 6px solid transparent;
-  border-top: 7px solid #6b665c;
+  border-top: 7px solid var(--text-muted);
 }
 
 /* prev / next month arrows */
@@ -170,10 +311,10 @@ button { padding: 0.6rem 1rem; font-size: 1rem; cursor: pointer; }
   padding: 6px 12px;
   font-size: 16px;
   line-height: 1;
-  border: 1px solid #d9d4c8;
+  border: 1px solid var(--border);
   border-radius: 8px;
-  background: #fff;
-  color: #2b2820;
+  background: var(--surface);
+  color: var(--text);
 }
 
 /* month/year picker popover (under the title) */
@@ -185,8 +326,8 @@ button { padding: 0.6rem 1rem; font-size: 1rem; cursor: pointer; }
   z-index: 50;
   width: 260px;
   padding: 12px;
-  background: #fff;
-  border: 1px solid #e7e3da;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 12px;
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.15);
 }
@@ -196,14 +337,14 @@ button { padding: 0.6rem 1rem; font-size: 1rem; cursor: pointer; }
   justify-content: space-between;
   margin-bottom: 10px;
 }
-.tcal-picker-year span { font-size: 15px; font-weight: 600; color: #2b2820; }
+.tcal-picker-year span { font-size: 15px; font-weight: 600; color: var(--text); }
 .tcal-picker-year button {
   padding: 4px 10px;
   font-size: 15px;
-  border: 1px solid #d9d4c8;
+  border: 1px solid var(--border);
   border-radius: 8px;
-  background: #fff;
-  color: #2b2820;
+  background: var(--surface);
+  color: var(--text);
 }
 .tcal-picker-months {
   display: grid;
@@ -213,64 +354,65 @@ button { padding: 0.6rem 1rem; font-size: 1rem; cursor: pointer; }
 .tcal-picker-month {
   padding: 8px 0;
   font-size: 13px;
-  border: 1px solid #e7e3da;
+  border: 1px solid var(--border);
   border-radius: 8px;
-  background: #fff;
-  color: #2b2820;
+  background: var(--surface);
+  color: var(--text);
 }
-.tcal-picker-month.is-active { background: #2b2820; border-color: #2b2820; color: #fff; }
+.tcal-picker-month.is-active { background: var(--primary); border-color: var(--primary); color: #fff; }
 
 #taskCalendarGrid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);  /* MON..SUN */
-  border: 1px solid #e7e3da;
+  border: 1px solid var(--border);
   border-radius: 12px;
   overflow: hidden;
   margin: 12px 0 28px;
-  background: #fff;
+  background: var(--surface);
+  box-shadow: var(--shadow);
 }
 .tcal-weekday {
   padding: 10px 12px;
   font-size: 12px;
   letter-spacing: 0.08em;
-  color: #6b665c;
-  border-bottom: 1px solid #e7e3da;
-  border-left: 1px solid #f0ece3;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+  border-left: 1px solid var(--border);
 }
 .tcal-cell {
   min-height: 96px;
   padding: 8px 10px;
-  border-left: 1px solid #f0ece3;
-  border-bottom: 1px solid #f0ece3;
+  border-left: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
 }
-.tcal-cell--blank { background: #faf8f3; }   /* faint fill for the leading blanks */
+.tcal-cell--blank { background: var(--hover); }   /* faint fill for the leading blanks */
 /* today: inset outline (box-shadow doesn't take layout space, so the grid stays put) */
-.tcal-cell--today { box-shadow: inset 0 0 0 2px #2b2820; }
+.tcal-cell--today { box-shadow: inset 0 0 0 2px var(--primary); }
 .tcal-cell--today .tcal-date { font-weight: 700; }
-.tcal-date { font-size: 13px; color: #2b2820; }
+.tcal-date { font-size: 13px; color: var(--text); }
 .tcal-pill {
   margin-top: 4px;
   padding: 2px 6px;
   font-size: 11px;
-  color: #2b2820;
-  background: #efe9dc;          /* neutral; per-module colours come with the module field */
+  color: var(--text);
+  background: var(--pill-bg);          /* neutral; per-module colours come with the module field */
   border-radius: 4px;
   white-space: nowrap;          /* keep each pill on one line... */
   overflow: hidden;            /* ...and clip overflow... */
   text-overflow: ellipsis;     /* ...showing "…" when the title is too long */
 }
-.tcal-pill--done { text-decoration: line-through; color: #9a948a; background: #f3f0e9; }
-.tcal-more { margin-top: 4px; font-size: 11px; font-weight: 600; color: #6b665c; }
+.tcal-pill--done { text-decoration: line-through; color: var(--text-muted); background: var(--hover); }
+.tcal-more { margin-top: 4px; font-size: 11px; font-weight: 600; color: var(--text-muted); }
 /* Phase 10: per-day rounded average study rating, shown as gold stars. */
 .tcal-rating { margin-top: 4px; font-size: 12px; line-height: 1; color: #d4a017; letter-spacing: 1px; }
 .tcal-cell--has-tasks { cursor: pointer; }       /* signals the day is clickable */
-.tcal-cell--has-tasks:hover { background: #faf8f3; }
+.tcal-cell--has-tasks:hover { background: var(--hover); }
 
 /* --- day popup (overlay backdrop + centred card) --- */
 .tcal-popup {
   position: fixed;              /* sits over the page, ignores scroll */
   inset: 0;                     /* top/right/bottom/left all 0 → fills the viewport */
-  background: rgba(43, 40, 32, 0.45);  /* dim, semi-transparent backdrop */
+  background: rgba(20, 30, 60, 0.45);  /* dim, semi-transparent backdrop */
   display: flex;               /* (toggled none/flex in JS) centres the card */
   align-items: center;
   justify-content: center;
@@ -278,7 +420,7 @@ button { padding: 0.6rem 1rem; font-size: 1rem; cursor: pointer; }
 }
 .tcal-popup-card {
   position: relative;          /* anchor for the absolutely-placed ✕ */
-  background: #fff;
+  background: var(--surface);
   width: min(360px, 90vw);     /* 360px, but never wider than 90% of the screen */
   max-height: 80vh;
   overflow-y: auto;            /* scroll inside the card if a day has many tasks */
@@ -293,17 +435,17 @@ button { padding: 0.6rem 1rem; font-size: 1rem; cursor: pointer; }
   border: none;
   background: transparent;
   font-size: 16px;
-  color: #6b665c;
+  color: var(--text-muted);
 }
-.tcal-popup-card h3 { margin: 0 24px 12px 0; font-size: 16px; color: #2b2820; }
-.tcal-popup-task { padding: 8px 0; border-top: 1px solid #f0ece3; }
-.tcal-popup-task-title { font-size: 14px; color: #2b2820; }
-.tcal-popup-task-meta { font-size: 12px; color: #8a847a; margin-top: 2px; }
+.tcal-popup-card h3 { margin: 0 24px 12px 0; font-size: 16px; color: var(--text); }
+.tcal-popup-task { padding: 8px 0; border-top: 1px solid var(--border); }
+.tcal-popup-task-title { font-size: 14px; color: var(--text); }
+.tcal-popup-task-meta { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
 
 /* Step 9.0: Add Task modal form rows — label stacked above its input. Layout only;
    visual polish (fonts/colours) comes in Phase 12. */
 .task-field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
-.task-field > span { font-size: 12px; color: #8a847a; }
+.task-field > span { font-size: 12px; color: var(--text-muted); }
 .task-field > input,
 .task-field > select { padding: 6px 8px; font-size: 14px; }
 .task-modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
@@ -322,30 +464,228 @@ button { padding: 0.6rem 1rem; font-size: 1rem; cursor: pointer; }
 .task-actions { display: flex; gap: 8px; }
 .task-controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 
-#taskList { list-style: none; padding: 0; }
+/* View header (eyebrow + big title), used by All Tasks; filter pills sit on the right. */
+.view-eyebrow { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); margin: 0 0 4px; }
+.view-title { font-size: 30px; font-weight: 700; color: var(--text); margin: 0; }
+.tasks-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+.task-controls select { border-radius: 999px; padding: 6px 14px; }  /* pill-style filters */
+
+#taskList { margin: 0; padding: 0; }            /* plain container; cards are per-bucket */
+.task-card {
+  list-style: none;
+  margin: 0 0 16px;            /* gap between bucket cards */
+  padding: 4px 18px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+}
+.task-card .task-row:first-child { border-top: none; }  /* no divider at the card's top */
 .task-group {
-  margin-top: 14px;
+  margin: 18px 0 6px;                /* above its own card */
   font-size: 11px;
   letter-spacing: 0.06em;
-  color: #8a847a;          /* muted, uppercase-style section label */
+  color: var(--text-muted);          /* muted section label, above the card */
 }
+.task-group:first-child { margin-top: 0; }
 .task-row {
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 8px 0;
-  border-top: 1px solid #f0ece3;
+  border-top: 1px solid var(--border);
 }
-.task-check { width: 16px; height: 16px; flex: none; }  /* checkbox, fixed size */
+.task-check { width: 16px; height: 16px; flex: none; accent-color: var(--primary); cursor: pointer; }
 .task-main { flex: 1; }                                  /* title block takes the slack */
-.task-title { font-size: 14px; color: #2b2820; }
-.task-meta { font-size: 12px; color: #8a847a; margin-top: 2px; }  /* "module · type" line */
-.task-del { padding: 2px 10px; font-size: 12px; }
+.task-title { font-size: 14px; font-weight: 600; color: var(--text); }
+.task-meta { font-size: 12px; color: var(--text-muted); margin-top: 2px; }  /* "module · type" line */
+/* Delete stays hidden until you hover the row (keeps rows clean, like the mockup). */
+.task-del { opacity: 0; border: none; background: transparent; color: var(--text-muted); font-size: 12px; padding: 2px 6px; transition: opacity 0.12s; }
+.task-row:hover .task-del { opacity: 1; }
+.task-del:hover { color: #e03131; }
 .task-pill {
   font-size: 12px;
-  color: #6b6459;
-  background: #f0ece3;
+  color: var(--text-muted);
+  background: var(--pill-bg);
   padding: 2px 8px;
   border-radius: 999px;     /* fully rounded "pill" */
   white-space: nowrap;
 }
+/* due today/tomorrow → blue accent pill (matches the dashboard) */
+.task-pill--soon { color: var(--primary); background: var(--primary-soft); font-weight: 600; }
+
+/* === Phase 12: SPA shell (STRUCTURE ONLY — mockup colours/fonts come in step 12.4) === */
+/* The old `body { padding: 2rem }` centred a single column; the shell wants the sidebar
+   flush to the edge and full height, so we zero body padding and pad #main instead. */
+body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
+#app {
+  display: grid;
+  grid-template-columns: 248px 1fr;  /* fixed sidebar + flexible main */
+  min-height: 100vh;
+}
+/* Sidebar = a white rounded card floating on the periwinkle bg. flex column so Settings
+   (+ the account chip, 12.4d) can sit pinned at the bottom. */
+#sidebar {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  padding: 18px 14px;
+  border-right: 1px solid var(--border);  /* flush full-height white panel, no rounded card */
+  /* Pin to the viewport: the sidebar stays put while only the main content scrolls, so
+     Settings + the account chip are always at the bottom of the SCREEN. Internal scroll
+     kicks in only if the sidebar's own content is taller than the screen. */
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+.brand { font-weight: 700; letter-spacing: 2px; margin: 4px 8px 18px; color: var(--text); }
+#nav { display: flex; flex-direction: column; gap: 2px; flex: 1; }  /* fill the height */
+.nav-link {
+  text-decoration: none;
+  color: var(--text);
+  padding: 9px 12px;
+  border-radius: 10px;
+}
+.nav-link:hover { background: var(--hover); }
+.nav-link.is-active { background: var(--primary-soft); color: var(--primary); font-weight: 600; }  /* current view */
+.nav-link--bottom { margin-top: auto; }                         /* push Settings down */
+#main { padding: 24px 28px; }
+
+/* The router shows exactly one view: only `.view.is-active` is displayed. */
+.view { display: none; }
+.view.is-active { display: block; }
+
+/* Top bar: status + Add Task grouped together on the RIGHT (flex-end), so the bar reads
+   as an intentional action cluster rather than two items flung to opposite edges. */
+#topbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.topbar-status { font-size: 13px; color: var(--text-muted); text-decoration: none; }
+.topbar-status:hover { text-decoration: underline; }
+/* Primary action — filled blue (was the warm outlined placeholder). */
+.btn-primary {
+  border: none;
+  border-radius: 10px;
+  background: var(--primary);
+  color: #fff;
+  font-weight: 600;
+}
+
+/* Dashboard header (12.3a). Eyebrow = small uppercase muted line; greeting = the big
+   heading; summary = a muted sub-line. Full visual polish in 12.4. */
+.dash-eyebrow { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); margin: 0 0 6px; }
+.dash-greeting { font-size: 28px; color: var(--text); margin: 0 0 6px; }
+.dash-summary { font-size: 14px; color: var(--text-muted); margin: 0 0 20px; }
+
+/* Stat cards (12.3b). Simple bordered boxes for now; mockup polish in 12.4. */
+.dash-cards { display: flex; gap: 12px; margin-bottom: 24px; }
+.dash-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px 18px;
+  min-width: 130px;
+  box-shadow: var(--shadow);
+}
+.dash-card-label { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); }
+.dash-card-value { font-size: 26px; color: var(--text); margin-top: 4px; }
+/* Filled-blue stat card (the "This week" highlight in the mockup). */
+.dash-card--accent { background: var(--primary); border-color: transparent; }
+.dash-card--accent .dash-card-label { color: rgba(255, 255, 255, 0.75); }
+.dash-card--accent .dash-card-value { color: #fff; }
+
+/* Main panels (12.3c): two cards side by side, each with a header + a list. */
+.dash-panels { display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap; }
+.dash-panel {
+  flex: 1;
+  min-width: 280px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px 18px;
+  box-shadow: var(--shadow);
+}
+.dash-panel-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+.dash-panel-head h3 { margin: 0; font-size: 15px; font-weight: 600; color: var(--text); }
+.dash-panel-head a { font-size: 12px; color: var(--primary); text-decoration: none; }
+.dash-panel-head a:hover { text-decoration: underline; }
+.dash-list { list-style: none; padding: 0; margin: 0; }
+.dash-empty { color: var(--text-muted); font-size: 13px; padding: 6px 0; }
+
+/* schedule rows: time gutter + details */
+.dash-class { display: flex; gap: 12px; padding: 8px 0; border-top: 1px solid var(--border); font-size: 14px; }
+.dash-class:first-child { border-top: none; }
+.dash-class-time { color: var(--text-muted); font-size: 13px; white-space: nowrap; }
+.dash-class-loc { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+/* task rows: title/meta on the left, due pill on the right */
+.dash-task { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid var(--border); }
+.dash-task:first-child { border-top: none; }
+.dash-task > div { flex: 1; font-size: 14px; color: var(--text); }
+.dash-task-meta { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+.dash-task-pill {
+  font-size: 12px;
+  color: var(--text-muted);
+  background: var(--pill-bg);
+  padding: 2px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+/* soonest tasks (today/tomorrow) — blue accent pill */
+.dash-task-pill--soon { color: var(--primary); background: var(--primary-soft); font-weight: 600; }
+/* checkbox + bold title + module colour dot (modelled on the mockup) */
+.dash-check { width: 16px; height: 16px; flex: none; accent-color: var(--primary); cursor: pointer; }
+.dash-task-title { font-weight: 600; font-size: 14px; color: var(--text); }
+.task-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+/* bucket headers in the dashboard task panel (Overdue / Due this week) */
+.dash-task-group { list-style: none; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); padding: 12px 0 2px; }
+.dash-task-group:first-child { padding-top: 0; }
+
+/* Dashboard Modules section (cards → detail modal) */
+.dash-modules-head { display: flex; align-items: baseline; gap: 10px; margin: 26px 0 12px; }
+.dash-modules-head h3 { margin: 0; font-size: 18px; color: var(--text); }
+.dash-modules-count { font-size: 12px; color: var(--text-muted); }
+.dash-modules { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
+.module-card {
+  display: block;
+  text-align: left;
+  padding: 0;
+  overflow: hidden;
+  cursor: pointer;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+}
+.module-card:hover { border-color: var(--border-strong); }
+.module-card-head { padding: 14px 16px; color: #fff; }       /* background colour set inline */
+.module-card-code { font-size: 11px; letter-spacing: 0.06em; opacity: 0.9; }
+.module-card-name { font-size: 15px; font-weight: 600; margin-top: 2px; }
+.module-card-foot { display: flex; justify-content: space-between; padding: 10px 16px; font-size: 12px; color: var(--text-muted); }
+
+/* module detail modal */
+.module-modal-label { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); margin: 14px 0 6px; }
+.module-modal-placeholder { font-size: 13px; color: var(--text-muted); margin: 0; }
+
+/* "Manage" link in the Modules heading + the manage popup rows */
+.link-btn { margin-left: auto; border: none; background: transparent; color: var(--primary); font-size: 13px; padding: 0; }
+.link-btn:hover { text-decoration: underline; }
+.manage-row { padding: 8px 0; border-top: 1px solid var(--border); }
+.manage-row:first-child { border-top: none; }
+.manage-label { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--text); cursor: pointer; }
+
+/* Timetable: grid-header action buttons (Edit + Re-upload) + the editor modal card */
+.cal-header-actions { display: flex; gap: 8px; }
+.tt-editor-card { width: min(720px, 92vw); }   /* wider than the default popup for slot rows */
+.tt-editor-actions { display: flex; align-items: center; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+/* Timetable empty state + upload-modal actions */
+.tt-empty { max-width: 480px; }
+.tt-empty h3 { margin: 0 0 6px; font-size: 16px; color: var(--text); }
+.tt-empty p { margin: 0; font-size: 14px; color: var(--text-muted); }
+.tt-empty-actions { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+.tt-upload-actions { display: flex; gap: 8px; margin: 10px 0; flex-wrap: wrap; }

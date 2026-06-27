@@ -6,6 +6,7 @@
 
 import { appState } from "./data.js";
 import { startReupload } from "./timetable.js";
+import { openEditor } from "./timetableEditor.js";
 
 const DAYS = ["MON", "TUE", "WED", "THU", "FRI"];
 const DEFAULT_START = 8;
@@ -122,6 +123,22 @@ function weekInfo(monday) {
   return { dates, number, parity, status: "normal" };
 }
 
+// --- Phase 12: read-only helpers the Dashboard reuses, so its "Week N" matches this
+// view exactly (one source of truth for term-week math). Both just call weekInfo, which
+// already handles term bounds + break-skipping. ---
+
+// This week's info (number / parity / status) for today's week.
+export function currentWeekInfo() {
+  return weekInfo(mondayOf(new Date()));
+}
+
+// Total teaching weeks in the term = the number of the term-end week (breaks excluded),
+// or null if no term end is set. (weekInfo on the last week returns the running count.)
+export function totalTeachingWeeks() {
+  const end = termEndMonday();
+  return end ? weekInfo(end).number : null;
+}
+
 // Month abbreviations for the week-range title.
 const MONTHS_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -156,6 +173,7 @@ function goThisWeek() {
 
 const headerEl = document.getElementById("timetableViewHeader");
 const calEl = document.getElementById("timetableCalendar");
+const emptyEl = document.getElementById("timetableEmpty");
 
 // The strip above the grid: week title (+ odd/even toggle) on the left, re-upload right.
 // `wk` is the weekInfo for the shown week; when it has a number we show real dates.
@@ -229,13 +247,23 @@ function renderHeader(showToggle, wk) {
     left.append(nav);
   }
 
+  const edit = document.createElement("button");
+  edit.type = "button";
+  edit.className = "cal-reupload";
+  edit.textContent = "Edit";
+  edit.addEventListener("click", openEditor);
+
   const reupload = document.createElement("button");
   reupload.type = "button";
   reupload.className = "cal-reupload";
   reupload.textContent = "Re-upload timetable";
   reupload.addEventListener("click", startReupload);
 
-  headerEl.append(left, reupload);
+  // Group the actions together on the right.
+  const actions = document.createElement("div");
+  actions.className = "cal-header-actions";
+  actions.append(edit, reupload);
+  headerEl.append(left, actions);
 }
 
 // Place one session block in its day column at the right time + height.
@@ -266,6 +294,17 @@ function addBlock(col, module, slot, startH) {
 
 function renderCalendar() {
   const modules = appState.timetable?.modules || [];
+
+  // Empty state: no timetable yet → show the prompt card instead of an empty grid.
+  if (modules.length === 0) {
+    headerEl.innerHTML = "";
+    calEl.style.display = "none";
+    emptyEl.style.display = "block";
+    return;
+  }
+  emptyEl.style.display = "none";
+  calEl.style.display = "";   // restore the grid (CSS sets display:grid)
+
   const alternating = hasAlternatingWeeks(modules);
   const wk = weekInfo(viewedMonday);
   renderHeader(alternating, wk);
@@ -341,6 +380,10 @@ function renderCalendar() {
     }
   }
 }
+
+// Empty-state buttons: open the upload modal / the manual editor.
+document.getElementById("ttEmptyUpload").addEventListener("click", startReupload);
+document.getElementById("ttEmptyManual").addEventListener("click", openEditor);
 
 window.addEventListener("modulo:datachanged", renderCalendar);
 renderCalendar();

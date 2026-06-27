@@ -3,6 +3,7 @@
 // the modulo:datachanged event (so it stays in sync without data.js knowing about it).
 
 import { appState, persist, getStorageMode } from "./data.js";
+import { moduleColor } from "./sidebar.js"; // shared module-colour palette (dots)
 
 // Each action changes memory then saves. persist() fires modulo:datachanged, which
 // re-runs renderTasks below — so the actions don't need to redraw themselves.
@@ -21,8 +22,9 @@ async function addTask(title, module, due, type) {
   await persist();
 }
 
-// Toggle a task's completion status.
-async function toggleTask(id) {
+// Toggle a task's completion status. Exported so the dashboard's due-soon checkboxes
+// can complete a task too (it persists → both views redraw).
+export async function toggleTask(id) {
   const task = appState.tasks.find((t) => t.id === id);
   if (task) {
     task.done = !task.done;
@@ -166,12 +168,20 @@ function renderTaskRow(task) {
   if (task.done) title.style.textDecoration = "line-through";
   const meta = document.createElement("div");
   meta.className = "task-meta";
-  meta.textContent = task.module ? `${task.module} · ${task.type}` : task.type;
+  if (task.module) {
+    const dot = document.createElement("span");
+    dot.className = "task-dot";
+    dot.style.background = moduleColor(task.module); // module colour dot before the meta
+    meta.append(dot);
+  }
+  meta.append(document.createTextNode(task.module ? `${task.module} · ${task.type}` : task.type));
   main.append(title, meta);
 
   // Right side: the relative-date pill + a Delete button.
+  const d = task.due ? daysUntil(task.due) : null;
   const pill = document.createElement("span");
-  pill.className = "task-pill";
+  // Blue accent pill for not-done tasks due today/tomorrow; everything else stays neutral.
+  pill.className = "task-pill" + (!task.done && (d === 0 || d === 1) ? " task-pill--soon" : "");
   pill.textContent = dueLabel(task);
 
   const delBtn = document.createElement("button");
@@ -188,6 +198,10 @@ function renderTasks() {
   const list = document.getElementById("taskList");
   list.innerHTML = ""; // wipe the list, then rebuild it from the derived view
 
+  // Header eyebrow count = number of not-done ("open") tasks.
+  const open = (appState.tasks || []).filter((t) => !t.done).length;
+  document.getElementById("tasksEyebrow").textContent = `ALL TASKS · ${open} OPEN`;
+
   refreshFilterOptions(); // keep the Type/Module dropdowns in sync with current tasks
 
   const visible = getVisibleTasks();
@@ -195,23 +209,42 @@ function renderTasks() {
     // Distinguish "you have no tasks" from "filters hid them all".
     const hasAnyTasks = (appState.tasks || []).length > 0;
     list.innerHTML = hasAnyTasks
-      ? "<li>No tasks match your filters.</li>"
-      : "<li>No tasks yet.</li>";
+      ? "<p class='dash-empty'>No tasks match your filters.</p>"
+      : "<p class='dash-empty'>No tasks yet.</p>";
     return;
   }
 
-  // For each bucket in order, render its header + rows (skip empty buckets). The tasks
-  // are already filtered + sorted; we only partition them — the sort holds within a group.
-  for (const bucket of BUCKETS) {
-    const inBucket = visible.filter((t) => bucketOf(t) === bucket.key);
-    if (inBucket.length === 0) continue;
-
-    const header = document.createElement("li");
+  // Make one white card (a <ul>) holding the given rows, and append it to #taskList.
+  function appendCard(tasks) {
+    const card = document.createElement("ul");
+    card.className = "task-card";
+    for (const task of tasks) card.append(renderTaskRow(task));
+    list.append(card);
+  }
+  // A section = a header label above its own card.
+  function appendGroup(label, tasks) {
+    const header = document.createElement("div");
     header.className = "task-group";
-    header.textContent = `${bucket.label} · ${inBucket.length}`;
+    header.textContent = `${label} · ${tasks.length}`;
     list.append(header);
+    appendCard(tasks);
+  }
 
-    for (const task of inBucket) list.append(renderTaskRow(task));
+  // Each group gets its own card with the header above it. Due → date buckets; Type →
+  // one card per type; Newest → a single flat card (no meaningful grouping).
+  if (sortBy === "due") {
+    for (const bucket of BUCKETS) {
+      const inBucket = visible.filter((t) => bucketOf(t) === bucket.key);
+      if (inBucket.length > 0) appendGroup(bucket.label, inBucket);
+    }
+  } else if (sortBy === "type") {
+    // visible is already sorted by type, so the Set keeps the types in that order.
+    const types = [...new Set(visible.map((t) => t.type))];
+    for (const type of types) {
+      appendGroup(type.toUpperCase(), visible.filter((t) => t.type === type));
+    }
+  } else {
+    appendCard(visible); // Newest → flat
   }
 }
 

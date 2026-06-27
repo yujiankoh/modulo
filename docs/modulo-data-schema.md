@@ -77,6 +77,7 @@ breaks even though the file transfers fine.
 | `updatedAt`      | string (ISO 8601) | yes      | When the whole state was last saved. Key field for sync + local-save reconciliation. |
 | `tasks`          | array of Task     | yes      | All of the user's tasks. May be empty (`[]`). |
 | `studySessions`  | array of StudySession | no   | Recorded focus/study sessions (Phase 10). Defaults to `[]`. Used for daily/weekly/cumulative study-time totals + the calendar's per-day average rating; feeds the MS3 study game. |
+| `hiddenModules`  | array of string   | no       | Module labels the user has hidden from the web dashboard + sidebar (Phase 12). Defaults to `[]`. Web-only (the app may ignore it). |
 | `timetable`      | Timetable \| null | yes      | The parsed timetable, or `null` if none yet. |
 
 ## Task object
@@ -206,6 +207,7 @@ let appState = {
   updatedAt: null,
   tasks: [],
   studySessions: [],      // [{ id, start, end, durationMins, rating, createdAt }] — Phase 10
+  hiddenModules: [],      // module labels hidden from the dashboard/sidebar (web-only) — Phase 12
   timetable: null,        // { educationLevel, modules: [...] }
 };
 ```
@@ -228,6 +230,7 @@ data class ModuloData(
     val updatedAt: String? = null,
     val tasks: List<Task> = emptyList(),
     val studySessions: List<StudySession> = emptyList(), // Phase 10; default keeps old files loading
+    val hiddenModules: List<String> = emptyList(),       // Phase 12; web UI preference (hidden module labels)
     val timetable: Timetable? = null
 )
 
@@ -298,3 +301,4 @@ data class Slot(
 | 2       | 2026-06-23 | Added top-level `termStart` (`YYYY-MM-DD` Week-1 Monday, default `null`) for the dated weekly timetable view + odd/even parity (Phase 8). Additive + defaulted, so old files still load; `schemaVersion` stays 2. Web-only for now; app may ignore it. |
 | 2       | 2026-06-23 | Added top-level `termEnd` (`YYYY-MM-DD`, default `null`) and `breaks` (recess/holiday `{ start, end }` date ranges, default `[]`) for term bounds + non-academic weeks (Phase 8). Any week overlapping a break range is skipped in numbering. Additive + defaulted; `schemaVersion` stays 2. Web-only for now. |
 | 2       | 2026-06-24 | Added top-level `studySessions` (array of StudySession `{ id, start, end, durationMins, rating, createdAt }`, default `[]`) for the Phase 10 study timer. Feeds daily/weekly/cumulative study-time totals + the calendar's per-day average rating (and the MS3 study game). Additive + defaulted, so old files still load; `schemaVersion` stays 2. **Ling Song: heads-up — additive contract change.** |
+| 2       | 2026-06-25 | Added top-level `hiddenModules` (array of strings, default `[]`) — module labels the web app hides from the dashboard + sidebar (Phase 12). Additive + defaulted; `schemaVersion` stays 2. Web-only (app may ignore). |
