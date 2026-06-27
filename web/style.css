@@ -276,6 +276,7 @@ select {
 }
 .cal-block-title { font-size: 12px; font-weight: 600; color: var(--text); }
 .cal-block-sub { font-size: 11px; color: var(--text-muted); }
+.cal-block-loc { font-size: 11px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* --- Phase 7: task calendar (month grid) --- */
 #taskCalendarHeader {
