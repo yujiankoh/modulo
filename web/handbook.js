@@ -26,6 +26,12 @@ let firstRun = false;
 const TERTIARY = ["university", "poly"];
 function isTertiary(level) { return TERTIARY.includes(level); }
 
+// Pretty names for the locked-level text + the Settings summary.
+const LEVEL_NAMES = {
+  primary: "Primary school", secondary: "Secondary school", jc: "Junior College",
+  poly: "Polytechnic", university: "University",
+};
+
 // Build the STORED academicYear string from a start year + level.
 //   tertiary 2025 -> "25/26"      school 2026 -> "2026"
 function formatAcademicYear(startYear, level) {
@@ -78,6 +84,16 @@ function refreshYearUI() {
 // Fill the form from the current state, then show the modal. On first run the close
 // ✕ is hidden (the modal is non-dismissable until the user saves).
 export function openHandbook() {
+  // Education level is immutable once the handbook is set up: show locked TEXT instead of
+  // the dropdown. (We still set the dropdown's value so Save can read it in either mode.)
+  const locked = appState.handbookSetup;
+  document.getElementById("hbLevelField").style.display = locked ? "none" : "";
+  document.getElementById("hbLevelLockedField").style.display = locked ? "" : "none";
+  if (locked) {
+    document.getElementById("hbLevelLocked").textContent =
+      LEVEL_NAMES[appState.educationLevel] || appState.educationLevel || "—";
+  }
+
   levelEl.value = appState.educationLevel || "";
   semesterEl.value = String(appState.semester || 1);
   const startYear = parseStartYear(appState.academicYear, appState.educationLevel);
@@ -86,6 +102,8 @@ export function openHandbook() {
   termEndEl.value = appState.termEnd || "";
   errorEl.textContent = "";
   closeX.style.display = firstRun ? "none" : "";
+  document.getElementById("hbTitle").textContent =
+    firstRun ? "Set up your handbook" : "Edit handbook";
   refreshYearUI();
   modal.style.display = "flex";   // .tcal-popup centres the card
 }
@@ -131,6 +149,31 @@ saveBtn.addEventListener("click", async () => {
   await persist();                     // fires modulo:datachanged → views (+ sidebar header) redraw
   modal.style.display = "none";
 });
+
+// "Edit" button in Settings → open the handbook modal (dismissable; level shown locked).
+document.getElementById("editHandbookBtn").addEventListener("click", openHandbook);
+
+// Render the read-only Settings summary from appState. Runs on every modulo:datachanged.
+function renderSummary() {
+  const box = document.getElementById("handbookSummary");
+  if (!box) return;
+  if (!appState.handbookSetup) {
+    box.innerHTML = `<p class="hb-locked-note">Not set up yet — click Edit to get started.</p>`;
+    return;
+  }
+  const breaks = appState.breaks || [];
+  const rows = [
+    ["Education level", LEVEL_NAMES[appState.educationLevel] || "—"],
+    ["Academic year", handbookHeaderLabel() || "—"],
+    ["Term start", appState.termStart || "—"],
+    ["Term end", appState.termEnd || "—"],
+    ["Recess / holiday", breaks.length ? breaks.map((b) => `${b.start} → ${b.end}`).join(", ") : "None"],
+  ];
+  box.innerHTML = rows
+    .map(([k, v]) => `<div class="hb-row"><span class="hb-row-k">${k}</span><span class="hb-row-v">${v}</span></div>`)
+    .join("");
+}
+window.addEventListener("modulo:datachanged", renderSummary);
 
 // First-run trigger: after data loads (modulo:datachanged), if the handbook was never
 // completed AND the modal isn't already open, auto-open it as the non-dismissable setup.

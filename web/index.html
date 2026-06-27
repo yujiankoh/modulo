@@ -211,38 +211,14 @@
           <button id="themeToggle" type="button">Switch to dark mode</button>
         </div>
 
-        <!-- Timetable setup (INTERIM — moves into the handbook, Phase 13). Education level
-             + term dates live here for now; the timetable parser + grid read them. -->
-        <h3 class="settings-heading">Timetable setup</h3>
-        <div class="card">
-          <label class="task-field">
-            <span>Education level</span>
-            <select id="eduLevel">
-              <option value="">— select —</option>
-              <option value="primary">Primary school</option>
-              <option value="secondary">Secondary school</option>
-              <option value="jc">Junior College</option>
-              <option value="poly">Polytechnic</option>
-              <option value="university">University</option>
-            </select>
-          </label>
-          <label class="task-field">
-            <span>Term start (Week 1 Monday)</span>
-            <input id="termStart" type="date" />
-          </label>
-          <label class="task-field">
-            <span>Term end</span>
-            <input id="termEnd" type="date" />
-          </label>
-          <div class="task-field">
-            <span>Recess / holiday</span>
-            <div class="settings-break-row">
-              <input id="breakStart" type="date" />
-              <span class="settings-break-to">to</span>
-              <input id="breakEnd" type="date" />
-              <button id="addBreakBtn" type="button">Add break</button>
-            </div>
-            <div id="breakList"></div>
+        <!-- Handbook (Phase 13): a read-only SUMMARY of the per-semester setup. handbook.js
+             fills #handbookSummary from appState; Edit opens the handbook modal (with the
+             education level shown locked). The raw inputs now live inside that modal. -->
+        <h3 class="settings-heading">Handbook</h3>
+        <div class="card hb-card">
+          <div id="handbookSummary"></div>
+          <div class="task-modal-actions">
+            <button id="editHandbookBtn" type="button">Edit</button>
           </div>
         </div>
       </section>
@@ -309,6 +285,19 @@
         <span>Term end</span>
         <input id="hbTermEnd" type="date" />
       </label>
+
+      <!-- Recess / holiday editor (relocated from Settings, Phase 13). Same ids as before,
+           so the breaks logic in timetable.js keeps working unchanged. -->
+      <div class="task-field">
+        <span>Recess / holiday</span>
+        <div class="settings-break-row">
+          <input id="breakStart" type="date" />
+          <span class="settings-break-to">to</span>
+          <input id="breakEnd" type="date" />
+          <button id="addBreakBtn" type="button">Add break</button>
+        </div>
+        <div id="breakList"></div>
+      </div>
 
       <div class="task-modal-actions">
         <button id="hbSaveBtn" class="btn-primary" type="button">Save handbook</button>

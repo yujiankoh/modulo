@@ -71,12 +71,8 @@ export async function loadInitialData() {
   }
   if (saved) {
     appState = saved;
-    const eduEl = document.getElementById("eduLevel");
-    if (appState.educationLevel) eduEl.value = appState.educationLevel;
-    const termEl = document.getElementById("termStart");
-    if (appState.termStart) termEl.value = appState.termStart;
-    const termEndEl = document.getElementById("termEnd");
-    if (appState.termEnd) termEndEl.value = appState.termEnd;
+    // (Phase 13) The education-level + term-date inputs moved into the handbook modal,
+    // which reads appState directly when opened — no DOM restore needed here.
     if (!appState.tasks) appState.tasks = [];
     if (!appState.breaks) appState.breaks = []; // default for files saved before Phase 8
     if (!appState.studySessions) appState.studySessions = []; // default for files saved before Phase 10
