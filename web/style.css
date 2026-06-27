@@ -553,7 +553,8 @@ body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
   height: 100vh;
   overflow-y: auto;
 }
-.brand { font-weight: 700; letter-spacing: 2px; margin: 4px 8px 18px; color: var(--text); }
+.brand { font-weight: 700; letter-spacing: 2px; margin: 4px 8px 6px; color: var(--text); }
+.brand-sub { font-size: 11px; letter-spacing: 0.06em; color: var(--text-muted); margin: 0 8px 16px; }
 #nav { display: flex; flex-direction: column; gap: 2px; flex: 1; }  /* fill the height */
 .nav-link {
   text-decoration: none;

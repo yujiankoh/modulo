@@ -33,6 +33,9 @@
     <!-- ---- Left navigation bar (persistent on every view) ---- -->
     <aside id="sidebar">
       <div class="brand">MODULO</div>
+      <!-- Handbook header (Phase 13): "HANDBOOK · AY25/26 · S1". sidebar.js fills it from
+           appState via handbookHeaderLabel(); hidden until the handbook is set up. -->
+      <div id="handbookHeader" class="brand-sub" style="display: none;"></div>
       <nav id="nav">
         <!-- Each link's href is its route. The text after # must match a #view-<route>
              section id below (router.js maps "dashboard" -> #view-dashboard). -->
