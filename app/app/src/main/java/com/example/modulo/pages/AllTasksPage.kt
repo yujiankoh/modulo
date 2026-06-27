@@ -168,75 +168,23 @@ fun AllTaskPage(
 
             when (selectedTabIndex) {
                 0 -> {
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 16.dp)
-                            .weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        if (uncompletedTasks.isEmpty()) {
-                            item {
-                                Text(
-                                    text = "All pending tasks are completed!",
-                                    modifier = Modifier.padding(top = 16.dp)
-                                )
-                            }
-                        } else {
-                            items(uncompletedTasks) { task ->
-                                TaskCard(
-                                    task = task,
-                                    showDelete = deletedTask == task,
-                                    onLongPress = { deletedTask = task },
-                                    onNormalPress = { deletedTask = null },
-                                    onToggle = { clickedTask ->
-                                        viewModel.completeTask(clickedTask)
-                                    },
-                                    onDelete = {
-                                        viewModel.deleteTask(task)
-                                        deletedTask = null
-                                    }
-                                )
-                            }
-                        }
-                    }
+                    TaskColumn(
+                        viewModel = viewModel,
+                        tasks = uncompletedTasks,
+                        emptyText = "All pending tasks are completed!",
+                        deletedTask = deletedTask,
+                        onSelectDeletedTask = { deletedTask = it }
+                    )
                 }
 
                 1 -> {
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 16.dp)
-                            .weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        if (completedTasks.isEmpty()) {
-                            item {
-                                Text(
-                                    text = "No completed tasks yet.",
-                                    modifier = Modifier.padding(top = 16.dp)
-                                )
-                            }
-                        } else {
-                            items(completedTasks) { task ->
-                                TaskCard(
-                                    task = task,
-                                    showDelete = deletedTask == task,
-                                    onLongPress = { deletedTask = task },
-                                    onNormalPress = { deletedTask = null },
-                                    onToggle = { clickedTask ->
-                                        viewModel.completeTask(clickedTask)
-                                    },
-                                    onDelete = {
-                                        viewModel.deleteTask(task)
-                                        deletedTask = null
-                                    }
-                                )
-                            }
-                        }
-                    }
+                    TaskColumn(
+                        viewModel = viewModel,
+                        tasks = completedTasks,
+                        emptyText = "No completed tasks yet.",
+                        deletedTask = deletedTask,
+                        onSelectDeletedTask = { deletedTask = it }
+                    )
                 }
             }
         }
@@ -341,5 +289,48 @@ fun formatDate(dataDate: String): String {
         date.format(formatter)
     } catch (e: Exception) {
         dataDate
+    }
+}
+
+@Composable
+fun TaskColumn(
+    viewModel: AppViewModel,
+    tasks: List<Task>,
+    emptyText: String,
+    deletedTask: Task?,
+    onSelectDeletedTask: (Task?) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    LazyColumn(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(top = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        if (tasks.isEmpty()) {
+            item {
+                Text(
+                    text = emptyText,
+                    modifier = Modifier.padding(top = 16.dp)
+                )
+            }
+        } else {
+            items(tasks) { task ->
+                TaskCard(
+                    task = task,
+                    showDelete = deletedTask == task,
+                    onLongPress = { onSelectDeletedTask(task) },
+                    onNormalPress = { onSelectDeletedTask(null) },
+                    onToggle = { clickedTask ->
+                        viewModel.completeTask(clickedTask)
+                    },
+                    onDelete = {
+                        viewModel.deleteTask(task)
+                        onSelectDeletedTask(null)
+                    }
+                )
+            }
+        }
     }
 }

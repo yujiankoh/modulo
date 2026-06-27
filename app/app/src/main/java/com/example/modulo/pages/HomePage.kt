@@ -50,35 +50,9 @@ fun HomePage(
 ) {
     // Collect info from the model
     val appData by viewModel.appData.collectAsState()
-    val syncState by viewModel.syncState.collectAsState()
     val timetableState by viewModel.timetableState.collectAsState()
 
     var deletedTask by remember { mutableStateOf<Task?>(null) }
-
-    val dueTasks = remember(appData.tasks) {
-        val parser = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).apply {
-            timeZone = TimeZone.getTimeZone("UTC")
-        }
-
-        // Calculate the cutoff date
-        val cutoff = Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply {
-            add(Calendar.DAY_OF_YEAR, 7)
-            set(Calendar.HOUR_OF_DAY, 23)
-            set(Calendar.MINUTE, 59)
-            set(Calendar.SECOND, 59)
-        }
-
-        appData.tasks.filter { task ->
-            if (task.done || task.due.isBlank()) return@filter false
-
-            try {
-                val dueDate = parser.parse(task.due)
-                dueDate != null && !dueDate.after(cutoff.time)
-            } catch (e: Exception) {
-                false
-            }
-        }.sortedBy { it.due }
-    }
 
     Scaffold { paddingValues ->
         Column(
@@ -98,83 +72,10 @@ fun HomePage(
                 MissingTimetableBanner (onUploadClicked = onUploadTimetable)
             }
 
-            // Top bar
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 24.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Greeting
-                Column {
-                    Text(
-                        text = getGreeting(),
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = "User", // You can replace this with viewModel.userName if you save it!
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
+            ProfileBar(viewModel = viewModel, onSettingsClick = onSettingsClick)
 
-                // Sync Icon + Settings / Profile Button
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp) // Adds a nice gap between the icon and button
-                ) {
-                    SyncIcon(state = syncState)
+            Deadlines(viewModel = viewModel, deletedTask = deletedTask, onSelectDeletedTask = {deletedTask = it})
 
-                    IconButton(
-                        onClick = onSettingsClick
-                    ) {
-                        Icon(
-                            painter = painterResource(R.drawable.circle_user_round),
-                            contentDescription = "Profile and Settings",
-                            modifier = Modifier.size(40.dp),
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
-            }
-
-            // Deadlines
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-            ) {
-                Text(
-                    text = "Upcoming Deadlines: ${dueTasks.size}",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-            }
-
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(max = 240.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(dueTasks) { task ->
-                    TaskCard(
-                        task = task,
-                        showDelete = deletedTask == task,
-                        onLongPress = { deletedTask = task },
-                        onNormalPress = { deletedTask = null },
-                        onToggle = { clickedTask ->
-                            viewModel.completeTask(clickedTask)
-                        },
-                        onDelete = {
-                            viewModel.deleteTask(task)
-                            deletedTask = null
-                        },
-                        dueText = formatRelativeDate(task.due)
-                    )
-                }
-            }
         }
     }
 }
@@ -205,6 +106,55 @@ fun SyncIcon(state: SyncState, modifier: Modifier = Modifier) {
     )
 }
 
+@Composable
+fun ProfileBar(
+    viewModel: AppViewModel,
+    onSettingsClick: () -> Unit
+) {
+    val syncState by viewModel.syncState.collectAsState()
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 24.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // Greeting
+        Column {
+            Text(
+                text = getGreeting(),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = "User", // You can replace this with viewModel.userName if you save it!
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold
+            )
+        }
+
+        // Sync Icon + Settings / Profile Button
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp) // Adds a nice gap between the icon and button
+        ) {
+            SyncIcon(state = syncState)
+
+            IconButton(
+                onClick = onSettingsClick
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.circle_user_round),
+                    contentDescription = "Profile and Settings",
+                    modifier = Modifier.size(40.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+        }
+    }
+}
+
 fun formatRelativeDate(dataDate: String): String {
     if (dataDate.isBlank()) return ""
 
@@ -221,5 +171,74 @@ fun formatRelativeDate(dataDate: String): String {
         }
     } catch (e: Exception) {
         dataDate
+    }
+}
+
+@Composable
+fun Deadlines(
+    viewModel: AppViewModel,
+    deletedTask: Task?,
+    onSelectDeletedTask: (Task?) -> Unit
+) {
+    val appData by viewModel.appData.collectAsState()
+
+    val dueTasks = remember(appData.tasks) {
+        val parser = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).apply {
+            timeZone = TimeZone.getTimeZone("UTC")
+        }
+
+        // Calculate the cutoff date
+        val cutoff = Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply {
+            add(Calendar.DAY_OF_YEAR, 7)
+            set(Calendar.HOUR_OF_DAY, 23)
+            set(Calendar.MINUTE, 59)
+            set(Calendar.SECOND, 59)
+        }
+
+        appData.tasks.filter { task ->
+            if (task.done || task.due.isBlank()) return@filter false
+
+            try {
+                val dueDate = parser.parse(task.due)
+                dueDate != null && !dueDate.after(cutoff.time)
+            } catch (e: Exception) {
+                false
+            }
+        }.sortedBy { it.due }
+    }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+    ) {
+        Text(
+            text = "Upcoming Deadlines: ${dueTasks.size}",
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+    }
+
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(max = 240.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        items(dueTasks) { task ->
+            TaskCard(
+                task = task,
+                showDelete = deletedTask == task,
+                onLongPress = { onSelectDeletedTask(task) },
+                onNormalPress = { onSelectDeletedTask(null) },
+                onToggle = { clickedTask ->
+                    viewModel.completeTask(clickedTask)
+                },
+                onDelete = {
+                    viewModel.deleteTask(task)
+                    onSelectDeletedTask(null)
+                },
+                dueText = formatRelativeDate(task.due)
+            )
+        }
     }
 }
