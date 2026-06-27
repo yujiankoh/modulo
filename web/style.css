@@ -38,6 +38,10 @@ body { font-family: "Inter", system-ui, sans-serif; padding: 2rem; }
 /* Base button: white, bordered, rounded. .btn-primary (blue) overrides this; the close
    ✕ / chevron buttons set their own transparent style. */
 button {
+  display: inline-flex;          /* lets an icon + label sit on one centred row */
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   padding: 0.5rem 0.9rem;
   font-size: 0.95rem;
   cursor: pointer;
@@ -47,6 +51,8 @@ button {
   border-radius: 8px;
 }
 button:hover { border-color: var(--border-strong); }
+/* Lucide icon inside any button: small + non-shrinking (stroke = currentColor). */
+button svg { width: 16px; height: 16px; flex: none; }
 /* Selects (filters, type pickers): match the button look. */
 select {
   padding: 6px 10px;
