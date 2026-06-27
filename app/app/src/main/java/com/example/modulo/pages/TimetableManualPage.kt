@@ -15,12 +15,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -37,6 +39,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
+import androidx.compose.material3.TimePickerDefaults
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -57,6 +60,7 @@ import com.example.modulo.Module
 import com.example.modulo.R
 import com.example.modulo.Slot
 import com.example.modulo.Timetable
+import com.example.modulo.ui.theme.ModuloTheme
 import kotlin.math.roundToInt
 
 @Composable
@@ -66,7 +70,13 @@ fun TimetableManualPage(
     onBack: () -> Unit
 ) {
     var educationLevel by remember { mutableStateOf(currEducationLevel) }
-    val modules = remember { mutableStateListOf(FormModule()) }
+    val modules = remember {
+        mutableStateListOf(
+            FormModule(
+                slots = mutableListOf(FormSlot(sessionType = getDefaultSessionType(currEducationLevel)))
+            )
+        )
+    }
 
     var showSaveWarning by remember { mutableStateOf(false) }
     val isHigherEd = educationLevel == EducationLevel.UNIVERSITY || educationLevel == EducationLevel.POLY
@@ -108,12 +118,8 @@ fun TimetableManualPage(
                             it.name.isNotBlank()
                         }
                     },
-                    contentPadding = PaddingValues(
-                        start = 12.dp,
-                        top = ButtonDefaults.ContentPadding.calculateTopPadding(),
-                        end = ButtonDefaults.ContentPadding.calculateEndPadding(layoutDirection = androidx.compose.ui.unit.LayoutDirection.Ltr),
-                        bottom = ButtonDefaults.ContentPadding.calculateBottomPadding()
-                    )
+                    contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
+                    shape = RoundedCornerShape(12.dp)
                 ) {
                     Icon(painter = painterResource(R.drawable.save), contentDescription = "Save")
                     Spacer(modifier = Modifier.padding(6.dp))
@@ -150,8 +156,14 @@ fun TimetableManualPage(
 
                 item {
                     OutlinedButton(
-                        onClick = { modules.add(FormModule()) },
-                        modifier = Modifier.fillMaxWidth()
+                        onClick = {
+                            modules.add(
+                                FormModule(
+                                    slots = mutableListOf(FormSlot(sessionType = getDefaultSessionType(educationLevel)))
+                                )
+                            )
+                        },
+                        modifier = Modifier.fillMaxWidth(),
                     ) {
                         Icon(painter = painterResource(R.drawable.plus), contentDescription = "Add Module")
                         Spacer(Modifier.width(8.dp))
@@ -203,6 +215,13 @@ fun TimetableManualPage(
     }
 }
 
+fun getDefaultSessionType(level: EducationLevel): String {
+    return when (level) {
+        EducationLevel.PRIMARY, EducationLevel.SECONDARY, EducationLevel.JC -> "lesson"
+        EducationLevel.POLY, EducationLevel.UNIVERSITY -> "lecture"
+    }
+}
+
 data class FormSlot(
     var day: String = "MON",
     var start: String = "12:00",
@@ -231,7 +250,8 @@ fun ModuleEntryCard(
 
     ElevatedCard(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+        colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface),
+        shape = RoundedCornerShape(20.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
@@ -253,7 +273,8 @@ fun ModuleEntryCard(
                     label = { Text("Module Code") },
                     placeholder = { Text("MA100...") },
                     keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp)
                 )
             }
 
@@ -266,7 +287,8 @@ fun ModuleEntryCard(
                 label = { Text(if (isHigherEd) "Module Name" else "Subject") },
                 placeholder = { Text(if (isHigherEd) "Introduction to..." else "Math...") },
                 keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp)
             )
 
             Spacer(Modifier.height(16.dp))
@@ -295,9 +317,10 @@ fun ModuleEntryCard(
             TextButton(
                 onClick = {
                     val newSlots = module.slots.toMutableList()
-                    newSlots.add(FormSlot())
+                    newSlots.add(FormSlot(sessionType = getDefaultSessionType(educationLevel)))
                     onModuleChange(module.copy(slots = newSlots))
-                }
+                },
+                shape = RoundedCornerShape(12.dp)
             ) {
                 Icon(painter = painterResource(R.drawable.plus), contentDescription = "Add Slot")
                 Spacer(Modifier.width(4.dp))
@@ -318,8 +341,7 @@ fun SlotEntryRow(
     val weeks = arrayOf("all", "even", "odd")
 
     val sessions = when (educationLevel) {
-        EducationLevel.PRIMARY -> arrayOf("lesson")
-        EducationLevel.SECONDARY -> arrayOf("lesson")
+        EducationLevel.PRIMARY, EducationLevel.SECONDARY -> arrayOf("lesson")
         EducationLevel.JC -> arrayOf("lesson", "tutorial")
         EducationLevel.POLY -> arrayOf("lecture", "tutorial", "lab", "practical")
         EducationLevel.UNIVERSITY -> arrayOf("lecture", "tutorial", "lab", "seminar")
@@ -327,7 +349,8 @@ fun SlotEntryRow(
 
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background),
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp)
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Row(
@@ -378,7 +401,8 @@ fun SlotEntryRow(
                     onValueChange = { onSlotChange(slot.copy(classNo = it.uppercase())) },
                     label = { Text("Class Code (Optional)", maxLines = 1, overflow = TextOverflow.Ellipsis) },
                     keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters),
-                    modifier = Modifier.weight(3f)
+                    modifier = Modifier.weight(3f),
+                    shape = RoundedCornerShape(12.dp)
                 )
             }
 
@@ -390,7 +414,8 @@ fun SlotEntryRow(
                     onValueChange = { onSlotChange(slot.copy(location = it)) },
                     label = { Text("Location (Optional)", maxLines = 1, overflow = TextOverflow.Ellipsis) },
                     singleLine = true,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(12.dp)
                 )
                 Spacer(Modifier.width(8.dp))
                 FormDropDownMenu(
@@ -430,12 +455,15 @@ fun FormDropDownMenu(
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isExpanded) },
             modifier = Modifier
                 .fillMaxWidth()
-                .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
+                .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
+            shape = RoundedCornerShape(12.dp)
         )
 
         ExposedDropdownMenu(
             expanded = isExpanded,
-            onDismissRequest = { isExpanded = false }
+            containerColor = MaterialTheme.colorScheme.surface,
+            onDismissRequest = { isExpanded = false },
+            shape = RoundedCornerShape(12.dp)
         ) {
             itemOptions.forEach { item ->
                 DropdownMenuItem(
@@ -484,44 +512,54 @@ fun TimePickerMenu(
                 disabledTextColor = MaterialTheme.colorScheme.onSurface,
                 disabledBorderColor = MaterialTheme.colorScheme.outline,
                 disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            ),
+            shape = RoundedCornerShape(12.dp)
         )
     }
 
     if (showDialog) {
         AlertDialog(
+            containerColor = MaterialTheme.colorScheme.surface,
             onDismissRequest = { showDialog = false },
             confirmButton = {
-                TextButton(onClick = {
-                    val rawHour = timePickerState.hour
-                    val rawMinute = timePickerState.minute
+                Button(
+                    onClick = {
+                        val rawHour = timePickerState.hour
+                        val rawMinute = timePickerState.minute
 
-                    // Round to the nearest 15 minutes
-                    var roundedMinute = ((rawMinute / 15.0).roundToInt() * 15)
-                    var finalHour = rawHour
+                        // Round to the nearest 15 minutes
+                        var roundedMinute = ((rawMinute / 15.0).roundToInt() * 15)
+                        var finalHour = rawHour
 
-                    if (roundedMinute == 60) {
-                        roundedMinute = 0
-                        finalHour = (finalHour + 1) % 24 // Keeps it within 0-23
-                    }
+                        if (roundedMinute == 60) {
+                            roundedMinute = 0
+                            finalHour = (finalHour + 1) % 24 // Keeps it within 0-23
+                        }
 
-                    val h = finalHour.toString().padStart(2, '0')
-                    val m = roundedMinute.toString().padStart(2, '0')
+                        val h = finalHour.toString().padStart(2, '0')
+                        val m = roundedMinute.toString().padStart(2, '0')
 
-                    onTimeSelected("$h:$m")
-                    showDialog = false
-                }) {
-                    Text("OK")
+                        onTimeSelected("$h:$m")
+                        showDialog = false
+                    },
+                    modifier = Modifier.padding(end = 8.dp, bottom = 4.dp),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("Override")
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showDialog = false }) {
-                    Text("Cancel")
-                }
+                TextButton(onClick = { showDialog = false }) { Text("Cancel") }
             },
             text = {
-                // This renders the visual clock dial!
-                TimePicker(state = timePickerState)
+                TimePicker(
+                    state = timePickerState,
+                    colors = TimePickerDefaults.colors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        clockDialColor = ModuloTheme.colors.pillBg,
+                        timeSelectorUnselectedContainerColor = ModuloTheme.colors.pillBg
+                    )
+                )
             }
         )
     }

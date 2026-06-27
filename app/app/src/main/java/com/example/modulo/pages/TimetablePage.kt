@@ -2,6 +2,7 @@ package com.example.modulo.pages
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,12 +13,12 @@ import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Badge
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -28,6 +29,7 @@ import androidx.compose.material3.SecondaryTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -37,14 +39,19 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import com.example.modulo.AppViewModel
 import com.example.modulo.R
 import com.example.modulo.getModuleColor
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import kotlin.text.isNotBlank
@@ -153,12 +160,8 @@ fun TimetablePage(
                 // Reupload Button
                 Button(
                     onClick = onUploadTimetable,
-                    contentPadding = PaddingValues(
-                        start = 8.dp,
-                        top = ButtonDefaults.ContentPadding.calculateTopPadding(),
-                        end = ButtonDefaults.ContentPadding.calculateEndPadding(layoutDirection = androidx.compose.ui.unit.LayoutDirection.Ltr),
-                        bottom = ButtonDefaults.ContentPadding.calculateBottomPadding()
-                    )
+                    contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
+                    shape = RoundedCornerShape(12.dp)
                 ) {
                     Icon(painter = painterResource(R.drawable.rotate), contentDescription = "Reupload")
                     Spacer(modifier = Modifier.padding(6.dp))
@@ -252,7 +255,10 @@ fun TimetablePage(
                 }
             } else if (hasEvenOddSplit) {
                 // Even / Odd option
-                SecondaryTabRow(selectedTabIndex = if (manualTab == "odd") 0 else 1) {
+                SecondaryTabRow(
+                    selectedTabIndex = if (manualTab == "odd") 0 else 1,
+                    containerColor = MaterialTheme.colorScheme.background
+                ) {
                     Tab(selected = manualTab == "odd", onClick = { manualTab = "odd" }, text = { Text("Odd Week") })
                     Tab(selected = manualTab == "even", onClick = { manualTab = "even" }, text = { Text("Even Week") })
                 }
@@ -261,49 +267,133 @@ fun TimetablePage(
             if (!isOutsideTerm) {
                 val slotsToShow = allDisplaySlots.filter { it.week == "all" || it.week == activeWeekType }
                 val dayNames = listOf("MON", "TUE", "WED", "THU", "FRI")
-                val groupedSlots = slotsToShow.groupBy { it.day }
-                    .toSortedMap(compareBy { dayNames.indexOf(it) })
 
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                val (minTime, maxTime, totalHours) = getTimeDetails(slotsToShow)
+
+                // Grid dimensions
+                val hourWidth = 120.dp
+                val hourWidthPx = with(LocalDensity.current) { hourWidth.toPx() }
+                val dayHeight = 90.dp
+                val timeHeaderHeight = 30.dp
+
+                // Auto-scroll to current time
+                val scrollState = rememberScrollState()
+                val verticalScrollState = rememberScrollState()
+                val screenSize = LocalWindowInfo.current.containerSize
+                val halfScreenWidthPx = with(LocalDensity.current) { ((screenSize.width.toDp() - 72.dp) / 2).toPx() }
+                val currentTime = LocalTime.now()
+
+                LaunchedEffect(Unit) {
+                    // Center the current-time line on the screen
+                    val currentOffsetPx = calculateOffset(currentTime, minTime, hourWidthPx)
+                    val targetPx = currentOffsetPx - halfScreenWidthPx
+                    if (targetPx > 0) {
+                        scrollState.scrollTo(targetPx.toInt())
+                    }
+                }
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(verticalScrollState)
+                        .padding(top = 16.dp)
                 ) {
-                    groupedSlots.forEach { (day, slotsForDay) ->
-                        item {
-                            Row(
+                    // Days Column
+                    Column(
+                        modifier = Modifier
+                            .width(36.dp)
+                            .background(MaterialTheme.colorScheme.background)
+                            .zIndex(1f)
+                    ) {
+                        Spacer(modifier = Modifier.height(timeHeaderHeight))
+                        dayNames.forEach { day ->
+                            Box(
                                 modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(top = 16.dp, bottom = 0.dp)
-                                ,
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
+                                    .height(dayHeight)
+                                    .fillMaxWidth(),
+                                contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    text = day,
-                                    style = MaterialTheme.typography.titleMedium,
+                                    text = day.map { it.toString() }.joinToString("\n"),
+                                    style = MaterialTheme.typography.labelMedium,
                                     fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.primary,
+                                    textAlign = TextAlign.Center,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
+                            }
+                        }
+                    }
 
-                                if (baseMonday != null) {
-                                    val dayOffset = dayNames.indexOf(day).toLong()
-                                    val targetDate = baseMonday.plusWeeks(selectedWeekNum - 1L).plusDays(dayOffset)
+                    // Timetable
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .horizontalScroll(scrollState)
+                    ) {
+                        val gridTotalWidth = hourWidth * totalHours
+                        val gridTotalHeight = dayHeight * dayNames.size
 
-                                    Text(
-                                        text = targetDate.format(DateTimeFormatter.ofPattern("dd MMM")),
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.primary,
-                                    )
+                        Box(
+                            modifier = Modifier
+                                .width(gridTotalWidth)
+                                .height(gridTotalHeight + timeHeaderHeight + 2.dp)
+                        ) {
+                            // Horizontal dividing lines
+                            for (i in 0..dayNames.size) {
+                                val yOffset = timeHeaderHeight + (dayHeight * i)
+                                Box(modifier = Modifier.offset(y = yOffset).width(gridTotalWidth).height(1.dp).background(MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)))
+                            }
+
+                            // Vertical dividing lines
+                            for (i in 0..totalHours) {
+                                val xOffset = hourWidth * i
+
+                                // Vertical Line
+                                Box(modifier = Modifier.offset(x = xOffset, y = timeHeaderHeight).width(1.dp).height(gridTotalHeight).background(MaterialTheme.colorScheme.outlineVariant))
+
+                                // Time Header Text
+                                Text(
+                                    text = minTime.plusHours(i.toLong()).format(DateTimeFormatter.ofPattern("HH:mm")),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.offset(x = xOffset + 4.dp, y = timeHeaderHeight - 20.dp)
+                                )
+                            }
+                        }
+
+                        // Module Blocks
+                        slotsToShow.forEach { slot ->
+                            val slotStart = parseTimeString(slot.start)
+                            val slotEnd = parseTimeString(slot.end)
+                            val dayIndex = dayNames.indexOf(slot.day)
+
+                            if (dayIndex >= 0) {
+                                val xOffset = calculateOffset(slotStart, minTime, hourWidth.value).dp
+                                val yOffset = timeHeaderHeight + (dayHeight * dayIndex)
+                                val blockWidth = calculateWidth(slotStart, slotEnd, hourWidth.value).dp
+
+                                Box(
+                                    modifier = Modifier
+                                        .offset(x = xOffset, y = yOffset)
+                                        .width(blockWidth)
+                                        .height(dayHeight)
+                                        .padding(horizontal = 2.dp, vertical = 4.dp)
+                                ) {
+                                    TimetableGridBlock(educationLevel = timetable.educationLevel, slot = slot)
                                 }
                             }
                         }
 
-                        items(slotsForDay.sortedBy { it.start }) { slot ->
-                            TimetableSlotCard(
-                                educationLevel = timetable.educationLevel,
-                                slot = slot
+                        // Current-Time line
+                        if (currentTime.isAfter(minTime) && currentTime.isBefore(maxTime)) {
+                            val timeLineOffset = calculateOffset(currentTime, minTime, hourWidth.value).dp
+                            Box(
+                                modifier = Modifier
+                                    .offset(x = timeLineOffset, y = timeHeaderHeight)
+                                    .width(2.dp)
+                                    .height(gridTotalHeight)
+                                    .background(MaterialTheme.colorScheme.primary)
+                                    .zIndex(2f)
                             )
                         }
                     }
@@ -311,6 +401,30 @@ fun TimetablePage(
             }
         }
     }
+}
+
+// Calculate the start and end timing of timetable (minimum 1000 - 1600)
+fun getTimeDetails(slots: List<DisplaySlot>): Triple<LocalTime, LocalTime, Int> {
+    val allTimes = slots.flatMap {
+        listOf(parseTimeString(it.start), parseTimeString(it.end))
+    }
+    val earliestClass = allTimes.minOrNull() ?: LocalTime.of(10, 0)
+    val latestClass = allTimes.maxOrNull() ?: LocalTime.of(16, 0)
+    val minTime = if (earliestClass.withMinute(0).isAfter(LocalTime.of(10, 0))) {
+        LocalTime.of(10, 0)
+    } else {
+        earliestClass.withMinute(0)
+    }
+    val maxTime = if (latestClass.minute == 0) {
+        latestClass
+    } else {
+        latestClass.withMinute(0).plusHours(1)
+    }.let {
+        if (it.isBefore(LocalTime.of(16, 0))) LocalTime.of(16, 0) else it
+    }
+    val totalHours = ChronoUnit.HOURS.between(minTime, maxTime).toInt()
+
+    return Triple(minTime, maxTime, totalHours)
 }
 
 data class DisplaySlot(
@@ -326,79 +440,81 @@ data class DisplaySlot(
 )
 
 @Composable
-fun TimetableSlotCard(
+fun TimetableGridBlock(
     educationLevel: String,
     slot: DisplaySlot
 ) {
     val theme = getModuleColor(slot.moduleCode.ifBlank { slot.moduleName })
 
-    Row(
+    Column(
         modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
+            .fillMaxSize()
+            .clip(RoundedCornerShape(8.dp))
             .background(theme.container)
             .clickable {
-                // TODO: Part 2b - Open Edit Dialog
+                // TODO: Open Edit Dialog
             }
-            .padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .padding(8.dp)
     ) {
-        // Time Column
-        Column(
-            modifier = Modifier.width(80.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(slot.start, fontWeight = FontWeight.Bold)
-            Text("to", style = MaterialTheme.typography.labelSmall)
-            Text(slot.end, fontWeight = FontWeight.Bold)
-        }
-
-        Spacer(modifier = Modifier.width(16.dp))
-
-        // Details Column
-        Column(modifier = Modifier.weight(1f)) {
-            if (educationLevel == "poly" || educationLevel == "university") {
-                Text(
-                    text = slot.moduleCode,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = theme.onContainer
-                )
-                if (slot.moduleName.isNotBlank()) {
-                    Text(
-                        text = slot.moduleName,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = theme.onContainer.copy(alpha = 0.8f)
-                    )
-                }
-            } else {
+        if (educationLevel == "poly" || educationLevel == "university") {
+            Text(
+                text = slot.moduleCode,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.ExtraBold,
+                color = theme.onContainer,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            if (slot.moduleName.isNotBlank()) {
                 Text(
                     text = slot.moduleName,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = theme.onContainer
+                    style = MaterialTheme.typography.labelSmall,
+                    color = theme.onContainer.copy(alpha = 0.8f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
-            Spacer(Modifier.height(4.dp))
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                if (slot.location.isNotBlank()) {
-                    Badge(containerColor = Color.White.copy(alpha = 0.4f)) {
-                        Text(slot.location, color = theme.onContainer)
-                    }
-                }
-                if (slot.sessionType.isNotBlank()) {
-                    Badge(containerColor = Color.White.copy(alpha = 0.4f)) {
-                        Text(slot.sessionType.uppercase(), color = theme.onContainer)
-                    }
-                }
-                if (slot.classNo.isNotBlank()) {
-                    Badge(containerColor = Color.White.copy(alpha = 0.4f)) {
-                        Text(slot.classNo.uppercase(), color = theme.onContainer)
-                    }
-                }
-            }
+        } else {
+            Text(
+                text = slot.moduleName,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.ExtraBold,
+                color = theme.onContainer,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+
+        Spacer(modifier = Modifier.weight(1f))
+
+        // Location Badge
+        if (slot.location.isNotBlank()) {
+            Text(
+                text = slot.location,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Bold,
+                color = theme.onContainer,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
         }
     }
+}
+
+fun parseTimeString(timeStr: String): LocalTime {
+    // Handles standard formats like "0800", "08:00", or "14:30"
+    val cleanStr = timeStr.replace(":", "")
+    val hour = cleanStr.take(2).toIntOrNull() ?: 0
+    val minute = cleanStr.drop(2).take(2).toIntOrNull() ?: 0
+    return LocalTime.of(hour, minute)
+}
+
+fun calculateOffset(startTime: LocalTime, minTime: LocalTime, hourWidthDp: Float): Float {
+    val minutesFromStart = ChronoUnit.MINUTES.between(minTime, startTime)
+    return (minutesFromStart / 60f) * hourWidthDp
+}
+
+fun calculateWidth(startTime: LocalTime, endTime: LocalTime, hourWidthDp: Float): Float {
+    val durationMinutes = ChronoUnit.MINUTES.between(startTime, endTime)
+    return (durationMinutes / 60f) * hourWidthDp
 }

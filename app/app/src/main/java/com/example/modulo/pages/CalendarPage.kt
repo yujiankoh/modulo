@@ -22,6 +22,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -42,14 +43,21 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.example.modulo.AppViewModel
 import com.example.modulo.R
+import com.example.modulo.StudySession
 import com.example.modulo.Task
+import com.example.modulo.emojis
 import com.example.modulo.getModuleColor
+import com.example.modulo.ui.theme.ModuloTheme
+import java.time.Instant
 import java.time.LocalDate
 import java.time.YearMonth
+import java.time.ZoneId
 import java.time.format.TextStyle
 import java.util.Locale
+import kotlin.math.roundToInt
 
 @Composable
 fun CalendarPage(
@@ -61,109 +69,162 @@ fun CalendarPage(
     var currentMonth by remember { mutableStateOf(YearMonth.now()) }
     var selectedDate by remember { mutableStateOf<LocalDate?>(null) }
 
-    val tasks = appData.tasks.sortedBy { task ->  task.done }
+    val today = remember { LocalDate.now() }
+    val tasks = appData.tasks.sortedBy { task -> task.done }
 
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+    val daysOfWeek = listOf("M", "T", "W", "T", "F", "S", "S")
+    val daysInMonth = currentMonth.lengthOfMonth()
+    val firstDayOfMonth = currentMonth.atDay(1)
+    val offset = firstDayOfMonth.dayOfWeek.value - 1
 
-        // Calendar header
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = { currentMonth = currentMonth.minusMonths(1) }) {
-                Icon(painter = painterResource(R.drawable.chevron_left), contentDescription = "Previous Month")
+    val ratings: Map<LocalDate, String> = remember(appData.studySessions) {
+        val sessions = appData.studySessions
+
+        val validDates = sessions.mapNotNull { session ->
+            try {
+                val localDate = Instant.parse(session.start)
+                    .atZone(ZoneId.systemDefault())
+                    .toLocalDate()
+                localDate to session
+            } catch (e: Exception) {
+                null
             }
+        }
 
-            Text(
-                text = "${currentMonth.month.getDisplayName(TextStyle.FULL, Locale.getDefault())} ${currentMonth.year}",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold
+        val sessionsByDate: Map<LocalDate, List<StudySession>> = validDates
+            .groupBy(
+                keySelector = { it.first },
+                valueTransform = { it.second }
             )
 
-            IconButton(onClick = { currentMonth = currentMonth.plusMonths(1) }) {
-                Icon(painter = painterResource(R.drawable.chevron_right), contentDescription = "Next Month")
-            }
-        }
+        // Average
+        sessionsByDate.mapValues { (_, dateSessions) ->
+            var totalPoints = 0L
+            var totalDurationMins = 0L
 
-        Spacer(modifier = Modifier.height(8.dp))
-
-        val daysOfWeek = listOf("M", "T", "W", "T", "F", "S", "S")
-
-        Row(modifier = Modifier.fillMaxWidth()) {
-            daysOfWeek.forEach { day ->
-                Text(
-                    text = day,
-                    modifier = Modifier.weight(1f),
-                    textAlign = TextAlign.Center,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // Calendar grid
-        val daysInMonth = currentMonth.lengthOfMonth()
-        val firstDayOfMonth = currentMonth.atDay(1)
-
-        // Adjust depending on whether Sunday or Monday as the first day.
-        // java.time defaults to Monday = 1, Sunday = 7.
-        val offset = firstDayOfMonth.dayOfWeek.value - 1
-
-        selectedDate?.let { date ->
-            val selectedTasks = tasks.filter { task ->
-                try {
-                    task.due.isNotEmpty() && LocalDate.parse(task.due) == date
-                } catch (e: Exception) {
-                    false
+            dateSessions.forEach { session ->
+                // score = rating * duration minutes
+                if (session.rating != null) {
+                    totalPoints += session.rating * session.durationMins
+                    totalDurationMins += session.durationMins
                 }
             }
 
-            ViewCalendarCell(
-                date = date,
-                tasks = selectedTasks,
-                viewModel = viewModel,
-                onDismiss = {selectedDate = null}
-            )
+            if (totalDurationMins > 0) {
+                val weightedAvg = (totalPoints.toDouble() / totalDurationMins).roundToInt()
+                emojis[weightedAvg - 1]
+            } else {
+                ""
+            }
         }
+    }
 
-        Column(modifier = Modifier.weight(1f)) {
-            for (rowIndex in 0 until 6) {
-                val firstDayOfRow = rowIndex * 7 - offset
+    Scaffold { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(horizontal = 16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // Calendar header
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = { currentMonth = currentMonth.minusMonths(1) }) {
+                    Icon(painter = painterResource(R.drawable.chevron_left), contentDescription = "Previous Month")
+                }
 
-                if (firstDayOfRow >= daysInMonth) {
-                    Spacer(modifier = Modifier.weight(1f))
-                } else {
-                    Row(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                Text(
+                    text = "${currentMonth.month.getDisplayName(TextStyle.FULL, Locale.getDefault())} ${currentMonth.year}",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold
+                )
 
-                        for (colIndex in 0 until 7) {
-                            val dayIndex = rowIndex * 7 + colIndex - offset
+                IconButton(onClick = { currentMonth = currentMonth.plusMonths(1) }) {
+                    Icon(painter = painterResource(R.drawable.chevron_right), contentDescription = "Next Month")
+                }
+            }
 
-                            if (dayIndex in 0 until daysInMonth) {
-                                val date = currentMonth.atDay(dayIndex + 1)
+            Spacer(modifier = Modifier.height(8.dp))
 
-                                val dayTasks = tasks.filter { task ->
-                                    try {
-                                        task.due.isNotEmpty() && LocalDate.parse(task.due) == date
-                                    } catch (e: Exception) {
-                                        false
+            Row(modifier = Modifier.fillMaxWidth()) {
+                daysOfWeek.forEach { day ->
+                    Text(
+                        text = day,
+                        modifier = Modifier.weight(1f),
+                        textAlign = TextAlign.Center,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Grid
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(1.dp)
+            ) {
+                for (rowIndex in 0 until 6) {
+                    val firstDayOfRow = rowIndex * 7 - offset
+
+                    if (firstDayOfRow >= daysInMonth) {
+                        Spacer(modifier = Modifier.weight(1f))
+                    } else {
+                        Row(
+                            modifier = Modifier.weight(1f).fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(1.dp)
+                        ) {
+                            for (colIndex in 0 until 7) {
+                                val dayIndex = rowIndex * 7 + colIndex - offset
+
+                                if (dayIndex in 0 until daysInMonth) {
+                                    val date = currentMonth.atDay(dayIndex + 1)
+
+                                    val dayTasks = tasks.filter { task ->
+                                        try {
+                                            task.due.isNotEmpty() && LocalDate.parse(task.due) == date
+                                        } catch (e: Exception) {
+                                            false
+                                        }
                                     }
-                                }
 
-                                DayCell(
-                                    date = date,
-                                    tasks = dayTasks,
-                                    modifier = Modifier.weight(1f).clickable { selectedDate = date }
-                                )
-                            } else {
-                                // Empty invisible box for days before the 1st or after the end of month
-                                Spacer(modifier = Modifier.weight(1f).fillMaxHeight())
+                                    DayCell(
+                                        date = date,
+                                        tasks = dayTasks,
+                                        isToday = (date == today),
+                                        modifier = Modifier.weight(1f).clickable { selectedDate = date },
+                                        emoji = ratings[date] ?: ""
+                                    )
+                                } else {
+                                    // Empty invisible box for days before the 1st or after the end of month
+                                    Spacer(modifier = Modifier.weight(1f).fillMaxHeight())
+                                }
                             }
                         }
                     }
                 }
+            }
+
+            selectedDate?.let { date ->
+                val selectedTasks = tasks.filter { task ->
+                    try {
+                        task.due.isNotEmpty() && LocalDate.parse(task.due) == date
+                    } catch (e: Exception) {
+                        false
+                    }
+                }
+
+                ViewCalendarCell(
+                    date = date,
+                    tasks = selectedTasks,
+                    viewModel = viewModel,
+                    onDismiss = {selectedDate = null}
+                )
             }
         }
     }
@@ -173,17 +234,24 @@ fun CalendarPage(
 fun DayCell(
     date: LocalDate,
     tasks: List<Task>,
+    isToday: Boolean,
     modifier: Modifier = Modifier,
     emoji: String = "",
 ) {
-    Column(
-        modifier = modifier
+    val cellModifier = if (isToday) {
+        modifier
             .fillMaxSize()
-            .padding(0.dp)
-            .background(color = MaterialTheme.colorScheme.surfaceContainer)
-            .border(width = 1.dp, color = MaterialTheme.colorScheme.inverseOnSurface)
+            .background(color = MaterialTheme.colorScheme.surface)
+            .border(width = 2.dp, color = MaterialTheme.colorScheme.primary)
             .padding(4.dp)
-    ) {
+    } else {
+        modifier
+            .fillMaxSize()
+            .background(color = MaterialTheme.colorScheme.surface)
+            .padding(4.dp)
+    }
+
+    Column(modifier = cellModifier) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -229,7 +297,7 @@ fun DayCell(
             Text(
                 text = "+${tasks.size - 3} more",
                 fontSize = 10.sp,
-                color = Color.Gray
+                color = ModuloTheme.colors.subText
             )
         }
     }
@@ -249,13 +317,16 @@ fun ViewCalendarCell(
 
     val screenHeight = with(density) { windowInfo.containerSize.height.toDp() }
 
-    Dialog(onDismissRequest = onDismiss) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
         Card(
             modifier = Modifier
-                .fillMaxWidth()
+                .fillMaxWidth(0.9f)
                 .padding(16.dp)
                 .heightIn(max = screenHeight * 0.6f),
-            shape = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(36.dp),
             elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surface
@@ -278,7 +349,10 @@ fun ViewCalendarCell(
                 if (tasks.isEmpty()) {
                     Text("No tasks scheduled for this day.", color = Color.Gray)
                 } else {
-                    LazyColumn(modifier = Modifier.weight(1f, fill = false)) {
+                    LazyColumn(
+                        modifier = Modifier.weight(1f, fill = false),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
                         items(tasks) { task ->
                             TaskCard(
                                 task = task,
@@ -302,7 +376,8 @@ fun ViewCalendarCell(
 
                 Button(
                     onClick = onDismiss,
-                    modifier = Modifier.align(Alignment.End)
+                    modifier = Modifier.align(Alignment.End),
+                    shape = RoundedCornerShape(12.dp)
                 ) {
                     Text("Close")
                 }

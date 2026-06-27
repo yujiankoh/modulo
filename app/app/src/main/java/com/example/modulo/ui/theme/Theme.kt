@@ -8,25 +8,65 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
+@Immutable
+data class CustomColors(
+    val pillBg: Color,
+    val subText: Color
+)
+
 private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80,
+    primary = DarkPrimary,
+    onPrimary = DarkBg,
+    primaryContainer = DarkPrimarySoft,
+    onPrimaryContainer = DarkText,
+    background = DarkBg,
+    onBackground = DarkText,
+    surface = DarkSurface,
+    onSurface = DarkText,
+    outline = DarkTextMuted,
+    outlineVariant = DarkBorder
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40,
+    primary = LightPrimary,
+    onPrimary = LightSurface,
+    primaryContainer = LightPrimarySoft,
+    onPrimaryContainer = LightPrimary,
+    background = LightBg,
+    onBackground = LightText,
+    surface = LightSurface,
+    onSurface = LightText,
+    outline = LightTextMuted,
+    outlineVariant = LightBorder
 )
+
+private val LightCustomColors = CustomColors(
+    pillBg = LightPillBg,
+    subText = LightTextMuted
+)
+
+private val DarkCustomColors = CustomColors(
+    pillBg = DarkPillBg,
+    subText = DarkTextMuted
+)
+
+private val LocalCustomColors = staticCompositionLocalOf { LightCustomColors }
+
+object ModuloTheme {
+    val colors: CustomColors
+        @Composable
+        get() = LocalCustomColors.current
+}
 
 @Composable
 fun ModuloTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
     dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
@@ -40,9 +80,13 @@ fun ModuloTheme(
         else -> LightColorScheme
     }
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = Typography,
-        content = content
-    )
+    val customColors = if (darkTheme) DarkCustomColors else LightCustomColors
+
+    CompositionLocalProvider(LocalCustomColors provides customColors) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = Typography,
+            content = content
+        )
+    }
 }

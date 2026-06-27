@@ -1,12 +1,13 @@
 package com.example.modulo.pages
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -26,16 +27,22 @@ fun SignInPage(
             .wrapContentSize(Alignment.Center),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Image(
+        Icon(
             painter = painterResource(R.drawable.logo),
             contentDescription = "logo"
         )
         Spacer(modifier = Modifier.height(16.dp))
 
-        Button(onClick = onSyncWithDriveClick) {
+        Button(
+            onClick = onSyncWithDriveClick,
+            shape = RoundedCornerShape(12.dp)
+        ) {
             Text("Sync with Google Drive")
         }
-        Button(onClick = onLocalSaveClick) {
+        Button(
+            onClick = onLocalSaveClick,
+            shape = RoundedCornerShape(12.dp)
+        ) {
             Text("Continue with Local Save")
         }
     }
