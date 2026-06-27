@@ -49,6 +49,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.example.modulo.AppViewModel
+import com.example.modulo.EducationLevel
 import com.example.modulo.R
 import com.example.modulo.SyncState
 import com.example.modulo.Task
@@ -538,6 +539,7 @@ fun Modules(
                             moduleCode = module.code,
                             moduleName = module.name,
                             uncompletedTasksCount = uncompletedCount,
+                            educationLevel = appData.educationLevel ?: "",
                             modifier = Modifier.weight(1f)
                         )
                     } else {
@@ -554,6 +556,7 @@ fun ModuleCard(
     moduleCode: String,
     moduleName: String,
     uncompletedTasksCount: Int,
+    educationLevel: String,
     modifier: Modifier = Modifier
 ) {
     // Falls back seamlessly to ModuloTheme system or standard palette values
@@ -575,20 +578,29 @@ fun ModuleCard(
                     .background(theme.container)
                     .padding(12.dp),
             ) {
-                Text(
-                    text = moduleCode.ifBlank { "General" },
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = theme.onContainer
-                )
-                Text(
-                    text = moduleName.ifBlank { "General" },
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = theme.onContainer,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
+                if (educationLevel == "poly" || educationLevel == "university") {
+                    Text(
+                        text = moduleCode,
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = theme.onContainer
+                    )
+                    Text(
+                        text = moduleName,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = theme.onContainer,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                } else {
+                    Text(
+                        text = moduleName,
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = theme.onContainer
+                    )
+                }
             }
 
             Row(

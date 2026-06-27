@@ -28,6 +28,8 @@ fun AuthenticatePage(
     ) {
         Text(text = "Sync your app data to Google Drive")
         Spacer(modifier = Modifier.height(16.dp))
+        Text(text = "Terms and Conditions...")
+        Spacer(modifier = Modifier.height(16.dp))
 
         Button(
             onClick = { onSyncWithDriveClick() },
