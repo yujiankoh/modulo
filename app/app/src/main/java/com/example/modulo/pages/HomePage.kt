@@ -6,6 +6,7 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
@@ -44,6 +45,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.example.modulo.AppViewModel
@@ -51,6 +53,7 @@ import com.example.modulo.R
 import com.example.modulo.SyncState
 import com.example.modulo.Task
 import com.example.modulo.TimetableState
+import com.example.modulo.getModuleColor
 import com.example.modulo.ui.theme.ModuloTheme
 import java.text.SimpleDateFormat
 import java.time.LocalDate
@@ -75,10 +78,10 @@ fun HomePage(
     var deletedTask by remember { mutableStateOf<Task?>(null) }
 
     Scaffold { paddingValues ->
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
+                .padding(top = paddingValues.calculateTopPadding())
                 .padding(horizontal = 16.dp)
                 .pointerInput(Unit) {
                     detectTapGestures(onTap = {
@@ -86,17 +89,31 @@ fun HomePage(
                     })
                 },
             horizontalAlignment = Alignment.CenterHorizontally,
+            contentPadding = PaddingValues(
+                bottom = paddingValues.calculateBottomPadding() + 24.dp
+            )
         ) {
-            // Missing timetable banner
             if (appData.timetable == null && timetableState is TimetableState.Idle) {
-                MissingTimetableBanner (onUploadClicked = onUploadTimetable)
+                item {
+                    MissingTimetableBanner(onUploadClicked = onUploadTimetable)
+                }
             }
 
-            ProfileBar(viewModel = viewModel, onSettingsClick = onSettingsClick)
+            item {
+                ProfileBar(viewModel = viewModel, onSettingsClick = onSettingsClick)
+            }
 
-            TodaySchedule(viewModel = viewModel, onTimetableClick = onTimetableClick)
+            item {
+                TodaySchedule(viewModel = viewModel, onTimetableClick = onTimetableClick)
+            }
 
-            Deadlines(viewModel = viewModel, deletedTask = deletedTask, onSelectDeletedTask = {deletedTask = it})
+            item {
+                Deadlines(viewModel = viewModel, deletedTask = deletedTask, onSelectDeletedTask = { deletedTask = it })
+            }
+
+            item {
+                Modules(viewModel = viewModel)
+            }
         }
     }
 }
@@ -477,6 +494,117 @@ fun Deadlines(
                 },
                 dueText = formatRelativeDate(task.due)
             )
+        }
+    }
+}
+
+@Composable
+fun Modules(
+    viewModel: AppViewModel,
+) {
+    val appData by viewModel.appData.collectAsState()
+    val modulesList = appData.timetable?.modules ?: emptyList()
+
+    if (modulesList.isEmpty()) {
+        Box(modifier = Modifier.fillMaxWidth().height(100.dp), contentAlignment = Alignment.Center) {
+            Text("No modules found in AppData!", color = MaterialTheme.colorScheme.error)
+        }
+        return
+    }
+
+    val chunkedList = modulesList.chunked(3)
+
+    Row(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        SectionTitle("Modules")
+    }
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        chunkedList.forEach { rowModules ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                for (i in 0 until 3) {
+                    if (i < rowModules.size) {
+                        val module = rowModules[i]
+                        val uncompletedCount = appData.tasks.count { !it.done && it.module == module.code }
+
+                        ModuleCard(
+                            moduleCode = module.code,
+                            moduleName = module.name,
+                            uncompletedTasksCount = uncompletedCount,
+                            modifier = Modifier.weight(1f)
+                        )
+                    } else {
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ModuleCard(
+    moduleCode: String,
+    moduleName: String,
+    uncompletedTasksCount: Int,
+    modifier: Modifier = Modifier
+) {
+    // Falls back seamlessly to ModuloTheme system or standard palette values
+    val theme = getModuleColor(moduleCode)
+
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(100.dp),
+        shape = RoundedCornerShape(20.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1.3f)
+                    .background(theme.container)
+                    .padding(12.dp),
+            ) {
+                Text(
+                    text = moduleCode.ifBlank { "General" },
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = theme.onContainer
+                )
+                Text(
+                    text = moduleName.ifBlank { "General" },
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = theme.onContainer,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(0.7f)
+                    .padding(8.dp),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "$uncompletedTasksCount " + if (uncompletedTasksCount == 1) "task" else "tasks",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
     }
 }

@@ -110,7 +110,7 @@ fun AllTaskPage(
                             label = { Text(option.displayName) },
                             shape = RoundedCornerShape(8.dp),
                             colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = ModuloTheme.colors.pillBg,
+                                selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
                                 selectedLabelColor = MaterialTheme.colorScheme.primary
                             )
                         )
@@ -130,7 +130,7 @@ fun AllTaskPage(
                                 label = { Text("All") },
                                 shape = RoundedCornerShape(8.dp),
                                 colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = ModuloTheme.colors.pillBg,
+                                    selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
                                     selectedLabelColor = MaterialTheme.colorScheme.primary
                                 )
                             )
@@ -144,7 +144,7 @@ fun AllTaskPage(
                                 label = { Text(moduleCode) },
                                 shape = RoundedCornerShape(8.dp),
                                 colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = ModuloTheme.colors.pillBg,
+                                    selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
                                     selectedLabelColor = MaterialTheme.colorScheme.primary
                                 )
                             )

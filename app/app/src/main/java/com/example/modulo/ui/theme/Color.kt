@@ -6,11 +6,11 @@ import androidx.compose.ui.graphics.Color
 val LightBg = Color(0xFFECEFFB)
 val LightSurface = Color(0xFFFFFFFF)
 val LightPrimary = Color(0xFF2F6BF6)
-val LightPrimarySoft = Color(0xFFE6EDFE)
+val LightPrimarySoft = Color(0xFFCADAFF)
 val LightText = Color(0xFF20263A)
-val LightTextMuted = Color(0xFF8890A4)
-val LightBorder = Color(0xFFE7EAF3)
-val LightPillBg = Color(0xFFEEF1F8)
+val LightTextMuted = Color(0xFF768CAB)
+val LightBorder = Color(0xFFCFD1EA)
+val LightPillBg = Color(0xFFE6E8FF)
 
 // Dark Theme Tokens
 val DarkBg = Color(0xFF0E1524)      // 0xFF0E1524 0xFF0D131F
