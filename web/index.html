@@ -256,6 +256,67 @@
        rating from Study). Hidden by default; their modules toggle display.
        ============================================================================ -->
 
+  <!-- Handbook / onboarding modal (Phase 13): captures education level (locked after first
+       run), a level-aware academic year, semester, and term dates. Auto-opens on first run;
+       afterwards it's the "Edit handbook" editor (level shown locked). Reuses .tcal-popup. -->
+  <div id="handbookModal" class="tcal-popup" style="display: none;">
+    <div class="tcal-popup-card">
+      <button id="hbCloseX" class="tcal-popup-close" type="button">✕</button>
+      <h3 id="hbTitle">Set up your handbook</h3>
+      <p id="hbIntro" class="module-modal-placeholder">A few details about your studies. You can
+        change these later — except your education level, which is fixed once set.</p>
+
+      <!-- Education level: a dropdown on first run; handbook.js swaps this for locked text
+           (#hbLevelLocked) once handbookSetup is true. -->
+      <label class="task-field" id="hbLevelField">
+        <span>Education level</span>
+        <select id="hbLevel">
+          <option value="">— select —</option>
+          <option value="primary">Primary school</option>
+          <option value="secondary">Secondary school</option>
+          <option value="jc">Junior College</option>
+          <option value="poly">Polytechnic</option>
+          <option value="university">University</option>
+        </select>
+      </label>
+      <div class="task-field" id="hbLevelLockedField" style="display: none;">
+        <span>Education level</span>
+        <div id="hbLevelLocked" class="hb-locked"></div>
+        <div class="hb-locked-note">Your education level is fixed and can't be changed.</div>
+      </div>
+
+      <!-- Academic year: a single START-YEAR number; handbook.js relabels it + previews how
+           it'll be stored per level (tertiary "25/26" vs school "2026"). -->
+      <label class="task-field">
+        <span id="hbYearLabel">Academic year</span>
+        <input id="hbYear" type="number" min="2000" max="2100" step="1" placeholder="e.g. 2026" />
+      </label>
+      <p id="hbYearPreview" class="hb-preview"></p>
+
+      <label class="task-field">
+        <span>Semester</span>
+        <select id="hbSemester">
+          <option value="1">Semester 1</option>
+          <option value="2">Semester 2</option>
+        </select>
+      </label>
+
+      <label class="task-field">
+        <span>Term start (Week 1 Monday)</span>
+        <input id="hbTermStart" type="date" />
+      </label>
+      <label class="task-field">
+        <span>Term end</span>
+        <input id="hbTermEnd" type="date" />
+      </label>
+
+      <div class="task-modal-actions">
+        <button id="hbSaveBtn" class="btn-primary" type="button">Save handbook</button>
+      </div>
+      <p id="hbError" class="hb-error"></p>
+    </div>
+  </div>
+
   <!-- Upload timetable modal (12.5d): opened by Re-upload / the empty-state Upload button.
        Education level lives in Settings now; the hint shows the current level. -->
   <div id="uploadModal" class="tcal-popup" style="display: none;">

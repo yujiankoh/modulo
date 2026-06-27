@@ -12,6 +12,7 @@
   --pill-bg: #eef1f8;     /* neutral due-date pills */
   --hover: #f2f5fd;       /* faint hover background */
   --today: #f3f7ff;       /* today highlight tint */
+  --danger: #d23b53;      /* validation/error text */
   /* Soft layered card elevation: a tight contact shadow + a wider ambient one. */
   --shadow: 0 1px 2px rgba(20, 30, 60, 0.04), 0 4px 14px rgba(20, 30, 60, 0.06);
 }
@@ -29,6 +30,7 @@
   --pill-bg: #20283b;
   --hover: #1c2438;
   --today: #16233f;
+  --danger: #f2728a;      /* validation/error text (brighter for dark bg) */
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 6px 18px rgba(0, 0, 0, 0.4);
 }
 
@@ -449,6 +451,12 @@ select {
 .task-field > input,
 .task-field > select { padding: 6px 8px; font-size: 14px; }
 .task-modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
+
+/* Handbook onboarding (Phase 13): live academic-year preview + validation error line. */
+.hb-preview { font-size: 12px; color: var(--text-muted); margin: -8px 0 12px; min-height: 14px; }
+.hb-error { font-size: 12px; color: var(--danger); margin: 8px 0 0; min-height: 14px; }
+.hb-locked { font-size: 14px; color: var(--text); padding: 6px 8px; background: var(--hover); border-radius: 8px; }
+.hb-locked-note { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
 
 /* Step 9.4: bucketed task list — group headers, rows, and the relative-date pill.
    Layout only; the mockup's polish (cards, colours, fonts) lands in Phase 12. */
