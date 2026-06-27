@@ -70,7 +70,7 @@ fun NavigationBottomBar(
                     ) {
                         // Home
                         NavigationBarItem(
-                            icon = { Icon(painter = painterResource(R.drawable.house), contentDescription = "Home") },
+                            icon = { Icon(painter = painterResource(R.drawable.dashboard), contentDescription = "Home") },
                             label = { Text("Dashboard") },
                             selected = currentDestination.contains("Home"),
                             onClick = { navController.navigateBottom(Home) },
@@ -79,7 +79,7 @@ fun NavigationBottomBar(
 
                         // Calender
                         NavigationBarItem(
-                            icon = { Icon(painter = painterResource(R.drawable.calendar_days), contentDescription = "Calendar") },
+                            icon = { Icon(painter = painterResource(R.drawable.calendar), contentDescription = "Calendar") },
                             label = { Text("Calendar") },
                             selected = currentDestination.contains("Calendar"),
                             onClick = { navController.navigateBottom(Calendar) },
@@ -97,7 +97,7 @@ fun NavigationBottomBar(
 
                         // All Task
                         NavigationBarItem(
-                            icon = { Icon(painter = painterResource(R.drawable.list), contentDescription = "All Tasks") },
+                            icon = { Icon(painter = painterResource(R.drawable.list_checks), contentDescription = "All Tasks") },
                             label = { Text("All Tasks") },
                             selected = currentDestination.contains("AllTasks"),
                             onClick = { navController.navigateBottom(AllTasks) },
@@ -106,7 +106,7 @@ fun NavigationBottomBar(
 
                         // Study Session
                         NavigationBarItem(
-                            icon = { Icon(painter = painterResource(R.drawable.book_open_text), contentDescription = "Study") },
+                            icon = { Icon(painter = painterResource(R.drawable.timer), contentDescription = "Study") },
                             label = { Text("Study") },
                             selected = currentDestination.contains("StudySession"),
                             onClick = { navController.navigateBottom(StudySession) },
