@@ -285,10 +285,15 @@ function moduleInfos() {
 
 const moduleModal = document.getElementById("moduleModal");
 
+// Display title for a module: "CODE · Name", or just the label when the name is empty OR
+// identical to the label (school levels store the subject as both → avoid "1BY2 · 1BY2").
+function moduleTitle(m) {
+  return m.name && m.name !== m.label ? `${m.label} · ${m.name}` : m.label;
+}
+
 // Open the module detail modal: notes placeholder (filled in HTML) + this module's tasks.
 function openModuleModal(m) {
-  document.getElementById("moduleModalTitle").textContent =
-    m.name ? `${m.label} · ${m.name}` : m.label;
+  document.getElementById("moduleModalTitle").textContent = moduleTitle(m);
 
   const list = document.getElementById("moduleModalTasks");
   list.innerHTML = "";
@@ -317,6 +322,13 @@ function openModuleModal(m) {
   moduleModal.style.display = "flex";
 }
 function closeModuleModal() { moduleModal.style.display = "none"; }
+
+// Open the module modal by label (used by the sidebar Modules list). Looks up the same
+// module info the dashboard cards use, so the modal content is identical.
+export function openModuleByLabel(label) {
+  const m = moduleInfos().find((x) => x.label === label);
+  if (m) openModuleModal(m);
+}
 
 // Render the Modules cards (coloured header + active-task count; click → detail modal).
 // Hidden modules (appState.hiddenModules) are filtered out here and in the sidebar.
@@ -351,7 +363,7 @@ function renderModules() {
     code.textContent = m.label;
     const name = document.createElement("div");
     name.className = "module-card-name";
-    name.textContent = m.name || " "; // non-breaking space keeps the header height
+    name.textContent = (m.name && m.name !== m.label) ? m.name : " "; // non-breaking space keeps the header height
     head.append(code, name);
 
     const foot = document.createElement("div");
@@ -414,7 +426,7 @@ function renderManageList() {
     dot.style.background = moduleColor(m.label);
 
     const name = document.createElement("span");
-    name.textContent = m.name ? `${m.label} · ${m.name}` : m.label;
+    name.textContent = moduleTitle(m);
 
     label.append(cb, dot, name);
     li.append(label);
