@@ -155,7 +155,7 @@ class AppViewModel(
         _syncState.value = SyncState.SYNCED
     }
 
-    private fun startUpChecks() {
+    fun startUpChecks() {
         viewModelScope.launch {
             val prefs = getApplication<Application>().dataStore.data.first()
             val hasSeenTutorial = prefs[HAS_SEEN_TUTORIAL] ?: false

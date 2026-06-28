@@ -3,10 +3,26 @@ package com.example.modulo
 import android.app.Application
 import android.content.Context
 import android.net.ConnectivityManager
+import androidx.credentials.CredentialManager
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.preferencesOf
 import androidx.lifecycle.SavedStateHandle
+import com.example.modulo.helpers.AuthenticationHelper
+import com.google.android.gms.auth.api.identity.AuthorizationResult
+import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkObject
+import io.mockk.mockkStatic
+import io.mockk.unmockkObject
+import io.mockk.unmockkStatic
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -35,19 +51,40 @@ class AppViewModelTest {
     private lateinit var mockSavedStateHandle: SavedStateHandle
     private lateinit var viewModel: AppViewModel
 
+    fun createTestDatastore(context: Context): DataStore<Preferences> {
+        return PreferenceDataStoreFactory.create(
+            produceFile = { File.createTempFile("test_settings", ".preferences_pb") }
+        )
+    }
+
     @Before
     fun setup() {
         mockApplication = mockk<Application>(relaxed = true)
         mockSavedStateHandle = mockk<SavedStateHandle>(relaxed = true)
+
+        // Setup shared mocks
         val mockConnectivityManager = mockk<ConnectivityManager>(relaxed = true)
+        val tempDir = File(System.getProperty("java.io.tmpdir"))
 
         every { mockApplication.getSystemService(Context.CONNECTIVITY_SERVICE) } returns mockConnectivityManager
-        val tempDir = File(System.getProperty("java.io.tmpdir"))
         every { mockApplication.applicationContext } returns mockApplication
         every { mockApplication.filesDir } returns tempDir
 
-        // Initialize a fresh ViewModel for every test
+        // Mock the static DataStore
+        mockkStatic("com.example.modulo.AppViewModelKt")
+        val mockDataStore = mockk<DataStore<Preferences>>(relaxed = true)
+        every { any<Context>().dataStore } returns mockDataStore
+
+        val fakePrefs = preferencesOf(HAS_SEEN_TUTORIAL to true, IS_DRIVE_SYNC_ENABLED to true)
+        every { mockDataStore.data } returns flowOf(fakePrefs)
+
         viewModel = AppViewModel(mockApplication, mockSavedStateHandle)
+    }
+
+    @After
+    fun tearDown() {
+        unmockkStatic("com.example.modulo.AppViewModelKt")
+        unmockkObject(AuthenticationHelper)
     }
 
     @Test
@@ -97,5 +134,43 @@ class AppViewModelTest {
         val currentTasks = viewModel.appData.value.tasks
         assertEquals(1, currentTasks.size)
         assertEquals("Assignment 2", currentTasks.first().title)
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun `when silentSignIn fails, authState moves to SIGN_IN`() = runTest {
+        // ARRANGE
+        mockkObject(AuthenticationHelper)
+        coEvery {
+            AuthenticationHelper.silentSignIn(any(), any(), any(), captureLambda())
+        } answers {
+            lambda<( () -> Unit )>().captured.invoke()
+        }
+
+        // ACT
+        viewModel.startUpChecks()
+        advanceUntilIdle()
+
+        // ASSERT
+        assertEquals(StartupState.SIGN_IN, viewModel.startupState.value)
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun `when silentSignIn succeeds, authState moves to READY`() = runTest {
+        // ARRANGE
+        mockkObject(AuthenticationHelper)
+        coEvery {
+            AuthenticationHelper.silentSignIn(any(), any(), captureLambda(), any())
+        } answers {
+            lambda<( (String) -> Unit )>().captured.invoke("test@email.com")
+        }
+
+        // ACT
+        viewModel.startUpChecks()
+        advanceUntilIdle()
+
+        // ASSERT
+        assertEquals(StartupState.READY, viewModel.startupState.value)
     }
 }
