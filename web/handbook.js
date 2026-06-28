@@ -4,6 +4,7 @@
 // (when appState.handbookSetup is still false). Reuses the .tcal-popup modal recipe.
 
 import { appState, persist } from "./data.js";
+import { isTertiary, formatAcademicYear, parseStartYear, formatHeaderLabel } from "./logic/academicYear.js";
 
 // --- DOM handles (all inside #handbookModal) ---
 const modal = document.getElementById("handbookModal");
@@ -24,45 +25,16 @@ let firstRun = false;
 // the next datachanged. Resets on page reload (module re-evaluates).
 let dismissed = false;
 
-// Tertiary levels (uni/poly) span TWO calendar years -> "25/26". School levels
-// (primary/secondary/jc) are a SINGLE calendar year -> "2026".
-const TERTIARY = ["university", "poly"];
-function isTertiary(level) { return TERTIARY.includes(level); }
-
 // Pretty names for the locked-level text + the Settings summary.
 const LEVEL_NAMES = {
   primary: "Primary school", secondary: "Secondary school", jc: "Junior College",
   poly: "Polytechnic", university: "University",
 };
 
-// Build the STORED academicYear string from a start year + level.
-//   tertiary 2025 -> "25/26"      school 2026 -> "2026"
-function formatAcademicYear(startYear, level) {
-  if (!startYear) return null;
-  if (isTertiary(level)) {
-    const a = String(startYear).slice(-2);        // 2025 -> "25"
-    const b = String(startYear + 1).slice(-2);    // 2026 -> "26"
-    return `${a}/${b}`;
-  }
-  return String(startYear);                        // "2026"
-}
-
-// The reverse: from a stored academicYear back to the start-year NUMBER for the input.
-//   "25/26" -> 2025      "2026" -> 2026
-function parseStartYear(academicYear, level) {
-  if (!academicYear) return null;
-  if (isTertiary(level)) return 2000 + parseInt(academicYear.split("/")[0], 10); // "25" -> 2025
-  return parseInt(academicYear, 10);
-}
-
-// The label shown in the sidebar header (Step 4 reuses this — kept here so the format
-// lives in ONE place). "" when not enough is set yet.
+// The label shown in the sidebar header (sidebar.js reuses this). Delegates the per-level
+// format to the pure formatHeaderLabel (logic/academicYear.js) — one source of truth.
 export function handbookHeaderLabel() {
-  const { educationLevel, academicYear, semester } = appState;
-  if (!academicYear || !semester) return "";
-  return isTertiary(educationLevel)
-    ? `AY${academicYear} · S${semester}`
-    : `${academicYear} · Sem ${semester}`;
+  return formatHeaderLabel(appState.educationLevel, appState.academicYear, appState.semester);
 }
 
 // Relabel the year field + refresh the live "Will show as: …" preview whenever the

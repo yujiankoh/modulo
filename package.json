@@ -1,0 +1,10 @@
+{
+  "name": "modulo-tests",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Automated tests for MODULO (web pure logic + proxy). Run with: npm test",
+  "scripts": {
+    "test": "node --test"
+  }
+}

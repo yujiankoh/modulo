@@ -1,6 +1,7 @@
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
+import { fileURLToPath } from "url";
 import { GoogleGenAI } from "@google/genai";
 
 const app = express();
@@ -150,5 +151,12 @@ app.use((err, req, res, next) => {
 });
 
 // Render provides the port via an environment variable; fall back to 3000 locally.
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Timetable proxy running on port ${PORT}`));
+// Only start listening when run directly (node index.js / npm start). When a test file
+// imports this module, skip listening so the test can start it on an ephemeral port.
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => console.log(`Timetable proxy running on port ${PORT}`));
+}
+
+// Exported for the test suite (tests/proxy.test.js).
+export { app, buildPrompt, extractJson };

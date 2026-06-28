@@ -1,0 +1,104 @@
+# MODULO — Software Testing (web + proxy)
+
+How we test MODULO's web app (`web/`) and parsing proxy (`server/`), across the three
+levels expected for Orbital: **unit**, **integration**, and **system** testing. For
+Milestone 2 the goal is *documented evidence of a testing approach*, not exhaustive
+coverage (that is Milestone 3); this file records what we test, how, and why.
+
+## Approach at a glance
+
+| Level | What it checks | How we do it | Where |
+|-------|----------------|--------------|-------|
+| **Unit** | Individual pure functions (one input → one expected output) | Automated, **Node's built-in test runner** (`node --test`), no framework/installs | `tests/*.test.js` |
+| **Integration** | Several units working together across a boundary | Automated: the proxy's HTTP route end-to-end (Express + handler + response). Manual: parse → merge → grid in the running app | `tests/proxy.test.js` + manual |
+| **System** | The whole app, end-to-end, as a user | Manual scripted scenarios through the real UI, with screenshots | table below |
+
+**Why this split:** the proxy is plain Node, so it's fully automatable. The web app's
+modules touch the browser at load (`document`, `localStorage`, Google Identity Services),
+so running them in Node would crash — full browser automation needs heavier tooling
+(jsdom / Playwright), which is planned for **Milestone 3**. For MS2 we automate the
+**pure logic** (which we deliberately extracted into `web/logic/` so it's importable and
+testable in isolation) and cover the browser-dependent UI with documented **manual system
+tests**.
+
+## Running the automated tests
+
+From the repo root:
+
+```bash
+npm test          # runs every tests/*.test.js with Node's built-in runner
+```
+
+Requires Node 18+ (developed on Node 24). No dependencies to install — `node --test`,
+`node:assert`, and `fetch` are all built in. The proxy route test starts the Express app
+on an ephemeral port and makes a real HTTP request; it asserts the **input-validation**
+path, which returns `400` *before* any Gemini call — so the suite **spends no Gemini
+quota** and needs no API key.
+
+Current result: **17 tests, 17 passing.**
+
+## Unit tests
+
+Pure, dependency-free functions were extracted into `web/logic/` and `server/index.js` so
+they can be tested in isolation.
+
+| Function | File | Test file | What's asserted |
+|----------|------|-----------|-----------------|
+| `formatAcademicYear`, `parseStartYear`, `isTertiary`, `formatHeaderLabel` | `web/logic/academicYear.js` | `tests/academicYear.test.js` | Tertiary AY spans two years (`2025`→`"25/26"`), school is single (`"2026"`); inverse round-trips; header label formats per level and is empty until complete |
+| `layoutColumns` | `web/logic/timetableLayout.js` | `tests/timetableLayout.test.js` | Non-overlapping classes get 1 lane; two overlapping split into 2 lanes; touching (end == start) is not an overlap; three mutually overlapping use 3 lanes |
+| `mergeModules`, `sameSlot` | `web/logic/mergeModules.js` | `tests/mergeModules.test.js` | Same module's slots combine; exact-duplicate slots skipped; differing code/name add a new module; inputs are not mutated |
+| `buildPrompt`, `extractJson` | `server/index.js` | `tests/proxy.test.js` | Prompt includes the level-specific section + falls back to secondary for unknown levels; JSON is extracted from surrounding noise and braces inside strings are ignored |
+
+Each test feeds known inputs and asserts the exact output with `node:assert/strict` — e.g.
+`assert.equal(formatAcademicYear(2025, "university"), "25/26")`.
+
+## Integration test
+
+`tests/proxy.test.js` starts the real Express app (`app.listen(0)`) and sends an actual
+`POST /parse-timetable` request over HTTP. It verifies the routing + middleware + handler
+work **together**: a request missing `image`/`mimeType` is rejected with HTTP `400` and a
+`"Missing image..."` body. This exercises the same path a browser hits, minus the external
+Gemini call (which the handler only reaches *after* validation passes).
+
+Web-side integration (parse result → `mergeModules` → `layoutColumns` → rendered grid) is
+covered by the manual system tests below, since it spans the DOM.
+
+## System tests (manual, end-to-end)
+
+Run in the browser against the deployed/Live-Server app, signed in (local or Drive mode).
+Record the result and attach a screenshot for each. Mark **Pass / Fail**; on Fail, note
+the actual behaviour.
+
+| # | Scenario | Steps | Expected result | Result |
+|---|----------|-------|-----------------|--------|
+| S1 | First-run onboarding | Fresh state → choose a storage mode | Handbook setup modal auto-opens; can be filled or dismissed; doesn't re-nag after dismiss | Pass (observed) |
+| S2 | Level-aware academic year | In handbook, switch level uni↔secondary, type a year | "Will show as…" preview updates: `AY25/26 · S1` vs `2026 · Sem 1` | Pass (observed) |
+| S3 | Connect storage | Settings → "Use this device only" / "Connect Google Drive" | Mode set; account chip + status reflect it; data loads | To verify |
+| S4 | Upload + parse timetable | Upload modal → pick image → Parse | Modules parsed and saved; grid populates (uses 1 Gemini quota) | To verify |
+| S5 | Timetable grid display | Open Timetable | Blocks coloured by module (matching sidebar dots), show type · time · location | Pass (observed) |
+| S6 | Overlapping classes | View a week with two classes at the same time | They render side by side (lanes), both readable — not stacked | Pass (observed) |
+| S7 | Odd/even weeks | Navigate weeks with an odd/even timetable | Only the matching-parity slots show; week number + parity correct | To verify |
+| S8 | Manual timetable edit | Timetable → Edit → change/add a slot → Save | Grid reflects the edit | To verify |
+| S9 | Add task (module picker) | + Add Task → pick a parsed module / "+ Add other…" | Task saves with chosen module; "other" reveals a text field | Pass (observed) |
+| S10 | Task list filter/sort/complete | All Tasks → change filters/sort, tick a task | List re-buckets; completed task moves to Completed | To verify |
+| S11 | Calendar | Calendar view | Tasks appear as pills on due dates; day popup lists them; study ratings as stars | To verify |
+| S12 | Study timer | Study → play/pause toggle → Stop & Save → rate | One play/pause button toggles; session saved; today/week/total update | To verify |
+| S13 | Dashboard aggregation | Dashboard | Eyebrow week, greeting, today's schedule, tasks-due-soon, module cards all correct | To verify |
+| S14 | Module detail modal | Click a module in the sidebar / a dashboard card | Modal opens with that module's notes placeholder + tasks; school subjects show once (no "1BY2 · 1BY2") | Pass (observed) |
+| S15 | Edit handbook / change level | Settings → Edit → change education level (with a timetable saved) | A confirm warns the timetable may not match; cancel keeps everything; sidebar header updates on save | Pass (observed) |
+| S16 | Light/dark theme | Toggle theme | All views + icons + module colours re-theme; choice persists across reload | Pass (observed) |
+| S17 | Proxy error handling | (If a parse fails) read the message | Friendly message shown; real cause visible in Render logs (429/503/504 mapping) | To verify |
+
+> Replace "To verify" with **Pass/Fail** during a manual pass and drop screenshots into a
+> `docs/test-evidence/` folder (or the report), referenced by scenario number.
+
+## Known limitations / Milestone 3 plans
+
+- **No automated browser/DOM tests yet.** UI-coupled modules (`router`, `dashboard`,
+  `task`, `calendarView`, `studyTimer`, `timetableView` rendering) are covered manually.
+  MS3: add **jsdom** for DOM-level unit tests and/or **Playwright** for automated
+  end-to-end system tests.
+- **Gemini parsing is not asserted on real images.** We test the proxy's validation +
+  prompt construction + JSON extraction, but not Gemini's output (non-deterministic +
+  quota-limited). MS3: a small set of fixture images with tolerance-based checks.
+- **Drive sync** (Phase 11) is deferred, so cross-device sync isn't yet in scope.

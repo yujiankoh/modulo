@@ -1,0 +1,43 @@
+# Deploys the web/ front-end to GitHub Pages.
+# Runs on every push to main (and can be run manually from the Actions tab). It publishes
+# ONLY the web/ folder as the site root, so index.html is served at the Pages URL root and
+# the app's relative asset paths (style.css, main.js, …) resolve correctly.
+name: Deploy web to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}   # allow manual runs from the Actions tab
+
+# Permissions the deploy needs (write to Pages, mint an ID token for the deploy step).
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Only one Pages deploy at a time; a newer push cancels an in-progress one.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload the web/ folder as the Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: web
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
