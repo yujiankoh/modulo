@@ -49,7 +49,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.example.modulo.AppViewModel
-import com.example.modulo.EducationLevel
 import com.example.modulo.R
 import com.example.modulo.SyncState
 import com.example.modulo.Task
@@ -316,7 +315,9 @@ fun TodaySchedule(
 
             if (slotsToday.isEmpty()) {
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp, top = 24.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp, top = 24.dp),
                     horizontalArrangement = Arrangement.Center
                 ) {
                     Text("No schedule today!")
@@ -342,7 +343,9 @@ fun TodaySchedule(
                             for (i in 0..1) {
                                 val yOffset = timeHeaderHeight + (dayHeight * i)
                                 Box(
-                                    modifier = Modifier.offset(y = yOffset).width(gridTotalWidth)
+                                    modifier = Modifier
+                                        .offset(y = yOffset)
+                                        .width(gridTotalWidth)
                                         .height(1.dp)
                                         .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
                                 )
@@ -354,10 +357,13 @@ fun TodaySchedule(
 
                                 // Vertical Line
                                 Box(
-                                    modifier = Modifier.offset(x = xOffset, y = timeHeaderHeight)
-                                        .width(1.dp).height(
-                                        dayHeight
-                                    ).background(MaterialTheme.colorScheme.outlineVariant)
+                                    modifier = Modifier
+                                        .offset(x = xOffset, y = timeHeaderHeight)
+                                        .width(1.dp)
+                                        .height(
+                                            dayHeight
+                                        )
+                                        .background(MaterialTheme.colorScheme.outlineVariant)
                                 )
 
                                 // Time Header Text
@@ -507,7 +513,9 @@ fun Modules(
     val modulesList = appData.timetable?.modules ?: emptyList()
 
     if (modulesList.isEmpty()) {
-        Box(modifier = Modifier.fillMaxWidth().height(100.dp), contentAlignment = Alignment.Center) {
+        Box(modifier = Modifier
+            .fillMaxWidth()
+            .height(100.dp), contentAlignment = Alignment.Center) {
             Text("No modules found in AppData!", color = MaterialTheme.colorScheme.error)
         }
         return
