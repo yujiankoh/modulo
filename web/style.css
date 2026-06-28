@@ -103,7 +103,8 @@ select {
 /* Sidebar MODULES list (12.4d) */
 .module-nav { margin-top: 18px; }
 .module-nav-label { font-size: 11px; letter-spacing: 0.08em; color: var(--text-muted); padding: 0 12px; margin-bottom: 6px; }
-.module-row { display: flex; align-items: center; gap: 10px; padding: 6px 12px; font-size: 14px; color: var(--text); }
+.module-row { display: flex; align-items: center; gap: 10px; padding: 6px 12px; font-size: 14px; color: var(--text); cursor: pointer; border-radius: 8px; }
+.module-row:hover { background: var(--hover); }
 .module-dot { width: 9px; height: 9px; border-radius: 50%; flex: none; } /* colour set inline per module */
 
 /* Sidebar account chip (12.4d): pinned at the bottom of the sidebar card. */

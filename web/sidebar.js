@@ -4,6 +4,7 @@
 
 import { appState, getStorageMode } from "./data.js";
 import { handbookHeaderLabel } from "./handbook.js";
+import { openModuleByLabel } from "./dashboard.js"; // open the module detail modal on click
 
 // A fixed palette + a stable assignment: the same module name always maps to the same
 // colour (sum of char codes mod palette length), independent of order. Exported so other
@@ -65,6 +66,7 @@ function renderModules() {
     const name = document.createElement("span");
     name.textContent = m;
     row.append(dot, name);
+    row.addEventListener("click", () => openModuleByLabel(m)); // open its detail modal
     el.append(row);
   }
 }

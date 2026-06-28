@@ -267,11 +267,41 @@ function renderHeader(showToggle, wk) {
   headerEl.append(left, actions);
 }
 
-// Place one session block in its day column at the right time + height.
-function addBlock(col, module, slot, startH) {
-  const startMin = toMinutes(slot.start);
-  const endMin = toMinutes(slot.end);
-  if (startMin == null || endMin == null) return;
+// Lay out one day's events into side-by-side columns so overlapping classes don't stack.
+// Greedy lane assignment (Google-calendar style): sort by start; events that overlap form
+// a "cluster"; within a cluster each event takes the first free lane, and they all share
+// the cluster's lane count. Annotates each event with { col, cols } for addBlock.
+function layoutColumns(events) {
+  events.sort((a, b) => a.startMin - b.startMin || a.endMin - b.endMin);
+  let cluster = [];      // events that overlap transitively
+  let clusterEnd = -1;   // latest end time seen in the current cluster
+
+  function flush() {
+    const laneEnds = [];                 // end time of the last event placed in each lane
+    for (const ev of cluster) {
+      let lane = laneEnds.findIndex((end) => end <= ev.startMin); // first free lane
+      if (lane === -1) { lane = laneEnds.length; laneEnds.push(ev.endMin); }
+      else laneEnds[lane] = ev.endMin;
+      ev.col = lane;
+    }
+    for (const ev of cluster) ev.cols = laneEnds.length; // everyone shares the lane count
+    cluster = [];
+    clusterEnd = -1;
+  }
+
+  for (const ev of events) {
+    if (cluster.length && ev.startMin >= clusterEnd) flush(); // no overlap → new cluster
+    cluster.push(ev);
+    clusterEnd = Math.max(clusterEnd, ev.endMin);
+  }
+  flush();
+  return events;
+}
+
+// Place one session block in its day column at the right time, height, and (for overlaps)
+// horizontal lane. `ev` = { module, slot, startMin, endMin, col, cols }.
+function addBlock(col, ev, startH) {
+  const { module, slot, startMin, endMin } = ev;
 
   const block = document.createElement("div");
   block.className = "cal-block";
@@ -280,6 +310,13 @@ function addBlock(col, module, slot, startH) {
   // and shorter classes end exactly where the next begins (no overlap). border-box
   // keeps the 1px border inside the height; overflow:hidden clips text in short cards.
   block.style.height = (endMin - startMin) * PX_PER_MIN + "px";
+
+  // Side-by-side lanes for overlapping classes: each takes 1/cols of the width, offset by
+  // its lane index, with a 2px gutter between. (Overrides the CSS left:0/right:0.)
+  const w = 100 / ev.cols;
+  block.style.left = `calc(${ev.col * w}% + 1px)`;
+  block.style.width = `calc(${w}% - 2px)`;
+  block.style.right = "auto";
 
   // Colour the block by its module (same palette as the sidebar dots): a soft tint
   // background + a left accent bar + a coloured title. `${color}22` = the hex colour at
@@ -390,13 +427,23 @@ function renderCalendar() {
   if (wk.status !== "break" && wk.status !== "outside") {
     // dated view: the week's own parity filters odd/even slots; undated: the manual toggle
     const weekParity = wk.parity || currentWeek;
+
+    // Gather the visible slots into per-day lists first (so overlaps can be laid out together).
+    const byDay = {};
+    for (const day of DAYS) byDay[day] = [];
     for (const m of modules) {
       for (const slot of m.slots || []) {
         // hide the OTHER week's slots; "all" slots always show
         if (alternating && slot.week && slot.week !== "all" && slot.week !== weekParity) continue;
-        const col = cols[slot.day];        // undefined for SAT/SUN — not shown yet
-        if (col) addBlock(col, m, slot, startH);
+        if (!cols[slot.day]) continue;     // SAT/SUN (not shown) — skip
+        const startMin = toMinutes(slot.start), endMin = toMinutes(slot.end);
+        if (startMin == null || endMin == null) continue;
+        byDay[slot.day].push({ module: m, slot, startMin, endMin });
       }
+    }
+    // Lay out each day's events into lanes, then draw them.
+    for (const day of DAYS) {
+      for (const ev of layoutColumns(byDay[day])) addBlock(cols[day], ev, startH);
     }
   }
 }

@@ -18,8 +18,11 @@ const termEndEl = document.getElementById("hbTermEnd");
 const saveBtn = document.getElementById("hbSaveBtn");
 const errorEl = document.getElementById("hbError");
 
-// True while the FIRST-RUN modal is showing — it can't be dismissed until saved.
+// firstRun = the auto-opened setup (vs the "Edit handbook" reopen) — controls the title.
 let firstRun = false;
+// Set when the user closes first-run setup WITHOUT saving, so it doesn't auto-reopen on
+// the next datachanged. Resets on page reload (module re-evaluates).
+let dismissed = false;
 
 // Tertiary levels (uni/poly) span TWO calendar years -> "25/26". School levels
 // (primary/secondary/jc) are a SINGLE calendar year -> "2026".
@@ -84,15 +87,11 @@ function refreshYearUI() {
 // Fill the form from the current state, then show the modal. On first run the close
 // ✕ is hidden (the modal is non-dismissable until the user saves).
 export function openHandbook() {
-  // Education level is immutable once the handbook is set up: show locked TEXT instead of
-  // the dropdown. (We still set the dropdown's value so Save can read it in either mode.)
-  const locked = appState.handbookSetup;
-  document.getElementById("hbLevelField").style.display = locked ? "none" : "";
-  document.getElementById("hbLevelLockedField").style.display = locked ? "" : "none";
-  if (locked) {
-    document.getElementById("hbLevelLocked").textContent =
-      LEVEL_NAMES[appState.educationLevel] || appState.educationLevel || "—";
-  }
+  // Education level is EDITABLE for now (showcase): always show the dropdown. Changing it
+  // with an existing timetable triggers a confirm in the Save handler. (The locked-text
+  // field stays hidden in the DOM — it returns when per-handbook locking lands.)
+  document.getElementById("hbLevelField").style.display = "";
+  document.getElementById("hbLevelLockedField").style.display = "none";
 
   levelEl.value = appState.educationLevel || "";
   semesterEl.value = String(appState.semester || 1);
@@ -101,7 +100,7 @@ export function openHandbook() {
   termStartEl.value = appState.termStart || "";
   termEndEl.value = appState.termEnd || "";
   errorEl.textContent = "";
-  closeX.style.display = firstRun ? "none" : "";
+  closeX.style.display = "";   // the setup is now dismissable (showcase)
   document.getElementById("hbTitle").textContent =
     firstRun ? "Set up your handbook" : "Edit handbook";
   refreshYearUI();
@@ -109,7 +108,8 @@ export function openHandbook() {
 }
 
 function closeHandbook() {
-  if (firstRun) return;           // can't dismiss the first-run setup until it's saved
+  // If closing before setup is done, don't auto-reopen again this session (until reload).
+  if (!appState.handbookSetup) dismissed = true;
   modal.style.display = "none";
 }
 
@@ -136,6 +136,19 @@ saveBtn.addEventListener("click", async () => {
   if (!startYear) { errorEl.textContent = "Please enter your academic year."; return; }
   if (ts && te && te < ts) {           // ISO date strings compare chronologically
     errorEl.textContent = "Term end can't be before term start."; return;
+  }
+
+  // Changing the level with a timetable already saved: warn (it was parsed under the old
+  // level's rules). Non-destructive — we keep the timetable; the user can re-upload/edit.
+  const prevLevel = appState.educationLevel;
+  const hasTimetable = (appState.timetable?.modules || []).length > 0;
+  if (prevLevel && level !== prevLevel && hasTimetable) {
+    const ok = confirm(
+      `Your saved timetable was set up for "${LEVEL_NAMES[prevLevel] || prevLevel}". ` +
+      `Changing to "${LEVEL_NAMES[level] || level}" may not match it — you can re-upload ` +
+      `or edit it afterward. Continue?`
+    );
+    if (!ok) return;   // keep the modal open, change nothing
   }
 
   appState.educationLevel = level;
@@ -179,7 +192,7 @@ window.addEventListener("modulo:datachanged", renderSummary);
 // completed AND the modal isn't already open, auto-open it as the non-dismissable setup.
 // The "already open" guard stops a stray datachanged from wiping what the user is typing.
 window.addEventListener("modulo:datachanged", () => {
-  if (!appState.handbookSetup && modal.style.display === "none") {
+  if (!appState.handbookSetup && !dismissed && modal.style.display === "none") {
     firstRun = true;
     openHandbook();
   }
