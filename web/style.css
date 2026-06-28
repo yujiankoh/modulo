@@ -374,7 +374,7 @@ select {
 #taskCalendarGrid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);  /* MON..SUN */
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-strong);
   border-radius: 12px;
   overflow: hidden;
   margin: 12px 0 28px;
@@ -386,14 +386,14 @@ select {
   font-size: 12px;
   letter-spacing: 0.08em;
   color: var(--text-muted);
-  border-bottom: 1px solid var(--border);
-  border-left: 1px solid var(--border);
+  border-bottom: 1px solid var(--border-strong);
+  border-left: 1px solid var(--border-strong);
 }
 .tcal-cell {
   min-height: 96px;
   padding: 8px 10px;
-  border-left: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
+  border-left: 1px solid var(--border-strong);
+  border-bottom: 1px solid var(--border-strong);
 }
 .tcal-cell--blank { background: var(--hover); }   /* faint fill for the leading blanks */
 /* today: inset outline (box-shadow doesn't take layout space, so the grid stays put) */

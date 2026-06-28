@@ -289,6 +289,16 @@ function renderGrid() {
 
     gridEl.append(cell);
   }
+
+  // --- trailing blanks to fill out the final row, so its grid lines are drawn (otherwise
+  // the row stops after the last day and the cells past it have no borders). ---
+  const placed = blanks + total;
+  const trailing = (7 - (placed % 7)) % 7;
+  for (let i = 0; i < trailing; i++) {
+    const blank = document.createElement("div");
+    blank.className = "tcal-cell tcal-cell--blank";
+    gridEl.append(blank);
+  }
 }
 
 function renderCalendar() {
