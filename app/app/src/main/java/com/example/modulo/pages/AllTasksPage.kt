@@ -1,6 +1,6 @@
 package com.example.modulo.pages
 
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -14,26 +14,32 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Badge
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SecondaryTabRow
+import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -42,7 +48,9 @@ import com.example.modulo.R
 import com.example.modulo.SortOption
 import com.example.modulo.Task
 import com.example.modulo.getModuleColor
-import java.text.SimpleDateFormat
+import com.example.modulo.ui.theme.ModuloTheme
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 @Composable
@@ -50,8 +58,6 @@ fun AllTaskPage(
     viewModel: AppViewModel,
 ) {
     val appData by viewModel.appData.collectAsState()
-
-    var isCompletedSectionExpanded by remember { mutableStateOf(false) }
 
     var deletedTask by remember { mutableStateOf<Task?>(null) }
 
@@ -77,135 +83,111 @@ fun AllTaskPage(
     val uncompletedTasks = filteredTasks.filter { !it.done }.sortedBy { it.due }
     val completedTasks = filteredTasks.filter { it.done }.sortedByDescending { it.due }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .pointerInput(Unit) {
-                detectTapGestures(onTap = {
-                    deletedTask = null
-                })
-            }
-    ) {
-        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
-            Text("Sort By:", style = MaterialTheme.typography.labelMedium)
+    var selectedTabIndex by remember { mutableIntStateOf(0) }
 
-            // Horizontally scrolling row for Sort buttons
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(SortOption.entries.toTypedArray()) { option ->
-                    FilterChip(
-                        selected = currentSort == option,
-                        onClick = { currentSort = option },
-                        label = { Text(option.displayName) }
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            if (moduleCodes.isNotEmpty()) {
-                Text("Filter Module:", style = MaterialTheme.typography.labelMedium)
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-
-                    item {
-                        FilterChip(
-                            selected = activeModuleFilter == null,
-                            onClick = { activeModuleFilter = null },
-                            label = { Text("All") }
-                        )
-                    }
-
-                    // Generate a button for every module code the user has tasks for
-                    items(moduleCodes) { moduleCode ->
-                        FilterChip(
-                            selected = activeModuleFilter == moduleCode,
-                            onClick = { activeModuleFilter = moduleCode },
-                            label = { Text(moduleCode) }
-                        )
-                    }
-                }
-            }
-        }
-
-        LazyColumn(
+    Scaffold { paddingValues ->
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f)
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(horizontal = 16.dp)
+                .pointerInput(Unit) {
+                    detectTapGestures(onTap = {
+                        deletedTask = null
+                    })
+                },
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            if (uncompletedTasks.isEmpty()) {
-                item {
-                    Text(
-                        text = "All pending tasks are completed!",
-                        modifier = Modifier.padding(16.dp)
-                    )
-                }
-            } else {
-                item {
-                    Text(
-                        text = "${uncompletedTasks.size} Uncompleted ${ if (uncompletedTasks.size < 2) "Work" else "Works" }",
-                        modifier = Modifier.padding(16.dp))
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Text("Sort By:", style = MaterialTheme.typography.labelMedium)
+
+                // Horizontally scrolling row for Sort buttons
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(SortOption.entries.toTypedArray()) { option ->
+                        FilterChip(
+                            selected = currentSort == option,
+                            onClick = { currentSort = option },
+                            label = { Text(option.displayName) },
+                            shape = RoundedCornerShape(8.dp),
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                                selectedLabelColor = MaterialTheme.colorScheme.primary
+                            )
+                        )
+                    }
                 }
 
-                items(uncompletedTasks) { task ->
-                    TaskCard(
-                        task = task,
-                        showDelete = deletedTask == task,
-                        onLongPress = { deletedTask = task },
-                        onNormalPress = { deletedTask = null },
-                        onToggle = { clickedTask ->
-                            viewModel.completeTask(clickedTask)
-                        },
-                        onDelete = {
-                            viewModel.deleteTask(task)
-                            deletedTask = null
+                Spacer(modifier = Modifier.height(8.dp))
+
+                if (moduleCodes.isNotEmpty()) {
+                    Text("Filter Module:", style = MaterialTheme.typography.labelMedium)
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+
+                        item {
+                            FilterChip(
+                                selected = activeModuleFilter == null,
+                                onClick = { activeModuleFilter = null },
+                                label = { Text("All") },
+                                shape = RoundedCornerShape(8.dp),
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                                    selectedLabelColor = MaterialTheme.colorScheme.primary
+                                )
+                            )
                         }
-                    )
+
+                        // Generate a button for every module code the user has tasks for
+                        items(moduleCodes) { moduleCode ->
+                            FilterChip(
+                                selected = activeModuleFilter == moduleCode,
+                                onClick = { activeModuleFilter = moduleCode },
+                                label = { Text(moduleCode) },
+                                shape = RoundedCornerShape(8.dp),
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                                    selectedLabelColor = MaterialTheme.colorScheme.primary
+                                )
+                            )
+                        }
+                    }
                 }
             }
 
-            item {
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { isCompletedSectionExpanded = !isCompletedSectionExpanded }
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text("${completedTasks.size} Completed ${if (completedTasks.size < 2) "Work" else "Works"}")
-
-                    Icon(
-                        painter = if (isCompletedSectionExpanded) painterResource(R.drawable.chevron) else painterResource(R.drawable.chevron_down),
-                        contentDescription = if (isCompletedSectionExpanded) "Hide Completed" else "Show Completed"
-                    )
-                }
+            SecondaryTabRow(
+                selectedTabIndex = selectedTabIndex,
+                containerColor = MaterialTheme.colorScheme.background,
+            ) {
+                Tab(
+                    selected = selectedTabIndex == 0,
+                    onClick = { selectedTabIndex = 0 },
+                    text = { Text("Pending (${uncompletedTasks.size})") }
+                )
+                Tab(
+                    selected = selectedTabIndex == 1,
+                    onClick = { selectedTabIndex = 1 },
+                    text = { Text("Completed (${completedTasks.size})") }
+                )
             }
 
-            if (isCompletedSectionExpanded) {
-                if (completedTasks.isEmpty()) {
-                    item {
-                        Text(
-                            text = "No completed tasks yet.",
-                            modifier = Modifier.padding(16.dp)
-                        )
-                    }
-                } else {
-                    items(completedTasks) { task ->
-                        TaskCard(
-                            task = task,
-                            showDelete = deletedTask == task,
-                            onLongPress = { deletedTask = task },
-                            onNormalPress = { deletedTask = null },
-                            onToggle = { clickedTask ->
-                                viewModel.completeTask(clickedTask)
-                            },
-                            onDelete = {
-                                viewModel.deleteTask(task)
-                                deletedTask = null
-                            }
-                        )
-                    }
+            when (selectedTabIndex) {
+                0 -> {
+                    TaskColumn(
+                        viewModel = viewModel,
+                        tasks = uncompletedTasks,
+                        emptyText = "All pending tasks are completed!",
+                        deletedTask = deletedTask,
+                        onSelectDeletedTask = { deletedTask = it }
+                    )
+                }
+
+                1 -> {
+                    TaskColumn(
+                        viewModel = viewModel,
+                        tasks = completedTasks,
+                        emptyText = "No completed tasks yet.",
+                        deletedTask = deletedTask,
+                        onSelectDeletedTask = { deletedTask = it }
+                    )
                 }
             }
         }
@@ -220,92 +202,81 @@ fun TaskCard(
     onNormalPress: () -> Unit,
     onToggle: (Task) -> Unit,
     onDelete: () -> Unit,
+    modifier: Modifier = Modifier,
     dueText: String = formatDate(task.due)
 ) {
 
     val theme = getModuleColor(task.module.ifBlank { task.title })
+
     val cardColour = if (showDelete) {
         MaterialTheme.colorScheme.error
     } else {
-        theme.container
+        MaterialTheme.colorScheme.surface
     }
 
     Card(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .combinedClickable(
                 onClick = {onNormalPress()},
                 onLongClick = {onLongPress()}
-            )
-            .padding(vertical = 4.dp, horizontal = 8.dp),
+            ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        shape = RoundedCornerShape(20.dp),
+        border = BorderStroke(2.dp, theme.container),
         colors = CardDefaults.cardColors(containerColor = cardColour),
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
+            modifier = Modifier.fillMaxWidth().padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Column(
-                modifier = Modifier.padding(8.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+            Row {
+                if (showDelete) {
+                    IconButton(onClick = { onDelete() }) {
+                        Icon(
+                            painter = painterResource(R.drawable.trash_2),
+                            contentDescription = "Delete Task"
+                        )
+                    }
+                } else {
+                    Checkbox(
+                        checked = task.done,
+                        onCheckedChange = { onToggle(task) },
+                    )
+                }
+
+                Column(
+                    modifier = Modifier.padding(horizontal = 8.dp)
                 ) {
                     Text(
                         text = task.title,
                         textDecoration = if (task.done) TextDecoration.LineThrough else TextDecoration.None,
-                        modifier = Modifier.padding(start = 8.dp)
+                        fontWeight = FontWeight.SemiBold
                     )
 
-                    if (showDelete) {
-                        IconButton(onClick = { onDelete() }) {
-                            Icon(
-                                painter = painterResource(R.drawable.trash_2),
-                                contentDescription = "Delete Task"
-                            )
-                        }
-                    } else {
-                        Checkbox(
-                            checked = task.done,
-                            onCheckedChange = { onToggle(task) },
-                        )
-                    }
-                }
-
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(start = 4.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Badge(containerColor = Color.White.copy(alpha = 0.4f)) {
-                            Text(
-                                text = task.module.ifBlank { task.title },
-                                fontSize = 12.sp,
-                                color = if (showDelete) MaterialTheme.colorScheme.onError else theme.onContainer,
-                                modifier = Modifier.padding(2.dp)
-                            )
-                        }
-                        Badge(containerColor = Color.White.copy(alpha = 0.4f)) {
-                            Text(
-                                text = task.type.replaceFirstChar { it.uppercase() },
-                                fontSize = 12.sp,
-                                color = if (showDelete) MaterialTheme.colorScheme.onError else theme.onContainer,
-                                modifier = Modifier.padding(2.dp)
-                            )
-                        }
-                    }
+                        Badge(containerColor = theme.container)
+                        Spacer(modifier.padding(4.dp))
 
-                    if (dueText.isNotEmpty()) {
                         Text(
-                            text = if (dueText == "Overdue") "$dueText!" else "Due: $dueText",
-                            modifier = Modifier.padding(end = 8.dp)
+                            text = "${task.module.ifBlank { task.title }} • ${task.type.replaceFirstChar { it.uppercase() }}",
+                            fontSize = 12.sp,
+                            color = if (showDelete) MaterialTheme.colorScheme.onError.copy(alpha = 0.7f) else ModuloTheme.colors.subText
                         )
                     }
+
+                }
+            }
+            if (dueText.isNotEmpty()) {
+                Badge(containerColor = if (showDelete) MaterialTheme.colorScheme.onError.copy(alpha = 0.2f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)) {
+                    Text(
+                        text = dueText,
+                        fontSize = 12.sp,
+                        modifier = Modifier.padding(4.dp)
+                    )
                 }
             }
         }
@@ -316,14 +287,53 @@ fun formatDate(dataDate: String): String {
     if (dataDate.isBlank()) return ""
 
     return try {
-        val parser = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-
-        val formatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-
-        val date = parser.parse(dataDate)
-
-        if (date != null) formatter.format(date) else dataDate
+        val date = LocalDate.parse(dataDate) // Natively parses "yyyy-MM-dd"
+        val formatter = DateTimeFormatter.ofPattern("E d MMMM", Locale.getDefault())
+        date.format(formatter)
     } catch (e: Exception) {
         dataDate
+    }
+}
+
+@Composable
+fun TaskColumn(
+    viewModel: AppViewModel,
+    tasks: List<Task>,
+    emptyText: String,
+    deletedTask: Task?,
+    onSelectDeletedTask: (Task?) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    LazyColumn(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(top = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        if (tasks.isEmpty()) {
+            item {
+                Text(
+                    text = emptyText,
+                    modifier = Modifier.padding(top = 16.dp)
+                )
+            }
+        } else {
+            items(tasks) { task ->
+                TaskCard(
+                    task = task,
+                    showDelete = deletedTask == task,
+                    onLongPress = { onSelectDeletedTask(task) },
+                    onNormalPress = { onSelectDeletedTask(null) },
+                    onToggle = { clickedTask ->
+                        viewModel.completeTask(clickedTask)
+                    },
+                    onDelete = {
+                        viewModel.deleteTask(task)
+                        onSelectDeletedTask(null)
+                    }
+                )
+            }
+        }
     }
 }

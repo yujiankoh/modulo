@@ -13,6 +13,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -54,25 +55,35 @@ fun NavigationBottomBar(
         }
     }
 
+    val navColors = NavigationBarItemDefaults.colors(
+        indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+        selectedIconColor = MaterialTheme.colorScheme.primary,
+        selectedTextColor = MaterialTheme.colorScheme.primary
+    )
+
     Scaffold(
         bottomBar = {
             if (showBottomBar) {
                 Box(modifier = Modifier.fillMaxWidth()) {
-                    NavigationBar {
+                    NavigationBar (
+                        containerColor = MaterialTheme.colorScheme.surface
+                    ) {
                         // Home
                         NavigationBarItem(
-                            icon = { Icon(painter = painterResource(R.drawable.house), contentDescription = "Home") },
-                            label = { Text("Home") },
+                            icon = { Icon(painter = painterResource(R.drawable.dashboard), contentDescription = "Home") },
+                            label = { Text("Dashboard") },
                             selected = currentDestination.contains("Home"),
-                            onClick = { navController.navigateBottom(Home) }
+                            onClick = { navController.navigateBottom(Home) },
+                            colors = navColors
                         )
 
                         // Calender
                         NavigationBarItem(
-                            icon = { Icon(painter = painterResource(R.drawable.calendar_days), contentDescription = "Calendar") },
+                            icon = { Icon(painter = painterResource(R.drawable.calendar), contentDescription = "Calendar") },
                             label = { Text("Calendar") },
                             selected = currentDestination.contains("Calendar"),
-                            onClick = { navController.navigateBottom(Calendar) }
+                            onClick = { navController.navigateBottom(Calendar) },
+                            colors = navColors
                         )
 
                         // Spacer for Add Task Button
@@ -86,18 +97,20 @@ fun NavigationBottomBar(
 
                         // All Task
                         NavigationBarItem(
-                            icon = { Icon(painter = painterResource(R.drawable.list), contentDescription = "All Tasks") },
-                            label = { Text("Tasks") },
+                            icon = { Icon(painter = painterResource(R.drawable.list_checks), contentDescription = "All Tasks") },
+                            label = { Text("All Tasks") },
                             selected = currentDestination.contains("AllTasks"),
-                            onClick = { navController.navigateBottom(AllTasks) }
+                            onClick = { navController.navigateBottom(AllTasks) },
+                            colors = navColors
                         )
 
                         // Study Session
                         NavigationBarItem(
-                            icon = { Icon(painter = painterResource(R.drawable.book_open_text), contentDescription = "Study") },
+                            icon = { Icon(painter = painterResource(R.drawable.timer), contentDescription = "Study") },
                             label = { Text("Study") },
                             selected = currentDestination.contains("StudySession"),
-                            onClick = { navController.navigateBottom(StudySession) }
+                            onClick = { navController.navigateBottom(StudySession) },
+                            colors = navColors
                         )
                     }
 
@@ -136,7 +149,7 @@ fun NavigationBottomBar(
                         Icon(
                             painter = painterResource(R.drawable.plus),
                             contentDescription = "Add Task",
-                            modifier = Modifier.rotate(rotation)
+                            modifier = Modifier.rotate(rotation).size(32.dp)
                         )
                     }
                 }
