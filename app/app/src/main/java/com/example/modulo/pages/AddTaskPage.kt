@@ -48,6 +48,8 @@ import com.example.modulo.Module
 import com.example.modulo.R
 import com.example.modulo.Task
 import com.example.modulo.TimetableState
+import com.example.modulo.components.DatePickerMenu
+import com.example.modulo.components.DropDownMenu
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
@@ -98,18 +100,23 @@ fun AddTaskPage(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            ModuleDropDownMenu(
-                selectedModule = selectedModule,
-                appData = appData,
-                onModuleSelected = { selectedModule = it },
+            DropDownMenu(
+                label = if (viewModel.isHigherEducation()) "Modules" else "Subjects",
+                selectedItem = selectedModule,
+                items = appData.timetable?.modules,
+                itemToText = {toDisplay(it)},
+                onItemSelected = { selectedModule = it },
                 modifier = Modifier.fillMaxWidth(0.7f)
             )
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            TaskTypeDropDownMenu(
-                selectedType = selectedTaskType,
-                onTypeSelected = { selectedTaskType = it },
+            DropDownMenu(
+                label = "Task Type",
+                selectedItem = selectedTaskType,
+                items = listOf("assignment", "tutorial", "quiz", "exam"),
+                itemToText = { type -> type?.replaceFirstChar { it.uppercase() } ?: "" },
+                onItemSelected = { selectedTaskType = it },
                 modifier = Modifier.fillMaxWidth(0.7f)
             )
 
@@ -161,55 +168,6 @@ fun AddTaskPage(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun ModuleDropDownMenu(
-    selectedModule: Module?,
-    appData: AppData,
-    onModuleSelected: (Module) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    var isExpanded by remember { mutableStateOf(false) }
-    val modules = appData.timetable?.modules
-
-    val moduleName = toDisplay(selectedModule)
-
-    ExposedDropdownMenuBox(
-        expanded = isExpanded,
-        onExpandedChange = { isExpanded = !isExpanded },
-    ) {
-        OutlinedTextField(
-            value = moduleName,
-            onValueChange = {},
-            readOnly = true,
-            singleLine = true,
-            label = { Text("Module") },
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isExpanded) },
-            modifier = modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
-            shape = RoundedCornerShape(12.dp)
-        )
-
-        ExposedDropdownMenu(
-            expanded = isExpanded,
-            containerColor = MaterialTheme.colorScheme.surface,
-            onDismissRequest = { isExpanded = false },
-            shape = RoundedCornerShape(12.dp)
-        ) {
-            modules?.forEach { item ->
-                DropdownMenuItem(
-                    text = {
-                        Text(text = toDisplay(item), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    },
-                    onClick = {
-                        onModuleSelected(item)
-                        isExpanded = false
-                    }
-                )
-            }
-        }
-    }
-}
-
 fun toDisplay(module: Module?): String {
     if (module == null) {
         return "No modules detected"
@@ -217,123 +175,3 @@ fun toDisplay(module: Module?): String {
     return if (module.code == "") module.name else "${module.code}: ${module.name}"
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun TaskTypeDropDownMenu(
-    selectedType: String,
-    onTypeSelected: (String) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    var isExpanded by remember { mutableStateOf(false) }
-    val taskTypes = arrayOf("assignment", "tutorial", "quiz", "exam")
-
-    ExposedDropdownMenuBox(
-        expanded = isExpanded,
-        onExpandedChange = { isExpanded = !isExpanded }
-    ) {
-        OutlinedTextField(
-            value = selectedType.replaceFirstChar { it.uppercase() },
-            onValueChange = {},
-            readOnly = true,
-            label = { Text("Task Type") },
-            singleLine = true,
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isExpanded) },
-            modifier = modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
-            shape = RoundedCornerShape(12.dp)
-        )
-
-        ExposedDropdownMenu(
-            expanded = isExpanded,
-            containerColor = MaterialTheme.colorScheme.surface,
-            onDismissRequest = { isExpanded = false },
-            shape = RoundedCornerShape(12.dp)
-        ) {
-            taskTypes.forEach { item ->
-                DropdownMenuItem(
-                    text = { Text(text = item.replaceFirstChar { it.uppercase() }) },
-                    onClick = {
-                        onTypeSelected(item)
-                        isExpanded = false
-                    }
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun DatePickerMenu(
-    label: String,
-    selectedDate: LocalDate?,
-    onDateSelected: (LocalDate?) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    var showCalendar by remember { mutableStateOf(false) }
-    val datePickerState = rememberDatePickerState(
-        initialSelectedDateMillis = selectedDate?.atStartOfDay(ZoneOffset.UTC)?.toInstant()?.toEpochMilli()
-    )
-
-    val displayFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
-
-    val interactionSource = remember { MutableInteractionSource() }
-    val isPressed by interactionSource.collectIsPressedAsState()
-
-    LaunchedEffect(isPressed) {
-        if (isPressed) {
-            showCalendar = true
-        }
-    }
-
-    OutlinedTextField(
-        value = selectedDate?.format(displayFormatter) ?: "",
-        onValueChange = { },
-        label = { Text(label) },
-        placeholder = { Text("DD/MM/YYYY") },
-        readOnly = true,
-        interactionSource = interactionSource,
-        modifier = modifier,
-        shape = RoundedCornerShape(12.dp)
-    )
-
-    if (showCalendar) {
-        DatePickerDialog(
-            onDismissRequest = { showCalendar = false },
-            colors = DatePickerDefaults.colors(
-                containerColor = MaterialTheme.colorScheme.surface
-            ),
-            confirmButton = {
-                Button(
-                    onClick = {
-                        showCalendar = false
-                        datePickerState.selectedDateMillis?.let { millis ->
-                            // Convert milliseconds to LocalDate
-                            val localDate = Instant.ofEpochMilli(millis)
-                                .atZone(ZoneOffset.UTC)
-                                .toLocalDate()
-                            onDateSelected(localDate)
-                        }
-                    },
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.padding(end = 8.dp, bottom = 4.dp)
-                ) {
-                    Text("OK")
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = { showCalendar = false },
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Text("Cancel")
-                }
-            }
-        ) {
-            DatePicker(
-                state = datePickerState,
-                colors = DatePickerDefaults.colors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
-            )
-        }
-    }
-}

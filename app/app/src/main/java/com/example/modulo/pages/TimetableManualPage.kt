@@ -60,6 +60,7 @@ import com.example.modulo.Module
 import com.example.modulo.R
 import com.example.modulo.Slot
 import com.example.modulo.Timetable
+import com.example.modulo.components.DropDownMenu
 import com.example.modulo.ui.theme.ModuloTheme
 import kotlin.math.roundToInt
 
@@ -135,9 +136,12 @@ fun TimetableManualPage(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 item {
-                    EducationDropDownMenu(
-                        selectedEdu = educationLevel,
-                        onEduSelected = { educationLevel = it }
+                    DropDownMenu(
+                        label = "Education Level",
+                        selectedItem = educationLevel,
+                        items = EducationLevel.entries,
+                        itemToText = { it?.displayName ?: "" },
+                        onItemSelected = { educationLevel = it }
                     )
                 }
 

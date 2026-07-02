@@ -261,6 +261,11 @@ class AppViewModel(
         _startupState.value = StartupState.AUTHENTICATE
     }
 
+    fun isHigherEducation(): Boolean {
+        val currLevel = _appData.value.educationLevel
+        return currLevel == "university" || currLevel == "poly";
+    }
+
     // TODO: other functions to change appdata
     // function that both updates local save and Google Drive
     private fun updateData(updateFunction: (AppData) -> AppData) {
