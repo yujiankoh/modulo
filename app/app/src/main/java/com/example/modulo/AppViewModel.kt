@@ -155,7 +155,7 @@ class AppViewModel(
         _syncState.value = SyncState.SYNCED
     }
 
-    private fun startUpChecks() {
+    fun startUpChecks() {
         viewModelScope.launch {
             val prefs = getApplication<Application>().dataStore.data.first()
             val hasSeenTutorial = prefs[HAS_SEEN_TUTORIAL] ?: false
@@ -288,17 +288,7 @@ class AppViewModel(
         if (success) _syncState.value = SyncState.SYNCED else _syncState.value = SyncState.UNSYNCED
     }
 
-    fun addTask(module: Module?, title: String, type: String, deadline: LocalDate?, isCompleted: Boolean) {
-        val currentTime = System.currentTimeMillis()
-        val newTask = Task(
-            id = currentTime,
-            module = module?.code?.ifBlank { module.name } ?: "",
-            title = title,
-            due = deadline?.toString() ?: "",
-            type = type,
-            done = isCompleted
-        )
-
+    fun addTask(newTask: Task) {
         updateData { currentData ->
             currentData.copy(tasks = currentData.tasks + newTask)
         }

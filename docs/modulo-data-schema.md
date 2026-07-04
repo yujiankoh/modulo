@@ -1,18 +1,12 @@
-# MODULO — Data Schema (`modulo-data.json`)
+# MODULO - Data Schema (`modulo-data.json`)
 
 The agreed shape of MODULO's data. **Both the web (JavaScript) and the app (Kotlin)
-read and write this same file**, so they must follow this contract exactly — same
-field names, same types. If the two sides disagree on a field name, sync silently
-breaks even though the file transfers fine.
+read and write this same file**.
 
 - **File name:** `modulo-data.json`
 - **Location:** Google Drive `appDataFolder` (and local device storage for local-only mode)
 - **Format:** a single JSON object holding the entire app state
 - **Current schema version:** `2`
-
-> Rule of thumb when changing this: **adding** a new optional field is safe (old files
-> still load). **Renaming or removing** a field requires updating web *and* app together.
-> Always read defensively — default missing fields rather than assuming they exist.
 
 ---
 
@@ -74,23 +68,23 @@ breaks even though the file transfers fine.
 |------------------|-------------------|----------|-------------|
 | `schemaVersion`  | number            | yes      | The structure version. Currently `2`. Bump when the structure changes. |
 | `educationLevel` | string \| null    | yes      | The user's level: `primary`, `secondary`, `jc`, `poly`, `university`, or `null` if unset. Drives how the timetable parser reads the image. **Set once during handbook onboarding, then locked** (immutable) — it determines the timetable schema/editor rules. |
-| `academicYear`   | string \| null    | no       | Academic year (Phase 13 handbook). **Format is level-aware:** tertiary (`university`/`poly`) spans two years → `"YY/YY"` e.g. `"25/26"`; school (`primary`/`secondary`/`jc`) is a single calendar year → `"YYYY"` e.g. `"2026"`. Drives the sidebar "HANDBOOK · …" header (rendered per level). `null` until onboarding. Web-only for now. |
-| `semester`       | number \| null    | no       | Current semester, `1` or `2` (Phase 13 handbook). Drives the sidebar header. `null` until onboarding. Web-only for now. |
-| `handbookSetup`  | boolean           | no       | `true` once the user has completed handbook onboarding (Phase 13). Gates the first-run setup modal. Defaults `false`; pre-Phase-13 files (no flag) are treated as set up iff `educationLevel` is already chosen. Web-only for now. |
-| `termStart`      | string (`YYYY-MM-DD`) \| null | no | Week-1 Monday anchor for the dated weekly timetable view. `null` until the user sets it. Used to map the recurring weekly timetable onto real dates + derive odd/even week parity. Web-only for now; the app may ignore it. |
-| `termEnd`        | string (`YYYY-MM-DD`) \| null | no | Last day of term. Weeks after it (and before `termStart`) are "outside term" — shown with dates but no week number/classes. `null` until set. Web-only for now. |
-| `breaks`         | array of `{ start, end }` (each `YYYY-MM-DD`) | no | Recess/holiday date ranges. Any week overlapping a range is non-academic: skipped in week numbering (so parity continues across it) and shows no classes. Defaults to `[]`. Web-only for now. |
+| `academicYear`   | string \| null    | no       | Academic year (Phase 13 handbook). **Format is level-aware:** tertiary (`university`/`poly`) spans two years → `"YY/YY"` e.g. `"25/26"`; school (`primary`/`secondary`/`jc`) is a single calendar year → `"YYYY"` e.g. `"2026"`. Drives the sidebar "HANDBOOK · …" header (rendered per level). `null` until onboarding. |
+| `semester`       | number \| null    | no       | Current semester, `1` or `2` (Phase 13 handbook). Drives the sidebar header. `null` until onboarding. |
+| `handbookSetup`  | boolean           | no       | `true` once the user has completed handbook onboarding (Phase 13). Gates the first-run setup modal. Defaults `false`; pre-Phase-13 files (no flag) are treated as set up iff `educationLevel` is already chosen. |
+| `termStart`      | string (`YYYY-MM-DD`) \| null | no | Week-1 Monday anchor for the dated weekly timetable view. `null` until the user sets it. Used to map the recurring weekly timetable onto real dates + derive odd/even week parity. |
+| `termEnd`        | string (`YYYY-MM-DD`) \| null | no | Last day of term. Weeks after it (and before `termStart`) are "outside term" — shown with dates but no week number/classes. `null` until set. |
+| `breaks`         | array of `{ start, end }` (each `YYYY-MM-DD`) | no | Recess/holiday date ranges. Any week overlapping a range is non-academic: skipped in week numbering (so parity continues across it) and shows no classes. Defaults to `[]` |
 | `updatedAt`      | string (ISO 8601) | yes      | When the whole state was last saved. Key field for sync + local-save reconciliation. |
 | `tasks`          | array of Task     | yes      | All of the user's tasks. May be empty (`[]`). |
-| `studySessions`  | array of StudySession | no   | Recorded focus/study sessions (Phase 10). Defaults to `[]`. Used for daily/weekly/cumulative study-time totals + the calendar's per-day average rating; feeds the MS3 study game. |
-| `hiddenModules`  | array of string   | no       | Module labels the user has hidden from the web dashboard + sidebar (Phase 12). Defaults to `[]`. Web-only (the app may ignore it). |
+| `studySessions`  | array of StudySession | no   | Recorded focus/study sessions (Phase 10). Defaults to `[]`. Used for daily/weekly/cumulative study-time totals + the calendar's per-day average rating |
+| `hiddenModules`  | array of string   | no       | Module labels the user has hidden from the web dashboard + sidebar (Phase 12). Defaults to `[]`. |
 | `timetable`      | Timetable \| null | yes      | The parsed timetable, or `null` if none yet. |
 
 ## Task object
 
 | Field       | Type              | Required | Description |
 |-------------|-------------------|----------|-------------|
-| `id`        | number            | yes      | Unique id (web uses `Date.now()`). |
+| `id`        | number            | yes      | Unique id (`Date.now()`). |
 | `module`    | string            | yes      | The Module `code`, or Module `name` for Primary, Secondary and JC. |
 | `title`     | string            | yes      | Task name. |
 | `due`       | string (`YYYY-MM-DD`) \| `""` | yes | Due date, empty if none. |
@@ -107,7 +101,7 @@ daily / weekly / cumulative totals can be **summed** later and the per-day avera
 
 | Field          | Type                | Required | Description |
 |----------------|---------------------|----------|-------------|
-| `id`           | string              | yes      | Unique id (web uses `crypto.randomUUID()`). |
+| `id`           | string              | yes      | Unique id (`crypto.randomUUID()`). |
 | `start`        | string (ISO 8601)   | yes      | When the session began. Its date is what groups a session into a day/week. |
 | `end`          | string (ISO 8601)   | yes      | When the session ended. |
 | `durationMins` | number              | yes      | Minutes actually studied (excludes paused time). Summed for totals. |
@@ -163,7 +157,7 @@ to the level and leaves the rest as `""`; the STORAGE shape is identical for eve
 | `location`    | string | Venue. May be `""`. |
 | `sessionType` | string | Normalized category — see per-level values below. |
 | `classNo`     | string | Class/group number (e.g. "1", "31B"). `""` for school levels. |
-| `week`        | string | Which weeks this session runs: `"all"` (every week — the default), `"odd"`, or `"even"`. For alternating-week timetables. Read defensively: treat a missing `week` as `"all"`. |
+| `week`        | string | Which weeks this session runs: `"all"` (every week — the default), `"odd"`, or `"even"`. For alternating-week timetables. Treat a missing `week` as `"all"`. |
 
 ### Which fields each level populates
 
@@ -176,8 +170,7 @@ to the level and leaves the rest as `""`; the STORAGE shape is identical for eve
 | `location`    | (if shown) | (if shown) | ✓ | ✓ | ✓ |
 | `week`        | all/odd/even | all/odd/even | all/odd/even | all/odd/even | all/odd/even |
 
-> `color` for module colour-coding is assigned client-side in the UI, not by the parser,
-> so it is not part of this contract.
+> `color` for module colour-coding is assigned client-side in the UI.
 
 > `week` defaults to `"all"` and only differs when a timetable has an odd/even split. Sec/JC
 > usually publish **two separate** Odd/Even Week images (parse each, slots tagged from the title);
@@ -188,20 +181,16 @@ to the level and leaves the rest as `""`; the STORAGE shape is identical for eve
 
 ## Time fields, sync, and local save
 
-Two storage locations: Google Drive `appDataFolder` (when linked) and local device storage
-(local-only mode). The top-level `updatedAt` makes them reconcilable:
+Two storage locations: Google Drive `appDataFolder` (when linked) and local device storage (local-only mode). The top-level `updatedAt` makes them reconcilable:
 - **Last-write-wins**: each save overwrites the whole file; `updatedAt` records when.
 - **On open, load fresh** so you're not editing a stale copy.
 - **If both a local and a Drive copy exist**, compare top-level `updatedAt`, keep the newer.
-
-Per-task `createdAt`/`updatedAt` aren't needed for basic sync; they're there for possible
-finer-grained merging later. Do NOT build conflict resolution yet — last-write-wins is fine.
 
 ---
 
 ## Reference implementations
 
-### Web (JavaScript) — in-memory state
+### Web (JavaScript)
 
 ```javascript
 let appState = {
@@ -221,10 +210,7 @@ let appState = {
 };
 ```
 
-### App (Kotlin) — matching `@Serializable` data classes
-
-Field names **must match the JSON keys exactly**. Defaults make reading old/partial files safe.
-Use `Json { ignoreUnknownKeys = true }`.
+### App (Kotlin)
 
 ```kotlin
 import kotlinx.serialization.Serializable
@@ -233,16 +219,16 @@ import kotlinx.serialization.Serializable
 data class ModuloData(
     val schemaVersion: Int = 2,
     val educationLevel: String? = null,
-    val academicYear: String? = null,  // level-aware: "YY/YY" (uni/poly) or "YYYY" (school) (Phase 13; web-only)
-    val semester: Int? = null,         // 1 or 2 (Phase 13 handbook; web-only for now)
-    val handbookSetup: Boolean = false, // true once web onboarding done (Phase 13; web-only for now)
-    val termStart: String? = null,     // "YYYY-MM-DD" Week-1 Monday anchor (web-only for now)
-    val termEnd: String? = null,       // "YYYY-MM-DD" last day of term (web-only for now)
-    val breaks: List<Break> = emptyList(), // recess/holiday date ranges (web-only for now)
+    val academicYear: String? = null,      // level-aware: "YY/YY" (uni/poly) or "YYYY" (school)
+    val semester: Int? = null,             // 1 or 2
+    val handbookSetup: Boolean = false,    // true once web onboarding done
+    val termStart: String? = null,         // "YYYY-MM-DD" Week-1 Monday anchor
+    val termEnd: String? = null,           // "YYYY-MM-DD" last day of term
+    val breaks: List<Break> = emptyList(), // recess/holiday date ranges
     val updatedAt: String? = null,
     val tasks: List<Task> = emptyList(),
-    val studySessions: List<StudySession> = emptyList(), // Phase 10; default keeps old files loading
-    val hiddenModules: List<String> = emptyList(),       // Phase 12; web UI preference (hidden module labels)
+    val studySessions: List<StudySession> = emptyList(),
+    val hiddenModules: List<String> = emptyList(),
     val timetable: Timetable? = null
 )
 
@@ -295,7 +281,7 @@ data class Slot(
     val location: String = "",
     val sessionType: String = "",  // lecture | tutorial | lab | recitation | seminar | practical | lesson | cca
     val classNo: String = "",
-    val week: String = "all"       // all | odd | even  (default all; for alternating-week timetables)
+    val week: String = "all"       // all | odd | even
 )
 ```
 
@@ -307,11 +293,11 @@ data class Slot(
 |---------|------------|--------|
 | 1       | 2026-05-30 | Initial schema: `tasks`, provisional `timetable`, time fields. |
 | 2       | 2026-06-03 | Added `educationLevel`. Finalized the level-aware `timetable` structure: `slots` now use `sessionType` + `classNo` + `teacher` (replacing the provisional `type`). |
-| 2       | 2026-06-16 | Dropped the unused `teacher` field from `Slot` — the proxy never emitted it and we decided not to capture teacher info; `location` is the room/venue only. `schemaVersion` stays 2. Ling Song informed. |
-| 2       | 2026-06-18 | Added `week` (`all`/`odd`/`even`, default `all`) to `Slot` for alternating-week timetables. Additive + defaulted, so old files still load; `schemaVersion` stays 2. |
-| 2       | 2026-06-18 | Added `module` to `Task` (the module code, or name for primary/secondary/jc, that the task belongs to). |
-| 2       | 2026-06-23 | Added top-level `termStart` (`YYYY-MM-DD` Week-1 Monday, default `null`) for the dated weekly timetable view + odd/even parity (Phase 8). Additive + defaulted, so old files still load; `schemaVersion` stays 2. Web-only for now; app may ignore it. |
-| 2       | 2026-06-23 | Added top-level `termEnd` (`YYYY-MM-DD`, default `null`) and `breaks` (recess/holiday `{ start, end }` date ranges, default `[]`) for term bounds + non-academic weeks (Phase 8). Any week overlapping a break range is skipped in numbering. Additive + defaulted; `schemaVersion` stays 2. Web-only for now. |
-| 2       | 2026-06-24 | Added top-level `studySessions` (array of StudySession `{ id, start, end, durationMins, rating, createdAt }`, default `[]`) for the Phase 10 study timer. Feeds daily/weekly/cumulative study-time totals + the calendar's per-day average rating (and the MS3 study game). Additive + defaulted, so old files still load; `schemaVersion` stays 2. **Ling Song: heads-up — additive contract change.** |
-| 2       | 2026-06-25 | Added top-level `hiddenModules` (array of strings, default `[]`) — module labels the web app hides from the dashboard + sidebar (Phase 12). Additive + defaulted; `schemaVersion` stays 2. Web-only (app may ignore). |
-| 2       | 2026-06-27 | Added top-level `academicYear` (string `"YY/YY"`, default `null`), `semester` (number `1`/`2`, default `null`), and `handbookSetup` (boolean, default `false`) for the Phase 13 handbook/onboarding. Drive the sidebar header + gate the first-run setup modal. Additive + defaulted, so old files still load; `schemaVersion` stays 2. Web-only for now. **Ling Song: heads-up — additive contract change.** |
+| 2       | 2026-06-16 | Dropped the unused `teacher` field from `Slot`. `location` is the room/venue only. |
+| 2       | 2026-06-18 | Added `week` (`all`/`odd`/`even`, default `all`) to `Slot` for alternating-week timetables. |
+| 2       | 2026-06-18 | Added `module` to `Task`, the module code, or name for primary/secondary/jc, that the task belongs to. |
+| 2       | 2026-06-23 | Added top-level `termStart` (`YYYY-MM-DD` Week-1 Monday, default `null`) for the dated weekly timetable view + odd/even parity. |
+| 2       | 2026-06-23 | Added top-level `termEnd` (`YYYY-MM-DD`, default `null`) and `breaks` (recess/holiday `{ start, end }` date ranges, default `[]`) for term bounds + non-academic weeks. Any week overlapping a break range is skipped in numbering. |
+| 2       | 2026-06-24 | Added top-level `studySessions` (array of StudySession `{ id, start, end, durationMins, rating, createdAt }`, default `[]`). Feeds daily/weekly/cumulative study-time totals + the calendar's per-day average rating. |
+| 2       | 2026-06-25 | Added top-level `hiddenModules` (array of strings, default `[]`) — module labels the web app hides from the dashboard + sidebar |
+| 2       | 2026-06-27 | Added top-level `academicYear` (string `"YY/YY"`, default `null`), `semester` (number `1`/`2`, default `null`), and `handbookSetup` (boolean, default `false`) for the handbook/onboarding. Drive the sidebar header + gate the first-run setup modal. |

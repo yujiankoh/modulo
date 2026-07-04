@@ -46,6 +46,7 @@ import com.example.modulo.AppData
 import com.example.modulo.AppViewModel
 import com.example.modulo.Module
 import com.example.modulo.R
+import com.example.modulo.Task
 import com.example.modulo.TimetableState
 import java.time.Instant
 import java.time.LocalDate
@@ -125,13 +126,17 @@ fun AddTaskPage(
 
             Button(
                 onClick = {
-                    viewModel.addTask(
-                        module =  selectedModule,
+
+                    val newTask = Task(
+                        id = System.currentTimeMillis(),
+                        module = selectedModule?.code?.ifBlank { selectedModule!!.name } ?: "",
                         title = inputTitle.text.toString(),
+                        due = selectedDeadline?.toString() ?: "",
                         type = selectedTaskType,
-                        deadline = selectedDeadline,
-                        isCompleted =  false
+                        done = false
                     )
+
+                    viewModel.addTask(newTask)
 
                     // Clear input fields
                     inputTitle.edit { replace(0, length, "") }
