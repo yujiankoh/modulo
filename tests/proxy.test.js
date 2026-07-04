@@ -8,7 +8,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { app, buildPrompt, extractJson } from "../server/index.js";
 
-// ---------- UNIT: buildPrompt ----------
+// UNIT: buildPrompt
 
 test("buildPrompt includes the level-specific section", () => {
   const uni = buildPrompt("university");
@@ -23,7 +23,7 @@ test("buildPrompt falls back to the secondary rules for an unknown/missing level
   assert.equal(buildPrompt("not-a-level"), buildPrompt(undefined));
 });
 
-// ---------- UNIT: extractJson (balanced-brace extraction) ----------
+// UNIT: extractJson (balanced-brace extraction)
 
 test("extractJson pulls the first balanced object out of surrounding noise", () => {
   assert.equal(extractJson('blah blah {"a":1,"b":2} trailing text'), '{"a":1,"b":2}');
@@ -34,7 +34,7 @@ test("extractJson ignores braces that appear inside strings", () => {
   assert.equal(extractJson("prefix " + obj), obj);
 });
 
-// ---------- INTEGRATION: the Express route ----------
+// INTEGRATION: the Express route
 
 test("POST /parse-timetable returns 400 when image/mimeType are missing", async () => {
   const server = app.listen(0);                // 0 = let the OS pick a free port
