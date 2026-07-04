@@ -1,8 +1,10 @@
 // dashboard.js — the Dashboard landing view (Phase 12.3). Aggregates existing data into
-// an at-a-glance home. 12.3a: a date/term-week eyebrow, a time-of-day greeting, and a
-// one-line summary. (12.3b adds study cards; 12.3c the schedule + tasks-due-soon panels.)
+// an at-a-glance home: date/term-week eyebrow, time-of-day greeting, one-line summary,
+// study-streak + this-week-hours cards, today's schedule, tasks due soon, and the
+// Modules cards (with the detail modal + the Manage show/hide popup).
 //
-// It only READS appState (plus writes the name field) and reuses the timetable's
+// It mostly READS appState (the Manage popup writes appState.hiddenModules; the task
+// checkboxes complete tasks via task.js's toggleTask) and reuses the timetable's
 // term-week math, so there's no second source of truth. Redraws on modulo:datachanged.
 
 import { appState, persist } from "./data.js";
@@ -10,7 +12,7 @@ import { currentWeekInfo, totalTeachingWeeks } from "./timetableView.js";
 import { moduleColor } from "./sidebar.js"; // shared module-colour palette
 import { toggleTask } from "./task.js"; // complete a task from the due-soon checkbox
 
-// --- shared helpers (also used by the schedule + tasks panels in 12.3c) ---
+// --- shared helpers (used by the summary line + the schedule/tasks panels) ---
 
 // Timetable days are "MON".."SUN"; JS getDay() is 0=Sun..6=Sat. Map today to that code.
 const DAY_CODES = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
@@ -25,7 +27,7 @@ function toMinutes(t) {
 
 // Today's classes: this weekday's slots, filtered by the current week's odd/even parity,
 // sorted by start time. Empty when there's no timetable, or it's a break/outside week.
-// Each item carries its module label so the schedule card (12.3c) can render directly.
+// Each item carries its module label so the schedule panel can render it directly.
 export function classesToday() {
   const tt = appState.timetable;
   if (!tt) return [];
@@ -132,7 +134,7 @@ function eyebrowText() {
   return date;
 }
 
-// Greeting by time of day. (A name can be added later — handbook/profile, Phase 13.)
+// Greeting by time of day. (A user name could be added later — a profile feature.)
 function greetingText() {
   const h = new Date().getHours();
   const part = h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";

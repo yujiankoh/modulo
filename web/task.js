@@ -330,13 +330,13 @@ document.getElementById("addBtn").addEventListener("click", () => {
   closeTaskModal();
 });
 
-// Step 9.2: when the user picks a different sort, remember it and redraw.
+// When the user picks a different sort, remember it and redraw.
 document.getElementById("taskSort").addEventListener("change", (e) => {
   sortBy = e.target.value;
   renderTasks();
 });
 
-// Step 9.3: redraw whenever any filter changes. The filters' values are read straight
+// Redraw whenever any filter changes. The filters' values are read straight
 // from the dropdowns inside getVisibleTasks(), so there's no state variable to update.
 ["taskFilterStatus", "taskFilterType", "taskFilterModule"].forEach((id) => {
   document.getElementById(id).addEventListener("change", renderTasks);

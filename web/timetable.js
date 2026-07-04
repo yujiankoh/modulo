@@ -93,8 +93,8 @@ let appendOnNextPick = false;
 // The Upload timetable modal (opened by the grid's "Re-upload" + the empty-state "Upload").
 const uploadModal = document.getElementById("uploadModal");
 
-// Open the upload modal: show the current education level (set in Settings) and reset the
-// picker. The user then chooses an image and clicks Parse.
+// Open the upload modal: show the current education level (set in the handbook —
+// Settings → Edit) and reset the picker. The user then chooses an image and clicks Parse.
 export function startReupload() {
   document.getElementById("uploadLevelHint").textContent = appState.educationLevel
     ? `Level: ${appState.educationLevel} · change in Settings`

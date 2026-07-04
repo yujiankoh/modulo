@@ -1,7 +1,8 @@
-// handbook.js — Phase 13 onboarding / handbook. Captures the per-semester setup once:
-// education level (locked after first run — Step 3), a LEVEL-AWARE academic year, the
-// semester, and the term dates. Auto-opens as a non-dismissable modal on first run
-// (when appState.handbookSetup is still false). Reuses the .tcal-popup modal recipe.
+// handbook.js — Phase 13 onboarding / handbook. Captures the per-semester setup:
+// education level (editable for now — changing it with a saved timetable asks to
+// confirm; per-handbook locking returns later), a LEVEL-AWARE academic year, the
+// semester, and the term dates. Auto-opens on first run (while appState.handbookSetup
+// is false); closing it then snoozes it until reload. Reuses the .tcal-popup recipe.
 
 import { appState, persist } from "./data.js";
 import { isTertiary, formatAcademicYear, parseStartYear, formatHeaderLabel } from "./logic/academicYear.js";
@@ -56,8 +57,7 @@ function refreshYearUI() {
     : `Will show as: ${ay} · Sem ${sem}`;
 }
 
-// Fill the form from the current state, then show the modal. On first run the close
-// ✕ is hidden (the modal is non-dismissable until the user saves).
+// Fill the form from the current state, then show the modal.
 export function openHandbook() {
   // Education level is EDITABLE for now (showcase): always show the dropdown. Changing it
   // with an existing timetable triggers a confirm in the Save handler. (The locked-text
@@ -85,7 +85,7 @@ function closeHandbook() {
   modal.style.display = "none";
 }
 
-// Close affordances (skipped during first run by closeHandbook's guard).
+// Close affordances: ✕, backdrop click, Esc.
 closeX.addEventListener("click", closeHandbook);
 modal.addEventListener("click", (e) => { if (e.target === modal) closeHandbook(); });
 document.addEventListener("keydown", (e) => {
@@ -135,7 +135,7 @@ saveBtn.addEventListener("click", async () => {
   modal.style.display = "none";
 });
 
-// "Edit" button in Settings → open the handbook modal (dismissable; level shown locked).
+// "Edit" button in Settings → open the handbook modal.
 document.getElementById("editHandbookBtn").addEventListener("click", openHandbook);
 
 // Render the read-only Settings summary from appState. Runs on every modulo:datachanged.

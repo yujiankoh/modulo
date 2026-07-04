@@ -1,8 +1,8 @@
-// timetableEditor.js — manual timetable editor (Phase 5).
+// timetableEditor.js — manual timetable editor (Phase 5; a modal since Phase 12.5c).
 // Opens to CORRECT a parsed timetable, or to ENTER one from scratch when parsing
-// fails / there's no photo. Step 2: render editable module cards + slot rows,
-// level-aware (fields/options depend on the chosen education level).
-// Saving (harvesting these inputs back into appState) comes in Step 3.
+// fails / there's no photo. Renders editable module cards + slot rows, level-aware
+// (fields/options depend on the chosen education level); Save validates the rows
+// and harvests them back into appState.timetable.
 
 import { appState, persist } from "./data.js";
 

@@ -1,8 +1,7 @@
 // calendarView.js — month-grid calendar showing tasks on their due dates (Phase 7).
 // Monday-first month grid; tasks as pills (capped, with "N more"); click a day for a
 // view-only popup; month nav via prev/next arrows + a month/year picker; today is
-// highlighted. Redraws on the modulo:datachanged event. (Phase 8 will add timetable
-// sessions onto these same date cells.)
+// highlighted. Redraws on the modulo:datachanged event.
 //
 // Phase 10: each day cell also shows the rounded AVERAGE rating of that day's study
 // sessions (as stars) — read from appState.studySessions, display-only.
@@ -24,7 +23,7 @@ const MONTH_ABBR = [
 // How many task pills to show in a cell before collapsing the rest into "N more".
 const MAX_PILLS = 3;
 
-// Which month the calendar is showing. Starts on today's month; nav changes it (7.4).
+// Which month the calendar is showing. Starts on today's month; the nav changes it.
 const today = new Date();
 let viewYear = today.getFullYear();
 let viewMonth = today.getMonth(); // 0=Jan ... 11=Dec

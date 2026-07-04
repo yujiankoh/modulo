@@ -34,7 +34,7 @@
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 6px 18px rgba(0, 0, 0, 0.4);
 }
 
-body { font-family: "Inter", system-ui, sans-serif; padding: 2rem; }
+body { font-family: "Inter", system-ui, sans-serif; }
 /* Base button: white, bordered, rounded. .btn-primary (blue) overrides this; the close
    ✕ / chevron buttons set their own transparent style. */
 button {
@@ -225,7 +225,7 @@ select {
 }
 .tt-arrow:disabled { opacity: 0.4; cursor: default; } /* greyed out at the term bounds */
 
-/* recess/holiday week chips (interim term-setup editor) */
+/* recess/holiday week chips (the handbook modal's break editor) */
 #breakList { margin-top: 6px; }
 .break-chip {
   display: inline-flex;
@@ -452,8 +452,7 @@ select {
 .tcal-popup-task-title { font-size: 14px; color: var(--text); }
 .tcal-popup-task-meta { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
 
-/* Step 9.0: Add Task modal form rows — label stacked above its input. Layout only;
-   visual polish (fonts/colours) comes in Phase 12. */
+/* Modal form rows (Add Task + handbook): label stacked above its input. */
 .task-field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
 .task-field > span { font-size: 12px; color: var(--text-muted); }
 .task-field > input,
@@ -472,18 +471,8 @@ select {
 .hb-row-k { color: var(--text-muted); }
 .hb-row-v { color: var(--text); }
 
-/* Step 9.4: bucketed task list — group headers, rows, and the relative-date pill.
-   Layout only; the mockup's polish (cards, colours, fonts) lands in Phase 12. */
-/* UI upgrade (layout): task toolbar — actions left, filters/sort right. */
-.task-toolbar {
-  display: flex;
-  justify-content: space-between;   /* push actions + controls to opposite ends */
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;                  /* wrap instead of overflowing on narrow screens */
-  margin: 8px 0 12px;
-}
-.task-actions { display: flex; gap: 8px; }
+/* Bucketed task list — group headers, rows, and the relative-date pill. The filter/sort
+   pills sit in .task-controls, on the right of the All Tasks header (.tasks-head). */
 .task-controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 
 /* View header (eyebrow + big title), used by All Tasks; filter pills sit on the right. */
@@ -536,9 +525,9 @@ select {
 /* due today/tomorrow → blue accent pill (matches the dashboard) */
 .task-pill--soon { color: var(--primary); background: var(--primary-soft); font-weight: 600; }
 
-/* === Phase 12: SPA shell (STRUCTURE ONLY — mockup colours/fonts come in step 12.4) === */
-/* The old `body { padding: 2rem }` centred a single column; the shell wants the sidebar
-   flush to the edge and full height, so we zero body padding and pad #main instead. */
+/* === Phase 12: the SPA shell === */
+/* The shell wants the sidebar flush to the edge and full height, so the body has no
+   margin/padding and #main is padded instead. */
 body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
 #app {
   display: grid;
@@ -605,13 +594,13 @@ body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
   font-weight: 600;
 }
 
-/* Dashboard header (12.3a). Eyebrow = small uppercase muted line; greeting = the big
-   heading; summary = a muted sub-line. Full visual polish in 12.4. */
+/* Dashboard header. Eyebrow = small uppercase muted line; greeting = the big
+   heading; summary = a muted sub-line. */
 .dash-eyebrow { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); margin: 0 0 6px; }
 .dash-greeting { font-size: 28px; color: var(--text); margin: 0 0 6px; }
 .dash-summary { font-size: 14px; color: var(--text-muted); margin: 0 0 20px; }
 
-/* Stat cards (12.3b). Simple bordered boxes for now; mockup polish in 12.4. */
+/* Stat cards (study streak + this-week hours). */
 .dash-cards { display: flex; gap: 12px; margin-bottom: 24px; }
 .dash-card {
   background: var(--surface);
@@ -628,7 +617,7 @@ body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
 .dash-card--accent .dash-card-label { color: rgba(255, 255, 255, 0.75); }
 .dash-card--accent .dash-card-value { color: #fff; }
 
-/* Main panels (12.3c): two cards side by side, each with a header + a list. */
+/* Main panels: two cards side by side, each with a header + a list. */
 .dash-panels { display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap; }
 .dash-panel {
   flex: 1;

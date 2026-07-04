@@ -1,5 +1,6 @@
 // studyTimer.js — a count-up stopwatch (Phase 10). Owns the timer engine + the big
-// display, wires Start / Pause / Reset, and (step 3) records a session on Stop & Save.
+// display, wires the play/pause toggle + Stop & Save, and records a rated session
+// (via the rating modal) into appState.studySessions.
 //
 // Accuracy idea: we compute elapsed time from wall-clock TIMESTAMPS, not by counting
 // ticks. A backgrounded tab throttles setInterval, so a "+1 each tick" counter would
