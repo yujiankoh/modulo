@@ -33,6 +33,7 @@ import com.example.modulo.pages.AllTaskPage
 import com.example.modulo.pages.AuthenticatePage
 import com.example.modulo.pages.CalendarPage
 import com.example.modulo.pages.HandbookCreatePage
+import com.example.modulo.pages.HandbookPage
 import com.example.modulo.pages.HomePage
 import com.example.modulo.pages.LoadingPage
 import com.example.modulo.pages.TimetableManualPage
@@ -66,6 +67,7 @@ import kotlinx.serialization.Serializable
 @Serializable object Timetable
 @Serializable object StudyHistory
 @Serializable object HandbookCreate
+@Serializable object Handbook
 
 @Composable
 fun RootNavigation(
@@ -240,7 +242,8 @@ fun NavGraphBuilder.globalNavigation(
             viewModel = viewModel,
             onBack = { navController.popBackStack() },
             onNavigateToTimetable = { navController.navigate(Timetable) },
-            onNavigateToHandbookCreate = { navController.navigate(HandbookCreate) }
+            onNavigateToHandbookCreate = { navController.navigate(HandbookCreate) },
+            onNavigateToHandbook = { navController.navigate(Handbook) }
         )
     }
 
@@ -264,8 +267,20 @@ fun NavGraphBuilder.globalNavigation(
             viewModel = viewModel,
             onBack = { navController.popBackStack() },
             onSave = {
-                navController.navigate(Home) {
+                navController.navigate(AppGraph) {
                     popUpTo(HandbookCreate) { inclusive = true }
+                }
+            }
+        )
+    }
+
+    composable<Handbook> {
+        HandbookPage(
+            viewModel = viewModel,
+            onBack = { navController.popBackStack() },
+            onLoad = {
+                navController.navigate(AppGraph) {
+                    popUpTo(Handbook) { inclusive = true }
                 }
             }
         )
