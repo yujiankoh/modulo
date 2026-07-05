@@ -85,17 +85,16 @@ fun AllTaskPage(
 
     var selectedTabIndex by remember { mutableIntStateOf(0) }
 
-    Scaffold { paddingValues ->
+    Scaffold (
+        modifier = Modifier.pointerInput(Unit) {
+            detectTapGestures(onTap = { deletedTask = null })
+        },
+    ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(horizontal = 16.dp)
-                .pointerInput(Unit) {
-                    detectTapGestures(onTap = {
-                        deletedTask = null
-                    })
-                },
+                .padding(horizontal = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Column(modifier = Modifier.fillMaxWidth()) {
@@ -233,7 +232,7 @@ fun TaskCard(
         ) {
             Row {
                 if (showDelete) {
-                    IconButton(onClick = { onDelete() }) {
+                    IconButton(onClick = onDelete) {
                         Icon(
                             painter = painterResource(R.drawable.trash_2),
                             contentDescription = "Delete Task"

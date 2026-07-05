@@ -77,17 +77,16 @@ fun HomePage(
 
     var deletedTask by remember { mutableStateOf<Task?>(null) }
 
-    Scaffold { paddingValues ->
+    Scaffold(
+        modifier = Modifier.pointerInput(Unit) {
+            detectTapGestures(onTap = { deletedTask = null })
+        },
+    ) { paddingValues ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(top = paddingValues.calculateTopPadding())
-                .padding(horizontal = 16.dp)
-                .pointerInput(Unit) {
-                    detectTapGestures(onTap = {
-                        deletedTask = null
-                    })
-                },
+                .padding(horizontal = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             contentPadding = PaddingValues(
                 bottom = paddingValues.calculateBottomPadding() + 24.dp
