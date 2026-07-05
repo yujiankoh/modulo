@@ -102,6 +102,7 @@ fun HandbookPage(
                     isDanger = false,
                     onConfirm = {
                         selectedHandbook = null
+                        viewModel.swapHandbook(handbook)
                         onLoad()
                     },
                     onDismiss = { selectedHandbook = null }

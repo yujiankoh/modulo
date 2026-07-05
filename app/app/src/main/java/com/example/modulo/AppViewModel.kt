@@ -474,4 +474,34 @@ class AppViewModel(
             _startupState.value = StartupState.READY
         }
     }
+
+    fun swapHandbook(handbook: Handbook) {
+        updateData { currentData ->
+            val updatedHandbooks = currentData.otherHandbooks.toMutableList()
+            updatedHandbooks.remove(handbook)
+
+            if (currentData.educationLevel != null) {
+                val currHandbook = Handbook(
+                    id = "test",
+                    educationLevel = currentData.educationLevel,
+                    termStart = currentData.termStart,
+                    termEnd = currentData.termEnd,
+                    breaks = currentData.breaks,
+                    tasks = currentData.tasks,
+                    timetable = currentData.timetable
+                )
+                updatedHandbooks.add(currHandbook)
+            }
+
+            currentData.copy(
+                educationLevel = handbook.educationLevel,
+                termStart = handbook.termStart,
+                termEnd = handbook.termEnd,
+                breaks = handbook.breaks,
+                tasks = handbook.tasks,
+                timetable = handbook.timetable,
+                otherHandbooks = updatedHandbooks
+            )
+        }
+    }
 }
