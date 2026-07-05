@@ -51,6 +51,8 @@ button {
   border-radius: 8px;
 }
 button:hover { border-color: var(--border-strong); }
+/* Form controls default to the OS font, not the page's — make them inherit Inter. */
+button, input, select { font-family: inherit; }
 /* Lucide icon inside any button: small + non-shrinking (stroke = currentColor). */
 button svg { width: 16px; height: 16px; flex: none; }
 /* Selects (filters, type pickers): match the button look. */
@@ -540,6 +542,7 @@ body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
   display: flex;
   flex-direction: column;
   background: var(--surface);
+  box-sizing: border-box;   /* padding counts INSIDE the 100vh, so the page never overflows */
   padding: 18px 14px;
   border-right: 1px solid var(--border);  /* flush full-height white panel, no rounded card */
   /* Pin to the viewport: the sidebar stays put while only the main content scrolls, so
@@ -712,6 +715,61 @@ body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
 .cal-header-actions { display: flex; gap: 8px; }
 .tt-editor-card { width: min(720px, 92vw); }   /* wider than the default popup for slot rows */
 .tt-editor-actions { display: flex; align-items: center; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+
+/* --- Timetable editor: module cards + aligned slot rows --- */
+/* The editor reuses the .module-card class name, so the Dashboard's clickable-card styles
+   (padding:0, overflow:hidden, pointer) leak in — undo them inside #moduleList only. */
+#editorHint { font-size: 13px; color: var(--text-muted); margin: 0 0 14px; }
+#moduleList .module-card {
+  display: flex;
+  flex-wrap: wrap;               /* code | name | delete on one row; slot list wraps below */
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+  cursor: default;
+  overflow: visible;
+  box-shadow: none;
+}
+.mod-code { width: 140px; }
+.mod-name { flex: 1; min-width: 160px; }       /* the name takes whatever width is left */
+.mod-code, .mod-name {
+  padding: 8px 10px;
+  font-size: 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+}
+/* "Delete module": quiet text button, red only on hover (destructive but not shouty). */
+.mod-del { border: none; background: transparent; font-size: 12px; color: var(--text-muted); padding: 4px 6px; }
+.mod-del:hover { color: var(--danger); border-color: transparent; }
+
+/* Slot rows: a fixed-column grid so day/time/location/type line up across every row.
+   Columns match the DOM order: day · start · end · location · type · class · week · ✕ */
+.slot-list { width: 100%; display: flex; flex-direction: column; gap: 6px; }
+.slot-row {
+  display: grid;
+  grid-template-columns: 66px 96px 96px minmax(110px, 1fr) 100px 64px 64px 24px;
+  gap: 6px;
+  align-items: center;
+}
+.slot-row input,
+.slot-row select {
+  width: 100%;
+  box-sizing: border-box;        /* width includes padding/border, so columns stay exact */
+  padding: 6px 8px;
+  font-size: 13px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+}
+/* "✕" delete-slot button: icon-quiet, red on hover. */
+.slot-del { border: none; background: transparent; font-size: 13px; color: var(--text-muted); padding: 2px; }
+.slot-del:hover { color: var(--danger); border-color: transparent; }
+.slot-add { align-self: flex-start; padding: 6px 12px; font-size: 13px; }
+#editorStatus { font-size: 13px; color: var(--text-muted); }
 /* Timetable empty state + upload-modal actions */
 .tt-empty { max-width: 480px; }
 .tt-empty h3 { margin: 0 0 6px; font-size: 16px; color: var(--text); }

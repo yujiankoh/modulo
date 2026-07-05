@@ -80,7 +80,10 @@ function addSlot(slotListEl, slot = {}) {
 
   const delBtn = document.createElement("button");
   delBtn.type = "button";                       // not a form submit button
-  delBtn.textContent = "Delete slot";
+  delBtn.className = "slot-del";
+  delBtn.textContent = "✕";
+  delBtn.title = "Delete slot";
+  delBtn.setAttribute("aria-label", "Delete slot"); // the ✕ has no text for screen readers
   delBtn.addEventListener("click", () => row.remove());
 
   row.append(day, start, end, location, sessionType, classNo, week, delBtn);
@@ -98,6 +101,7 @@ function addModule(module = {}) {
 
   const delModBtn = document.createElement("button");
   delModBtn.type = "button";
+  delModBtn.className = "mod-del";
   delModBtn.textContent = "Delete module";
   delModBtn.addEventListener("click", () => card.remove());
 
@@ -106,6 +110,7 @@ function addModule(module = {}) {
 
   const addSlotBtn = document.createElement("button");
   addSlotBtn.type = "button";
+  addSlotBtn.className = "slot-add";
   addSlotBtn.textContent = "+ Add slot";
   addSlotBtn.addEventListener("click", () => addSlot(slotList));
 
