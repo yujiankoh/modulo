@@ -62,6 +62,7 @@ import com.example.modulo.Slot
 import com.example.modulo.Timetable
 import com.example.modulo.components.DropDownMenu
 import com.example.modulo.components.TimePickerMenu
+import com.example.modulo.components.WarningCard
 import com.example.modulo.ui.theme.ModuloTheme
 import kotlin.math.roundToInt
 
@@ -182,9 +183,9 @@ fun TimetableManualPage(
 
     if (showSaveWarning) {
         WarningCard(
-            title = "Save Timetable",
+            title = "Override Timetable",
             text = "Are you sure you want to manually save this timetable? This will override your current timetable, if any.",
-            confirmText = "Save",
+            confirmText = "Override",
             onConfirm = {
                 val validFormModules = modules.filter { it.code.isNotBlank() || it.name.isNotBlank()}
 

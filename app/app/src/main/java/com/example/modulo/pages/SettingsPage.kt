@@ -37,6 +37,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.modulo.AppViewModel
 import com.example.modulo.R
+import com.example.modulo.components.WarningCard
 
 @Composable
 fun SettingsPage(
@@ -96,7 +97,7 @@ fun SettingsPage(
             )
 
             SettingsRow(
-                icon = R.drawable.book_plus,
+                icon = R.drawable.notebook_pen,
                 title = "New Handbook",
                 isClickable = true,
                 onClick = onNavigateToHandbookCreate
@@ -196,38 +197,3 @@ fun SettingsRow(
     HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.outlineVariant)
 }
 
-@Composable
-fun WarningCard(
-    title: String,
-    text: String,
-    confirmText: String,
-    dismissText: String = "Cancel",
-    onConfirm: () -> Unit,
-    onDismiss: () -> Unit
-) {
-    AlertDialog(
-        title = { Text(title, fontWeight = FontWeight.Bold) },
-        text = { Text(text) },
-        containerColor = MaterialTheme.colorScheme.surface,
-        onDismissRequest = onDismiss,
-        confirmButton = {
-            Button(
-                onClick = onConfirm,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.error
-                ),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Text(text = confirmText, color = MaterialTheme.colorScheme.onError)
-            }
-        },
-        dismissButton = {
-            TextButton(
-                onClick = onDismiss,
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Text(dismissText)
-            }
-        }
-    )
-}
