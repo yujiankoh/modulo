@@ -240,6 +240,7 @@ fun NavGraphBuilder.globalNavigation(
             viewModel = viewModel,
             onBack = { navController.popBackStack() },
             onNavigateToTimetable = { navController.navigate(Timetable) },
+            onNavigateToHandbookCreate = { navController.navigate(HandbookCreate) }
         )
     }
 

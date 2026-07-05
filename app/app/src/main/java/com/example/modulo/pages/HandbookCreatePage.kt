@@ -14,7 +14,6 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
@@ -40,11 +39,9 @@ import com.example.modulo.Break
 import com.example.modulo.EducationLevel
 import com.example.modulo.Handbook
 import com.example.modulo.R
-import com.example.modulo.StartupState
 import com.example.modulo.components.DatePickerMenu
 import com.example.modulo.components.DropDownMenu
 import java.time.LocalDate
-import kotlin.text.isNotBlank
 
 @Composable
 fun HandbookCreatePage(
@@ -64,8 +61,7 @@ fun HandbookCreatePage(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
-                .padding(horizontal = 16.dp),
+                .padding(paddingValues),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Row(
@@ -119,74 +115,79 @@ fun HandbookCreatePage(
                 }
             }
 
-            DropDownMenu(
-                label = "Education Level",
-                selectedItem = educationLevel,
-                items = EducationLevel.entries,
-                itemToText = { it?.displayName ?: "" },
-                onItemSelected = { educationLevel = it },
+            Column(
                 modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    .padding(horizontal = 16.dp)
             ) {
-                DatePickerMenu(
-                    selectedDate = termStartDate,
-                    label = "Term Start",
-                    onDateSelected = { newDate ->
-                        termStartDate = newDate
-                        viewModel.saveTermStart(newDate)
-                    },
-                    modifier = Modifier.weight(1f)
+                DropDownMenu(
+                    label = "Education Level",
+                    selectedItem = educationLevel,
+                    items = EducationLevel.entries,
+                    itemToText = { it?.displayName ?: "" },
+                    onItemSelected = { educationLevel = it },
+                    modifier = Modifier.fillMaxWidth()
                 )
 
-                DatePickerMenu(
-                    selectedDate = termEndDate,
-                    label = "Term End",
-                    onDateSelected = { newDate ->
-                        termEndDate = newDate
-                        viewModel.saveTermEnd(newDate)
-                    },
-                    modifier = Modifier.weight(1f)
-                )
-            }
+                Spacer(modifier = Modifier.height(8.dp))
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                itemsIndexed(breaks) { breakIndex, currBreak ->
-                    HandbookBreak(
-                        currBreak = currBreak,
-                        onBreakChange = { newBreak ->
-                            breaks[breakIndex] = newBreak
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    DatePickerMenu(
+                        selectedDate = termStartDate,
+                        label = "Term Start",
+                        onDateSelected = { newDate ->
+                            termStartDate = newDate
+                            viewModel.saveTermStart(newDate)
                         },
-                        onDeleteClick = {
-                            breaks.removeAt(breakIndex)
-                        }
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    DatePickerMenu(
+                        selectedDate = termEndDate,
+                        label = "Term End",
+                        onDateSelected = { newDate ->
+                            termEndDate = newDate
+                            viewModel.saveTermEnd(newDate)
+                        },
+                        modifier = Modifier.weight(1f)
                     )
                 }
 
-                item {
-                    OutlinedButton(
-                        onClick = {
-                            breaks.add(Break("", ""))
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Icon(painter = painterResource(R.drawable.plus), contentDescription = "Add Break")
-                        Spacer(Modifier.width(8.dp))
-                        Text("Add Another Break")
+                Spacer(modifier = Modifier.height(16.dp))
+
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    itemsIndexed(breaks) { breakIndex, currBreak ->
+                        HandbookBreak(
+                            currBreak = currBreak,
+                            onBreakChange = { newBreak ->
+                                breaks[breakIndex] = newBreak
+                            },
+                            onDeleteClick = {
+                                breaks.removeAt(breakIndex)
+                            }
+                        )
                     }
-                    Spacer(modifier = Modifier.height(32.dp))
+
+                    item {
+                        OutlinedButton(
+                            onClick = {
+                                breaks.add(Break("", ""))
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Icon(painter = painterResource(R.drawable.plus), contentDescription = "Add Break")
+                            Spacer(Modifier.width(8.dp))
+                            Text("Add Another Break")
+                        }
+                        Spacer(modifier = Modifier.height(32.dp))
+                    }
                 }
             }
         }
