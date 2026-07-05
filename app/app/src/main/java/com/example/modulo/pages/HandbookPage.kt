@@ -1,9 +1,11 @@
 package com.example.modulo.pages
 
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -11,6 +13,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -25,6 +28,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -43,7 +47,14 @@ fun HandbookPage(
     val oldHandbooks = appData.otherHandbooks
     var selectedHandbook by remember { mutableStateOf<Handbook?>(null) }
 
-    Scaffold { paddingValues ->
+    var deletedHandbook by remember { mutableStateOf<Handbook?>(null) }
+    var showDeleteWarning by remember { mutableStateOf(false) }
+
+    Scaffold(
+        modifier = Modifier.pointerInput(Unit) {
+            detectTapGestures(onTap = { deletedHandbook = null })
+        },
+    ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -87,9 +98,20 @@ fun HandbookPage(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(oldHandbooks) { handbook ->
+                    val showDelete = deletedHandbook == handbook
+
                     HandbookCard(
                         handbook = handbook,
-                        onClick = { selectedHandbook = handbook }
+                        showDelete = showDelete,
+                        onClick = {
+                            if (deletedHandbook == null) {
+                                selectedHandbook = handbook
+                            } else {
+                                deletedHandbook = null
+                            }
+                        },
+                        onHold = { deletedHandbook = handbook},
+                        onDelete = { showDeleteWarning = true }
                     )
                 }
             }
@@ -108,6 +130,25 @@ fun HandbookPage(
                     onDismiss = { selectedHandbook = null }
                 )
             }
+
+            if (showDeleteWarning) {
+                deletedHandbook?.let { handbook ->
+                    WarningCard(
+                        title = "Delete Handbook",
+                        text = "Are you sure you want to delete ${handbook.id} handbook? This will remove all data and cannot be recovered.",
+                        confirmText = "Delete",
+                        onConfirm = {
+                            showDeleteWarning = false
+                            viewModel.deleteHandbook(handbook)
+                            deletedHandbook = null
+                        },
+                        onDismiss = {
+                            showDeleteWarning = false
+                            deletedHandbook = null
+                        }
+                    )
+                }
+            }
         }
     }
 }
@@ -115,23 +156,49 @@ fun HandbookPage(
 @Composable
 fun HandbookCard(
     handbook: Handbook,
-    onClick: () -> Unit
+    showDelete: Boolean,
+    onClick: () -> Unit,
+    onHold: () -> Unit,
+    onDelete: () -> Unit
 ) {
+    val cardColour = if (showDelete) {
+        MaterialTheme.colorScheme.error
+    } else {
+        MaterialTheme.colorScheme.surface
+    }
+
     ElevatedCard(
         shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = cardColour),
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onClick() }
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = onHold
+            )
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+                .defaultMinSize(minHeight = 48.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
                 text = handbook.id,
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.SemiBold
             )
+
+            if (showDelete) {
+                IconButton(onClick = onDelete) {
+                    Icon(
+                        painter = painterResource(R.drawable.trash_2),
+                        contentDescription = "Delete Handbook"
+                    )
+                }
+            }
         }
     }
 }

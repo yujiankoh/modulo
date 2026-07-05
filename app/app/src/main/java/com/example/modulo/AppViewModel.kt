@@ -504,4 +504,12 @@ class AppViewModel(
             )
         }
     }
+
+    fun deleteHandbook(handbook: Handbook) {
+        updateData { currentData ->
+            currentData.copy(
+                otherHandbooks = currentData.otherHandbooks.filter { it != handbook }
+            )
+        }
+    }
 }
