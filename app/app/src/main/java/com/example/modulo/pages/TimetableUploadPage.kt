@@ -41,6 +41,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -72,7 +73,9 @@ fun UploadTimetablePage(
     onManualClick: (EducationLevel) -> Unit,
 ) {
     val context = LocalContext.current
-    var selectedEducation by remember { mutableStateOf(EducationLevel.UNIVERSITY) }
+    val appData by viewModel.appData.collectAsState();
+    val currEducation = EducationLevel.entries.find{ it.json == appData.educationLevel } ?: EducationLevel.UNIVERSITY
+    var selectedEducation by remember { mutableStateOf(currEducation) }
 
     Scaffold { paddingValues ->
         Column(
