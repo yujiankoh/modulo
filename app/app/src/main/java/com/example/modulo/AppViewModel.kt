@@ -96,6 +96,14 @@ class AppViewModel(
         return savedStateHandle["email"] ?: ""
     }
 
+    private fun checkHandbookState() {
+        if (_appData.value.educationLevel == null) {
+            _startupState.value = StartupState.HANDBOOK
+        } else {
+            _startupState.value = StartupState.READY
+        }
+    }
+
     fun onAuthenticationSuccess(context: Context, email: String) {
         setUserEmail(email)
         saveSyncPreference(true)
@@ -104,7 +112,7 @@ class AppViewModel(
         viewModelScope.launch {
             _syncState.value = SyncState.SYNCING
             resolveConflict(syncingHelper!!)
-            _startupState.value = StartupState.READY
+            checkHandbookState()
         }
     }
 
@@ -175,21 +183,21 @@ class AppViewModel(
                     if (!networkMonitor.isConnected()) {
                         Log.d(TAG, "App launched offline. Bypassing Google Sign-In.")
                         _syncState.value = SyncState.OFFLINE
-                        _startupState.value = StartupState.READY
+                        checkHandbookState()
                         return@launch
                     }
 
                     attemptSilentSignIn(
                         onComplete = {
                             _syncState.value = SyncState.SYNCED
-                            _startupState.value = StartupState.READY
+                            checkHandbookState()
                         }
                     )
                 }
                 false -> {
                     // User selected local save, go to Home
                     _isDriveSyncEnabled.value = false
-                    _startupState.value = StartupState.READY
+                    checkHandbookState()
                 }
                 null -> {
                     // Completed tutorial but user did not select, go to Sign-in
@@ -239,10 +247,10 @@ class AppViewModel(
             }
             _isDriveSyncEnabled.value = enabled
 
-            // If local save, go straight to home
+            // If local save, go straight to home check
             if (!enabled) {
-                _startupState.value = StartupState.READY
                 _syncState.value = SyncState.OFFLINE
+                checkHandbookState()
             }
         }
     }
@@ -430,5 +438,40 @@ class AppViewModel(
 
         // Clear the timer state
         discardSession()
+    }
+
+    fun saveHandbook(newHandbook: Handbook) {
+        updateData { currentData ->
+            val updatedHandbooks = if (currentData.educationLevel != null) {
+                val currHandbook = Handbook(
+                    id = "test",
+                    educationLevel = currentData.educationLevel,
+                    termStart = currentData.termStart,
+                    termEnd = currentData.termEnd,
+                    breaks = currentData.breaks,
+                    tasks = currentData.tasks,
+                    timetable = currentData.timetable
+                )
+                currentData.otherHandbooks + currHandbook
+            } else {
+                currentData.otherHandbooks
+            }
+
+            currentData.copy(
+                educationLevel = newHandbook.educationLevel,
+                termStart = newHandbook.termStart,
+                termEnd = newHandbook.termEnd,
+                breaks = newHandbook.breaks,
+                tasks = emptyList(),
+                timetable = null,
+                handbookId = newHandbook.id,
+                otherHandbooks = updatedHandbooks
+            )
+        }
+
+
+        if (_startupState.value == StartupState.HANDBOOK) {
+            _startupState.value = StartupState.READY
+        }
     }
 }

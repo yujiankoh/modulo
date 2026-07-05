@@ -19,7 +19,7 @@ enum class SyncState{
  * This enum class encapsulates the states of app startup
  */
 enum class StartupState{
-    LOADING, TUTORIAL, SIGN_IN, AUTHENTICATE, READY
+    LOADING, TUTORIAL, SIGN_IN, AUTHENTICATE, HANDBOOK, READY
 }
 
 /**
@@ -92,6 +92,17 @@ data class StudySession(
     val createdAt: String? = null
 )
 
+@Serializable
+data class Handbook(
+    val id: String,
+    val educationLevel: String,
+    val termStart: String? = null,
+    val termEnd: String? = null,
+    val breaks: List<Break> = emptyList(),
+    val tasks: List<Task> = emptyList(),
+    val timetable: Timetable? = null
+)
+
 /**
  * This data class encapsulates all the information that needs to be saved
  */
@@ -105,7 +116,9 @@ data class AppData(
     val updatedAt: String? = null,
     val tasks: List<Task> = emptyList(),
     val studySessions: List<StudySession> = emptyList(),
-    val timetable: Timetable? = null
+    val timetable: Timetable? = null,
+    val handbookId: String = "",
+    val otherHandbooks: List<Handbook> = emptyList()
 )
 /**
  * This data class encapsulates all the timetable information to send to proxy
