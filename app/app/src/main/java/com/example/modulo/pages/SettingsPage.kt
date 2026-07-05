@@ -44,7 +44,8 @@ fun SettingsPage(
     viewModel: AppViewModel,
     onBack: () -> Unit,
     onNavigateToTimetable: () -> Unit,
-    onNavigateToHandbookCreate: () -> Unit
+    onNavigateToHandbookCreate: () -> Unit,
+    onNavigateToHandbook: () -> Unit,
 ) {
     val userEmail = viewModel.getUserEmail()
     val isSignedIn = userEmail.isNotBlank()
@@ -101,6 +102,13 @@ fun SettingsPage(
                 title = "New Handbook",
                 isClickable = true,
                 onClick = onNavigateToHandbookCreate
+            )
+
+            SettingsRow(
+                icon = R.drawable.notebook,
+                title = "Old Handbooks",
+                isClickable = true,
+                onClick = onNavigateToHandbook
             )
 
             SettingsSectionTitle("Danger Zone", color = MaterialTheme.colorScheme.error)
