@@ -61,6 +61,7 @@ import com.example.modulo.R
 import com.example.modulo.Slot
 import com.example.modulo.Timetable
 import com.example.modulo.components.DropDownMenu
+import com.example.modulo.components.TimePickerMenu
 import com.example.modulo.ui.theme.ModuloTheme
 import kotlin.math.roundToInt
 
@@ -479,92 +480,5 @@ fun FormDropDownMenu(
                 )
             }
         }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun TimePickerMenu(
-    label: String,
-    selectedTime: String,
-    onTimeSelected: (String) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    var showDialog by remember { mutableStateOf(false) }
-
-    // Parse the existing time string
-    val parts = selectedTime.split(":")
-    val initialHour = parts.getOrNull(0)?.toIntOrNull() ?: 12
-    val initialMinute = parts.getOrNull(1)?.toIntOrNull() ?: 0
-
-    val timePickerState = rememberTimePickerState(
-        initialHour = initialHour,
-        initialMinute = initialMinute,
-        is24Hour = true
-    )
-
-    Box(modifier = modifier.clickable { showDialog = true }) {
-        OutlinedTextField(
-            value = selectedTime,
-            onValueChange = {},
-            readOnly = true,
-            enabled = false, // Prevents keyboard from appearing
-            label = { Text(label) },
-            modifier = Modifier.fillMaxWidth(),
-            // Override disabled colors
-            colors = OutlinedTextFieldDefaults.colors(
-                disabledTextColor = MaterialTheme.colorScheme.onSurface,
-                disabledBorderColor = MaterialTheme.colorScheme.outline,
-                disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
-            ),
-            shape = RoundedCornerShape(12.dp)
-        )
-    }
-
-    if (showDialog) {
-        AlertDialog(
-            containerColor = MaterialTheme.colorScheme.surface,
-            onDismissRequest = { showDialog = false },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        val rawHour = timePickerState.hour
-                        val rawMinute = timePickerState.minute
-
-                        // Round to the nearest 15 minutes
-                        var roundedMinute = ((rawMinute / 15.0).roundToInt() * 15)
-                        var finalHour = rawHour
-
-                        if (roundedMinute == 60) {
-                            roundedMinute = 0
-                            finalHour = (finalHour + 1) % 24 // Keeps it within 0-23
-                        }
-
-                        val h = finalHour.toString().padStart(2, '0')
-                        val m = roundedMinute.toString().padStart(2, '0')
-
-                        onTimeSelected("$h:$m")
-                        showDialog = false
-                    },
-                    modifier = Modifier.padding(end = 8.dp, bottom = 4.dp),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Text("Override")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDialog = false }) { Text("Cancel") }
-            },
-            text = {
-                TimePicker(
-                    state = timePickerState,
-                    colors = TimePickerDefaults.colors(
-                        containerColor = MaterialTheme.colorScheme.surface,
-                        clockDialColor = ModuloTheme.colors.pillBg,
-                        timeSelectorUnselectedContainerColor = ModuloTheme.colors.pillBg
-                    )
-                )
-            }
-        )
     }
 }
