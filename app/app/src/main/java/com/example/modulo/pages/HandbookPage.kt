@@ -202,3 +202,7 @@ fun HandbookCard(
         }
     }
 }
+
+//fun handbookTitle(handbook: Handbook): String {
+//
+//}

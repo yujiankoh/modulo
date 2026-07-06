@@ -446,6 +446,8 @@ class AppViewModel(
                 val currHandbook = Handbook(
                     id = "test",
                     educationLevel = currentData.educationLevel,
+                    academicYear = currentData.academicYear,
+                    semester = currentData.semester,
                     termStart = currentData.termStart,
                     termEnd = currentData.termEnd,
                     breaks = currentData.breaks,
@@ -459,6 +461,8 @@ class AppViewModel(
 
             currentData.copy(
                 educationLevel = newHandbook.educationLevel,
+                academicYear = newHandbook.academicYear,
+                semester = newHandbook.semester,
                 termStart = newHandbook.termStart,
                 termEnd = newHandbook.termEnd,
                 breaks = newHandbook.breaks,
@@ -484,6 +488,8 @@ class AppViewModel(
                 val currHandbook = Handbook(
                     id = "test",
                     educationLevel = currentData.educationLevel,
+                    academicYear = currentData.academicYear,
+                    semester = currentData.semester,
                     termStart = currentData.termStart,
                     termEnd = currentData.termEnd,
                     breaks = currentData.breaks,
@@ -495,6 +501,8 @@ class AppViewModel(
 
             currentData.copy(
                 educationLevel = handbook.educationLevel,
+                academicYear = handbook.academicYear,
+                semester = handbook.semester,
                 termStart = handbook.termStart,
                 termEnd = handbook.termEnd,
                 breaks = handbook.breaks,

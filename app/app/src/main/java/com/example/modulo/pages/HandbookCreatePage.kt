@@ -25,6 +25,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -42,6 +43,9 @@ import com.example.modulo.Handbook
 import com.example.modulo.R
 import com.example.modulo.components.DatePickerMenu
 import com.example.modulo.components.DropDownMenu
+import com.example.modulo.components.WarningCard
+import com.example.modulo.components.YearInputField
+import com.example.modulo.ui.theme.ModuloTheme
 import java.time.LocalDate
 
 @Composable
@@ -54,6 +58,8 @@ fun HandbookCreatePage(
     val isFirstTime = appData.educationLevel == null
 
     var educationLevel by remember { mutableStateOf(EducationLevel.UNIVERSITY) }
+    var academicYear by remember { mutableStateOf("") }
+    var semester by remember { mutableIntStateOf(1) }
     var termStartDate by remember { mutableStateOf<LocalDate?>(null) }
     var termEndDate by remember { mutableStateOf<LocalDate?>(null) }
     val breaks = remember { mutableStateListOf<Break>()}
@@ -68,6 +74,7 @@ fun HandbookCreatePage(
             !start.isAfter(end)
         }
     }
+    val isYearFilled = academicYear.isNotEmpty()
 
     Scaffold { paddingValues ->
         Column(
@@ -105,6 +112,8 @@ fun HandbookCreatePage(
                         val handbook = Handbook(
                             id = "test",
                             educationLevel = educationLevel.json,
+                            academicYear = yearFormat(educationLevel, academicYear),
+                            semester = semester,
                             termStart = termStartDate?.toString(),
                             termEnd = termEndDate?.toString(),
                             breaks = breaks.toList(),
@@ -118,7 +127,7 @@ fun HandbookCreatePage(
                             onSave()
                         }
                     },
-                    enabled = isTermValid && areBreaksValid,
+                    enabled = isTermValid && areBreaksValid && isYearFilled,
                     contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
                     shape = RoundedCornerShape(12.dp)
                 ) {
@@ -148,23 +157,49 @@ fun HandbookCreatePage(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
+                    YearInputField(
+                        label = if (educationLevel == EducationLevel.UNIVERSITY || educationLevel == EducationLevel.POLY) "Academic Year (Starting Year)" else "Year",
+                        selectedYear = academicYear,
+                        onYearSelected = { academicYear = it},
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    DropDownMenu(
+                        label = "Semester",
+                        selectedItem = semester,
+                        items = listOf(1, 2),
+                        itemToText = { "Semester $it" },
+                        onItemSelected = { semester = it },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                if (academicYear.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Will be shown as ${titleDisplay(educationLevel, academicYear, semester)}",
+                        fontSize = 12.sp,
+                        color = ModuloTheme.colors.subText
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     DatePickerMenu(
                         selectedDate = termStartDate,
                         label = "Term Start",
-                        onDateSelected = { newDate ->
-                            termStartDate = newDate
-                            viewModel.saveTermStart(newDate)
-                        },
+                        onDateSelected = { termStartDate = it },
                         modifier = Modifier.weight(1f)
                     )
 
                     DatePickerMenu(
                         selectedDate = termEndDate,
                         label = "Term End",
-                        onDateSelected = { newDate ->
-                            termEndDate = newDate
-                            viewModel.saveTermEnd(newDate)
-                        },
+                        onDateSelected = { termEndDate = it },
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -247,7 +282,11 @@ fun HandbookBreak(
             ) {
                 Text("Break")
                 IconButton(onClick = onDeleteClick) {
-                    Icon(painter = painterResource(R.drawable.trash_2), contentDescription = "Delete Break", tint = MaterialTheme.colorScheme.error)
+                    Icon(
+                        painter = painterResource(R.drawable.trash_2),
+                        contentDescription = "Delete Break",
+                        tint = MaterialTheme.colorScheme.error
+                    )
                 }
             }
 
@@ -256,7 +295,9 @@ fun HandbookBreak(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 DatePickerMenu(
-                    selectedDate = if (currBreak.start.isEmpty()) null else LocalDate.parse(currBreak.start),
+                    selectedDate = if (currBreak.start.isEmpty()) null else LocalDate.parse(
+                        currBreak.start
+                    ),
                     label = "Break Start",
                     onDateSelected = { newDate ->
                         onBreakChange(currBreak.copy(start = newDate.toString()))
@@ -290,5 +331,29 @@ fun HandbookBreak(
                 )
             }
         }
+    }
+}
+
+fun titleDisplay(educationLevel: EducationLevel, academicYear: String, semester: Int): String {
+    val year = academicYear.toIntOrNull() ?: return "";
+
+    if (educationLevel == EducationLevel.UNIVERSITY || educationLevel == EducationLevel.POLY) {
+        val startStr = academicYear.takeLast(2)
+        val nextStr = ((year + 1) % 100).toString().padStart(2, '0')
+        return "AY$startStr/$nextStr • S$semester"
+    } else {
+        return "$academicYear • Sem $semester"
+    }
+}
+
+fun yearFormat(educationLevel: EducationLevel, academicYear: String): String {
+    val year = academicYear.toIntOrNull() ?: return "";
+
+    if (educationLevel == EducationLevel.UNIVERSITY || educationLevel == EducationLevel.POLY) {
+        val startStr = academicYear.takeLast(2)
+        val nextStr = ((year + 1) % 100).toString().padStart(2, '0')
+        return "$startStr/$nextStr"
+    } else {
+        return academicYear
     }
 }
