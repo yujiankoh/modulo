@@ -37,12 +37,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.modulo.AppViewModel
 import com.example.modulo.R
+import com.example.modulo.components.WarningCard
 
 @Composable
 fun SettingsPage(
     viewModel: AppViewModel,
     onBack: () -> Unit,
     onNavigateToTimetable: () -> Unit,
+    onNavigateToHandbookCreate: () -> Unit,
+    onNavigateToHandbook: () -> Unit,
 ) {
     val userEmail = viewModel.getUserEmail()
     val isSignedIn = userEmail.isNotBlank()
@@ -74,6 +77,8 @@ fun SettingsPage(
                 )
             }
 
+            SettingsSectionTitle("Account & Settings")
+
             SettingsRow(
                 icon = R.drawable.circle_user_round,
                 title = "Google Account",
@@ -83,12 +88,30 @@ fun SettingsPage(
                 onClick = { viewModel.reAuthenticate() }
             )
 
+            SettingsSectionTitle("More Tools")
+
             SettingsRow(
                 icon = R.drawable.calendar_clock,
                 title = "Timetable",
                 isClickable = true,
                 onClick = onNavigateToTimetable
             )
+
+            SettingsRow(
+                icon = R.drawable.notebook_pen,
+                title = "New Handbook",
+                isClickable = true,
+                onClick = onNavigateToHandbookCreate
+            )
+
+            SettingsRow(
+                icon = R.drawable.notebook,
+                title = "Old Handbooks",
+                isClickable = true,
+                onClick = onNavigateToHandbook
+            )
+
+            SettingsSectionTitle("Danger Zone", color = MaterialTheme.colorScheme.error)
 
             if (isSignedIn) {
                 SettingsRow(
@@ -123,11 +146,11 @@ fun SettingsPage(
 }
 
 @Composable
-fun SettingsSectionTitle(title: String) {
+fun SettingsSectionTitle(title: String, color: Color = MaterialTheme.colorScheme.primary) {
     Text(
         text = title,
         style = MaterialTheme.typography.labelLarge,
-        color = MaterialTheme.colorScheme.primary,
+        color = color,
         modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
     )
 }
@@ -182,38 +205,3 @@ fun SettingsRow(
     HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.outlineVariant)
 }
 
-@Composable
-fun WarningCard(
-    title: String,
-    text: String,
-    confirmText: String,
-    dismissText: String = "Cancel",
-    onConfirm: () -> Unit,
-    onDismiss: () -> Unit
-) {
-    AlertDialog(
-        title = { Text(title, fontWeight = FontWeight.Bold) },
-        text = { Text(text) },
-        containerColor = MaterialTheme.colorScheme.surface,
-        onDismissRequest = onDismiss,
-        confirmButton = {
-            Button(
-                onClick = onConfirm,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.error
-                ),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Text(text = confirmText, color = MaterialTheme.colorScheme.onError)
-            }
-        },
-        dismissButton = {
-            TextButton(
-                onClick = onDismiss,
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Text(dismissText)
-            }
-        }
-    )
-}

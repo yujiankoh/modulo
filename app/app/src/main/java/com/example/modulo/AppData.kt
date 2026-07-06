@@ -19,7 +19,7 @@ enum class SyncState{
  * This enum class encapsulates the states of app startup
  */
 enum class StartupState{
-    LOADING, TUTORIAL, SIGN_IN, AUTHENTICATE, READY
+    LOADING, TUTORIAL, SIGN_IN, AUTHENTICATE, HANDBOOK, READY
 }
 
 /**
@@ -38,6 +38,15 @@ enum class EducationLevel(val json: String, val displayName: String) {
     JC("jc", "JC"),
     POLY("poly", "Polytechnic"),
     UNIVERSITY("university", "University");
+
+    companion object {
+        fun fromJson(json: String?): EducationLevel? {
+            return entries.find { it.json == json }
+        }
+        fun getDisplay(json: String?): String {
+            return fromJson(json)?.displayName ?: ""
+        }
+    }
 }
 
 @Serializable
@@ -92,6 +101,19 @@ data class StudySession(
     val createdAt: String? = null
 )
 
+@Serializable
+data class Handbook(
+    val id: String,
+    val educationLevel: String?,
+    val academicYear: String?,
+    val semester: Int?,
+    val termStart: String? = null,
+    val termEnd: String? = null,
+    val breaks: List<Break> = emptyList(),
+    val tasks: List<Task> = emptyList(),
+    val timetable: Timetable? = null
+)
+
 /**
  * This data class encapsulates all the information that needs to be saved
  */
@@ -99,13 +121,18 @@ data class StudySession(
 data class AppData(
     val schemaVersion: Int = 2,
     val educationLevel: String? = null,
+    val academicYear: String? = null,
+    val semester: Int? = null,
     val termStart: String? = null,
     val termEnd: String? = null,
     val breaks: List<Break> = emptyList(),
     val updatedAt: String? = null,
     val tasks: List<Task> = emptyList(),
     val studySessions: List<StudySession> = emptyList(),
-    val timetable: Timetable? = null
+    val hiddenModules: List<String> = emptyList(),
+    val timetable: Timetable? = null,
+    val handbookId: String = "",
+    val otherHandbooks: List<Handbook> = emptyList()
 )
 /**
  * This data class encapsulates all the timetable information to send to proxy

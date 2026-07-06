@@ -41,6 +41,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -59,6 +60,7 @@ import com.example.modulo.AppViewModel
 import com.example.modulo.EducationLevel
 import com.example.modulo.R
 import com.example.modulo.TimetableState
+import com.example.modulo.components.DropDownMenu
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -71,7 +73,9 @@ fun UploadTimetablePage(
     onManualClick: (EducationLevel) -> Unit,
 ) {
     val context = LocalContext.current
-    var selectedEducation by remember { mutableStateOf(EducationLevel.UNIVERSITY) }
+    val appData by viewModel.appData.collectAsState();
+    val currEducation = EducationLevel.fromJson(appData.educationLevel) ?: EducationLevel.UNIVERSITY
+    var selectedEducation by remember { mutableStateOf(currEducation) }
 
     Scaffold { paddingValues ->
         Column(
@@ -102,9 +106,12 @@ fun UploadTimetablePage(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            EducationDropDownMenu(
-                selectedEdu = selectedEducation,
-                onEduSelected = {selectedEducation = it}
+            DropDownMenu(
+                label = "Education Level",
+                selectedItem = selectedEducation,
+                items = EducationLevel.entries,
+                itemToText = { it?.displayName ?: "" },
+                onItemSelected = { selectedEducation = it }
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -227,47 +234,6 @@ fun UploadTimetable(
             Icon(painter = painterResource(R.drawable.upload), contentDescription = "Upload")
             Spacer(modifier = Modifier.padding(6.dp))
             Text("Upload Timetable")
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun EducationDropDownMenu(
-    selectedEdu: EducationLevel,
-    onEduSelected: (EducationLevel) -> Unit
-) {
-    var isExpanded by remember { mutableStateOf(false) }
-
-    ExposedDropdownMenuBox(
-        expanded = isExpanded,
-        onExpandedChange = { isExpanded = !isExpanded }
-    ) {
-        OutlinedTextField(
-            value = selectedEdu.displayName,
-            onValueChange = {},
-            readOnly = true,
-            label = { Text("Education Level") },
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isExpanded) },
-            modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
-            shape = RoundedCornerShape(12.dp)
-        )
-
-        ExposedDropdownMenu(
-            expanded = isExpanded,
-            containerColor = MaterialTheme.colorScheme.surface,
-            onDismissRequest = { isExpanded = false },
-            shape = RoundedCornerShape(12.dp)
-        ) {
-           EducationLevel.entries.forEach { item ->
-                DropdownMenuItem(
-                    text = { Text(text = item.displayName) },
-                    onClick = {
-                        onEduSelected(item)
-                        isExpanded = false
-                    }
-                )
-            }
         }
     }
 }

@@ -74,7 +74,6 @@ dependencies {
     implementation("com.google.android.libraries.identity.googleid:googleid:1.2.0")
     implementation("com.google.android.gms:play-services-auth:21.6.0")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.10.0")
-    implementation(libs.androidx.material3)
 
     val nav_version = "2.9.8"
     implementation("androidx.navigation:navigation-compose:$nav_version")

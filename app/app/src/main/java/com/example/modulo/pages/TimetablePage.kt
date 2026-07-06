@@ -49,6 +49,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.example.modulo.AppViewModel
 import com.example.modulo.R
+import com.example.modulo.components.DatePickerMenu
 import com.example.modulo.getModuleColor
 import java.time.LocalDate
 import java.time.LocalTime
