@@ -38,6 +38,15 @@ enum class EducationLevel(val json: String, val displayName: String) {
     JC("jc", "JC"),
     POLY("poly", "Polytechnic"),
     UNIVERSITY("university", "University");
+
+    companion object {
+        fun fromJson(json: String?): EducationLevel? {
+            return entries.find { it.json == json }
+        }
+        fun getDisplay(json: String?): String {
+            return fromJson(json)?.displayName ?: ""
+        }
+    }
 }
 
 @Serializable

@@ -286,7 +286,7 @@ fun formatDate(dataDate: String): String {
     if (dataDate.isBlank()) return ""
 
     return try {
-        val date = LocalDate.parse(dataDate) // Natively parses "yyyy-MM-dd"
+        val date = LocalDate.parse(dataDate) // parses "yyyy-MM-dd"
         val formatter = DateTimeFormatter.ofPattern("E d MMMM", Locale.getDefault())
         date.format(formatter)
     } catch (e: Exception) {

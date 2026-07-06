@@ -74,7 +74,7 @@ fun UploadTimetablePage(
 ) {
     val context = LocalContext.current
     val appData by viewModel.appData.collectAsState();
-    val currEducation = EducationLevel.entries.find{ it.json == appData.educationLevel } ?: EducationLevel.UNIVERSITY
+    val currEducation = EducationLevel.fromJson(appData.educationLevel) ?: EducationLevel.UNIVERSITY
     var selectedEducation by remember { mutableStateOf(currEducation) }
 
     Scaffold { paddingValues ->
