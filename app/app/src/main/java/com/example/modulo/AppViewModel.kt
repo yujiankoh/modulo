@@ -444,7 +444,7 @@ class AppViewModel(
         updateData { currentData ->
             val updatedHandbooks = if (currentData.educationLevel != null) {
                 val currHandbook = Handbook(
-                    id = "test",
+                    id = currentData.handbookId,
                     educationLevel = currentData.educationLevel,
                     academicYear = currentData.academicYear,
                     semester = currentData.semester,
@@ -486,7 +486,7 @@ class AppViewModel(
 
             if (currentData.educationLevel != null) {
                 val currHandbook = Handbook(
-                    id = "test",
+                    id = currentData.handbookId,
                     educationLevel = currentData.educationLevel,
                     academicYear = currentData.academicYear,
                     semester = currentData.semester,
@@ -517,6 +517,20 @@ class AppViewModel(
         updateData { currentData ->
             currentData.copy(
                 otherHandbooks = currentData.otherHandbooks.filter { it != handbook }
+            )
+        }
+    }
+
+    fun updateHandbook(handbook: Handbook) {
+        updateData { currentData ->
+            currentData.copy(
+                handbookId = handbook.id,
+                educationLevel = handbook.educationLevel,
+                academicYear = handbook.academicYear,
+                semester = handbook.semester,
+                termStart = handbook.termStart,
+                termEnd = handbook.termEnd,
+                breaks = handbook.breaks,
             )
         }
     }

@@ -51,18 +51,40 @@ import java.time.LocalDate
 @Composable
 fun HandbookCreatePage(
     viewModel: AppViewModel,
+    isEditMode: Boolean = false,
     onBack: () -> Unit,
     onSave: () -> Unit
 ) {
     val appData by viewModel.appData.collectAsState()
     val isFirstTime = appData.educationLevel == null
 
-    var educationLevel by remember { mutableStateOf(EducationLevel.UNIVERSITY) }
-    var academicYear by remember { mutableStateOf("") }
-    var semester by remember { mutableIntStateOf(1) }
-    var termStartDate by remember { mutableStateOf<LocalDate?>(null) }
-    var termEndDate by remember { mutableStateOf<LocalDate?>(null) }
-    val breaks = remember { mutableStateListOf<Break>()}
+    var educationLevel by remember {
+        mutableStateOf(
+            if (isEditMode) {
+                EducationLevel.fromJson(appData.educationLevel) ?: EducationLevel.UNIVERSITY
+            } else EducationLevel.UNIVERSITY
+        )
+    }
+
+    var academicYear by remember {
+        mutableStateOf(
+            if (isEditMode) {
+                unparseYear(educationLevel, appData.academicYear ?: "")
+            } else ""
+        )
+    }
+
+    var semester by remember { mutableIntStateOf(if (isEditMode) appData.semester ?: 1 else 1) }
+
+    var termStartDate by remember { mutableStateOf(if (isEditMode && !appData.termStart.isNullOrBlank()) LocalDate.parse(appData.termStart) else null) }
+
+    var termEndDate by remember { mutableStateOf(if (isEditMode && !appData.termEnd.isNullOrBlank()) LocalDate.parse(appData.termEnd) else null) }
+
+    val breaks = remember {
+        mutableStateListOf<Break>().apply {
+            if (isEditMode) addAll(appData.breaks)
+        }
+    }
 
     val isTermValid = termStartDate == null || termEndDate == null ||  termEndDate!!.isAfter(termStartDate)
     val areBreaksValid = breaks.all { currBreak ->
@@ -110,7 +132,7 @@ fun HandbookCreatePage(
                 Button(
                     onClick = {
                         val handbook = Handbook(
-                            id = "test",
+                            id = "hb-$academicYear-s$semester",
                             educationLevel = educationLevel.json,
                             academicYear = yearFormat(educationLevel, academicYear),
                             semester = semester,
@@ -121,9 +143,13 @@ fun HandbookCreatePage(
                             timetable = null,
                         )
 
-                        viewModel.saveHandbook(handbook)
+                        if (isEditMode) {
+                            viewModel.updateHandbook(handbook)
+                        } else {
+                            viewModel.saveHandbook(handbook)
+                        }
 
-                        if (!isFirstTime) {
+                        if (!isFirstTime || isEditMode) {
                             onSave()
                         }
                     },
@@ -355,5 +381,14 @@ fun yearFormat(educationLevel: EducationLevel, academicYear: String): String {
         return "$startStr/$nextStr"
     } else {
         return academicYear
+    }
+}
+
+fun unparseYear(educationLevel: EducationLevel, year: String): String {
+    if (educationLevel == EducationLevel.UNIVERSITY || educationLevel == EducationLevel.POLY) {
+        val prefix = year.substringBefore('/')
+        return if (prefix.length == 2) "20$prefix" else year
+    } else {
+        return year
     }
 }

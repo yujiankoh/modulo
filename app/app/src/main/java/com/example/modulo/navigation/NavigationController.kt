@@ -68,6 +68,7 @@ import kotlinx.serialization.Serializable
 @Serializable object StudyHistory
 @Serializable object HandbookCreate
 @Serializable object Handbook
+@Serializable object HandbookEdit
 
 @Composable
 fun RootNavigation(
@@ -282,7 +283,17 @@ fun NavGraphBuilder.globalNavigation(
                 navController.navigate(AppGraph) {
                     popUpTo(Handbook) { inclusive = true }
                 }
-            }
+            },
+            onEdit = { navController.navigate(HandbookEdit) }
+        )
+    }
+
+    composable<HandbookEdit> {
+        HandbookCreatePage(
+            viewModel = viewModel,
+            isEditMode = true,
+            onBack = { navController.popBackStack() },
+            onSave = { navController.popBackStack() }
         )
     }
 }
