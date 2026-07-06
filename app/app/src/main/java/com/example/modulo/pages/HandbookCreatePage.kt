@@ -34,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.modulo.AppViewModel
 import com.example.modulo.Break
 import com.example.modulo.EducationLevel
@@ -55,7 +56,18 @@ fun HandbookCreatePage(
     var educationLevel by remember { mutableStateOf(EducationLevel.UNIVERSITY) }
     var termStartDate by remember { mutableStateOf<LocalDate?>(null) }
     var termEndDate by remember { mutableStateOf<LocalDate?>(null) }
-    val breaks = remember { mutableStateListOf(Break("", ""))}
+    val breaks = remember { mutableStateListOf<Break>()}
+
+    val isTermValid = termStartDate == null || termEndDate == null ||  termEndDate!!.isAfter(termStartDate)
+    val areBreaksValid = breaks.all { currBreak ->
+        if (currBreak.start.isEmpty() || currBreak.end.isEmpty()) {
+            false
+        } else {
+            val start = LocalDate.parse(currBreak.start)
+            val end = LocalDate.parse(currBreak.end)
+            !start.isAfter(end)
+        }
+    }
 
     Scaffold { paddingValues ->
         Column(
@@ -106,6 +118,7 @@ fun HandbookCreatePage(
                             onSave()
                         }
                     },
+                    enabled = isTermValid && areBreaksValid,
                     contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
                     shape = RoundedCornerShape(12.dp)
                 ) {
@@ -117,7 +130,8 @@ fun HandbookCreatePage(
 
             Column(
                 modifier = Modifier.fillMaxWidth()
-                    .padding(horizontal = 16.dp)
+                    .padding(horizontal = 16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 DropDownMenu(
                     label = "Education Level",
@@ -155,6 +169,15 @@ fun HandbookCreatePage(
                     )
                 }
 
+                if (termStartDate != null && termEndDate?.isBefore(termStartDate) ?: false) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Term End must be after Term Start",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+
                 Spacer(modifier = Modifier.height(16.dp))
 
                 LazyColumn(
@@ -184,7 +207,7 @@ fun HandbookCreatePage(
                         ) {
                             Icon(painter = painterResource(R.drawable.plus), contentDescription = "Add Break")
                             Spacer(Modifier.width(8.dp))
-                            Text("Add Another Break")
+                            Text(if (breaks.isEmpty()) "Add a Break" else "Add another Break")
                         }
                         Spacer(modifier = Modifier.height(32.dp))
                     }
@@ -200,12 +223,23 @@ fun HandbookBreak(
     onBreakChange: (Break) -> Unit,
     onDeleteClick: () -> Unit
 ) {
+    val startFilled = currBreak.start.isNotEmpty()
+    val endFilled = currBreak.end.isNotEmpty()
+
+    val isMissingOneDate = !endFilled || !startFilled
+    val isStartAfterEnd = if (startFilled && endFilled) {
+        LocalDate.parse(currBreak.start).isAfter(LocalDate.parse(currBreak.end))
+    } else false
+
     ElevatedCard(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -239,7 +273,22 @@ fun HandbookBreak(
                     modifier = Modifier.weight(1f)
                 )
             }
-        }
 
+            if (isMissingOneDate) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Both Start and End dates must be filled.",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.error
+                )
+            } else if (isStartAfterEnd) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Break End must be after Break Start.",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
+        }
     }
 }
