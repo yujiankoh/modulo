@@ -78,7 +78,7 @@ export function openHandbook() {
   levelEl.value = appState.educationLevel || "";
   semesterEl.value = String(appState.semester || 1);
   const startYear = parseStartYear(appState.academicYear, appState.educationLevel);
-  yearEl.value = startYear || "";
+  yearEl.value = startYear || new Date().getFullYear();   // default a fresh handbook to this year
   termStartEl.value = appState.termStart || "";
   termEndEl.value = appState.termEnd || "";
   errorEl.textContent = "";
