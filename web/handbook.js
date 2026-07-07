@@ -60,12 +60,20 @@ function refreshYearUI() {
 
 // Fill the form from the current state, then show the modal.
 export function openHandbook() {
-  // Education level is EDITABLE for now (showcase): always show the dropdown. Changing it
-  // with an existing timetable triggers a confirm in the Save handler. (The locked-text
-  // field stays hidden in the DOM — it returns when per-handbook locking lands.)
-  document.getElementById("hbLevelField").style.display = "";
-  document.getElementById("hbLevelLockedField").style.display = "none";
+  // Education level is locked PER HANDBOOK (13.5): chosen while the handbook is being
+  // created (first run / Start new semester — handbookSetup still false), then shown as
+  // read-only text. It drives the timetable parser + editor rules, so changing it
+  // mid-handbook could orphan the timetable; a different level = start a new semester.
+  const locked = appState.handbookSetup;
+  document.getElementById("hbLevelField").style.display = locked ? "none" : "";
+  document.getElementById("hbLevelLockedField").style.display = locked ? "" : "none";
+  if (locked) {
+    document.getElementById("hbLevelLocked").textContent =
+      LEVEL_NAMES[appState.educationLevel] || appState.educationLevel || "—";
+  }
 
+  // Keep the (possibly hidden) dropdown in sync — the Save handler and the year
+  // preview both read levelEl.value, locked or not.
   levelEl.value = appState.educationLevel || "";
   semesterEl.value = String(appState.semester || 1);
   const startYear = parseStartYear(appState.academicYear, appState.educationLevel);
@@ -111,18 +119,9 @@ saveBtn.addEventListener("click", async () => {
     errorEl.textContent = "Term end can't be before term start."; return;
   }
 
-  // Changing the level with a timetable already saved: warn (it was parsed under the old
-  // level's rules). Non-destructive — we keep the timetable; the user can re-upload/edit.
-  const prevLevel = appState.educationLevel;
-  const hasTimetable = (appState.timetable?.modules || []).length > 0;
-  if (prevLevel && level !== prevLevel && hasTimetable) {
-    const ok = confirm(
-      `Your saved timetable was set up for "${LEVEL_NAMES[prevLevel] || prevLevel}". ` +
-      `Changing to "${LEVEL_NAMES[level] || level}" may not match it — you can re-upload ` +
-      `or edit it afterward. Continue?`
-    );
-    if (!ok) return;   // keep the modal open, change nothing
-  }
+  // (13.5) No level-change warning needed anymore: once a handbook is set up its level
+  // dropdown is hidden, so `level` here can only differ from the stored one during
+  // handbook CREATION — when there's no timetable to mismatch yet.
 
   appState.educationLevel = level;
   appState.academicYear = formatAcademicYear(startYear, level);

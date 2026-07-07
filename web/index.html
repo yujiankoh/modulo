@@ -253,8 +253,8 @@
       <p id="hbIntro" class="module-modal-placeholder">A few details about your studies. You can
         change these later in Settings.</p>
 
-      <!-- Education level dropdown. The locked-text variant below stays hidden for now;
-           it returns when per-handbook level locking lands (see CLAUDE.md). -->
+      <!-- Education level (13.5): the dropdown shows only while the handbook is being
+           CREATED; once set up, handbook.js shows the locked-text variant instead. -->
       <label class="task-field" id="hbLevelField">
         <span>Education level</span>
         <select id="hbLevel">
@@ -269,7 +269,7 @@
       <div class="task-field" id="hbLevelLockedField" style="display: none;">
         <span>Education level</span>
         <div id="hbLevelLocked" class="hb-locked"></div>
-        <div class="hb-locked-note">Your education level is fixed and can't be changed.</div>
+        <div class="hb-locked-note">Fixed for this handbook — start a new semester to use a different level.</div>
       </div>
 
       <!-- Academic year: a single START-YEAR number; handbook.js relabels it + previews how
