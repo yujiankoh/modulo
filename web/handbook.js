@@ -6,6 +6,7 @@
 
 import { appState, persist } from "./data.js";
 import { isTertiary, formatAcademicYear, parseStartYear, formatHeaderLabel } from "./logic/academicYear.js";
+import { snapshotHandbook, blankHandbook } from "./logic/handbooks.js"; // 13.5: pure swap helpers
 
 // --- DOM handles (all inside #handbookModal) ---
 const modal = document.getElementById("handbookModal");
@@ -137,6 +138,34 @@ saveBtn.addEventListener("click", async () => {
 
 // "Edit" button in Settings → open the handbook modal.
 document.getElementById("editHandbookBtn").addEventListener("click", openHandbook);
+
+// --- Start new semester (Phase 13.5) ---------------------------------------
+// Store the current handbook in otherHandbooks and reset the flat fields to a fresh,
+// not-set-up handbook — in ONE persist(). We never open the modal here: the fresh
+// handbook has handbookSetup:false, so the first-run listener below sees the
+// modulo:datachanged from persist() and opens onboarding exactly like a first run.
+document.getElementById("newSemesterBtn").addEventListener("click", async () => {
+  if (!appState.handbookSetup) {
+    alert("Finish setting up your current handbook first.");
+    return;
+  }
+  const label = handbookHeaderLabel() || "your current handbook";
+  const ok = confirm(
+    `Start a new semester? ${label} will be saved — you can switch back to it anytime.`
+  );
+  if (!ok) return;
+
+  // 1) Current handbook → otherHandbooks (deep-copied snapshot, id included).
+  appState.otherHandbooks = [...(appState.otherHandbooks || []), snapshotHandbook(appState)];
+
+  // 2) Flat fields → a blank handbook with a fresh identity.
+  const { id, ...fields } = blankHandbook(crypto.randomUUID());
+  appState.handbookId = id;
+  Object.assign(appState, fields);   // resets every per-handbook field, incl. handbookSetup:false
+
+  dismissed = false;                 // a snoozed modal must still prompt for the NEW semester
+  await persist();                   // one atomic save → datachanged → first-run modal opens
+});
 
 // Render the read-only Settings summary from appState. Runs on every modulo:datachanged.
 function renderSummary() {
