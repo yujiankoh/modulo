@@ -35,7 +35,7 @@ on an ephemeral port and makes a real HTTP request; it asserts the **input-valid
 path, which returns `400` *before* any Gemini call — so the suite **spends no Gemini
 quota** and needs no API key.
 
-Current result: **17 tests, 17 passing.**
+Current result: **25 tests, 25 passing.**
 
 ## Unit tests
 
@@ -48,6 +48,7 @@ they can be tested in isolation.
 | `layoutColumns` | `web/logic/timetableLayout.js` | `tests/timetableLayout.test.js` | Non-overlapping classes get 1 lane; two overlapping split into 2 lanes; touching (end == start) is not an overlap; three mutually overlapping use 3 lanes |
 | `mergeModules`, `sameSlot` | `web/logic/mergeModules.js` | `tests/mergeModules.test.js` | Same module's slots combine; exact-duplicate slots skipped; differing code/name add a new module; inputs are not mutated |
 | `buildPrompt`, `extractJson` | `server/index.js` | `tests/proxy.test.js` | Prompt includes the level-specific section + falls back to secondary for unknown levels; JSON is extracted from surrounding noise and braces inside strings are ignored |
+| `snapshotHandbook`, `blankHandbook`, `switchHandbook` | `web/logic/handbooks.js` | `tests/handbooks.test.js` | Snapshot captures every `HANDBOOK_FIELDS` entry, deep-copies (no shared references), excludes globals (`studySessions`); switch swaps active↔stored, round-trips losslessly, never mutates its input, no-ops on unknown/active ids (Phase 13.5) |
 
 Each test feeds known inputs and asserts the exact output with `node:assert/strict` — e.g.
 `assert.equal(formatAcademicYear(2025, "university"), "25/26")`.
@@ -88,6 +89,12 @@ the actual behaviour.
 | S15 | Edit handbook / change level | Settings → Edit → change education level (with a timetable saved) | A confirm warns the timetable may not match; cancel keeps everything; sidebar header updates on save | Pass (observed) |
 | S16 | Light/dark theme | Toggle theme | All views + icons + module colours re-theme; choice persists across reload | Pass (observed) |
 | S17 | Proxy error handling | (If a parse fails) read the message | Friendly message shown; real cause visible in Render logs (429/503/504 mapping) | To verify |
+| S18 | Start new semester (13.5) | Settings → Start new semester → confirm | Confirm names the current handbook; onboarding modal opens fresh (year pre-filled to current); old handbook stored (appears in the handbook list) | To verify |
+| S19 | Switch handbook (13.5) | Settings → handbook list → Switch | "Switching handbook…" overlay (≥400ms); timetable, tasks, sidebar header + modules, dashboard all swap; reload keeps the switched-to handbook active | To verify |
+| S20 | Study time is global (13.5) | Note study totals/streak → switch handbook | Today/week/total, streak, and calendar stars are IDENTICAL before and after any switch | To verify |
+| S21 | Delete handbook (13.5) | Handbook list → trash on a stored row | Active row has no trash; confirm names the handbook + its task count; Cancel = no change; OK removes it permanently (survives reload) | To verify |
+| S22 | Level locked per handbook (13.5) | Settings → Edit (set-up handbook) vs Start new semester | Edit shows the level as read-only text + note; a NEW handbook's modal shows the full dropdown | To verify |
+| S23 | Pre-13.5 file migration | Load data saved before 13.5 | Loads cleanly; gains `handbookId` + empty `otherHandbooks` on save; app behaves as a single-handbook state | To verify |
 
 > Replace "To verify" with **Pass/Fail** during a manual pass and drop screenshots into a
 > `docs/test-evidence/` folder (or the report), referenced by scenario number.
