@@ -6,7 +6,7 @@
 
 import { appState, persist } from "./data.js";
 import { isTertiary, formatAcademicYear, parseStartYear, formatHeaderLabel } from "./logic/academicYear.js";
-import { snapshotHandbook, blankHandbook } from "./logic/handbooks.js"; // 13.5: pure swap helpers
+import { snapshotHandbook, blankHandbook, switchHandbook } from "./logic/handbooks.js"; // 13.5: pure swap helpers
 
 // --- DOM handles (all inside #handbookModal) ---
 const modal = document.getElementById("handbookModal");
@@ -166,6 +166,75 @@ document.getElementById("newSemesterBtn").addEventListener("click", async () => 
   dismissed = false;                 // a snoozed modal must still prompt for the NEW semester
   await persist();                   // one atomic save → datachanged → first-run modal opens
 });
+
+// --- Handbook list + Switch (Phase 13.5) ------------------------------------
+// Settings shows one row per handbook: the active one badged, the others with a
+// Switch button. (No modal can be open when Switch is clicked — any open modal's
+// backdrop covers the whole page — so there's no stale-modal state to defend against.)
+
+// Make the handbook with `targetId` active. All the thinking is in the pure
+// switchHandbook (logic/handbooks.js); this just applies its result and saves ONCE.
+async function switchToHandbook(targetId) {
+  const result = switchHandbook(appState, targetId);
+  if (!result) return;                             // unknown id / already active → no-op
+  Object.assign(appState, result.flat);            // target's fields (incl. handbookId) in
+  appState.otherHandbooks = result.otherHandbooks; // current handbook stored in its place
+  await persist();                                 // ONE save → every view redraws swapped
+}
+
+// Rebuild the list from state. Hidden entirely while there's only one handbook
+// (no point listing a single row with no action).
+function renderHandbookList() {
+  const box = document.getElementById("handbookList");
+  const others = appState.otherHandbooks || [];
+  box.innerHTML = "";
+  if (others.length === 0) { box.style.display = "none"; return; }
+  box.style.display = "";
+
+  // Active handbook first, then the stored ones in stored order.
+  const entries = [
+    { id: appState.handbookId, label: handbookHeaderLabel(),
+      level: appState.educationLevel, active: true },
+    ...others.map((h) => ({
+      id: h.id,
+      label: formatHeaderLabel(h.educationLevel, h.academicYear, h.semester),
+      level: h.educationLevel,
+      active: false,
+    })),
+  ];
+
+  for (const entry of entries) {
+    const row = document.createElement("div");
+    row.className = "hb-list-row";
+
+    const label = document.createElement("span");
+    label.className = "hb-list-label";
+    label.textContent = entry.label || "Not set up yet";
+
+    const level = document.createElement("span");
+    level.className = "hb-list-level";
+    level.textContent = LEVEL_NAMES[entry.level] || "";
+
+    row.append(label, level);
+
+    if (entry.active) {
+      const badge = document.createElement("span");
+      badge.className = "hb-active-badge";
+      badge.textContent = "Active";
+      row.append(badge);
+    } else {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "hb-switch-btn";
+      btn.textContent = "Switch";
+      btn.addEventListener("click", () => switchToHandbook(entry.id)); // closes over ITS id
+      row.append(btn);
+    }
+    box.append(row);
+  }
+}
+window.addEventListener("modulo:datachanged", renderHandbookList);
+renderHandbookList();
 
 // Render the read-only Settings summary from appState. Runs on every modulo:datachanged.
 function renderSummary() {

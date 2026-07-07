@@ -220,6 +220,10 @@
         <h3 class="settings-heading">Handbook</h3>
         <div class="card hb-card">
           <div id="handbookSummary"></div>
+          <!-- Handbook list (13.5): one row per handbook, filled by handbook.js —
+               the active one badged, the others get a Switch button. Hidden while
+               there's only a single handbook. -->
+          <div id="handbookList" style="display: none;"></div>
           <div class="task-modal-actions">
             <!-- Start new semester (13.5): stores the current handbook and onboards a fresh
                  one (handbook.js). Edit opens the handbook modal for the ACTIVE handbook. -->
