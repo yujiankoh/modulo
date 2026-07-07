@@ -476,6 +476,44 @@ select {
 .hb-list-level { font-size: 12px; color: var(--text-muted); }
 .hb-active-badge { font-size: 12px; font-weight: 600; color: var(--primary); background: var(--primary-soft); padding: 2px 10px; border-radius: 999px; }
 .hb-switch-btn { padding: 4px 14px; font-size: 12px; border-radius: 999px; }
+/* Delete-handbook button: icon-quiet, red on hover (same recipe as the editor's ✕). */
+.hb-del-btn { border: none; background: transparent; color: var(--text-muted); padding: 4px; }
+.hb-del-btn:hover { color: var(--danger); border-color: transparent; }
+.hb-del-btn svg { width: 14px; height: 14px; }
+
+/* Switching-handbook overlay (13.5): dim backdrop + small card with a CSS spinner.
+   z-index above the modals (100) so it covers everything during the swap. */
+.switch-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(20, 30, 60, 0.45);
+}
+.switch-overlay-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 22px;
+  font-size: 14px;
+  color: var(--text);
+  background: var(--surface);
+  border-radius: 14px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+}
+/* A ring with one coloured quarter, spun forever = the classic pure-CSS spinner. */
+.switch-spinner {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  border: 3px solid var(--primary-soft);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: switch-spin 0.8s linear infinite;
+}
+@keyframes switch-spin { to { transform: rotate(360deg); } }
 .hb-row { display: grid; grid-template-columns: 140px 1fr; gap: 12px; padding: 8px 0; border-top: 1px solid var(--border); font-size: 14px; }
 .hb-row:first-child { border-top: none; }
 .hb-row-k { color: var(--text-muted); }

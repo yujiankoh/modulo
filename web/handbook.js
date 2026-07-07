@@ -7,6 +7,7 @@
 import { appState, persist } from "./data.js";
 import { isTertiary, formatAcademicYear, parseStartYear, formatHeaderLabel } from "./logic/academicYear.js";
 import { snapshotHandbook, blankHandbook, switchHandbook } from "./logic/handbooks.js"; // 13.5: pure swap helpers
+import { drawIcons } from "./icons.js"; // redraw the trash icons the handbook list injects
 
 // --- DOM handles (all inside #handbookModal) ---
 const modal = document.getElementById("handbookModal");
@@ -171,14 +172,47 @@ document.getElementById("newSemesterBtn").addEventListener("click", async () => 
 // Switch button. (No modal can be open when Switch is clicked — any open modal's
 // backdrop covers the whole page — so there's no stale-modal state to defend against.)
 
+// A Promise that resolves after ms — lets us `await` a pause.
+function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// Keep the switch overlay up at least this long: a local save is instant, and a
+// few-ms flash of overlay reads as a glitch; ~400ms reads as a deliberate transition.
+const MIN_SWITCH_MS = 400;
+
 // Make the handbook with `targetId` active. All the thinking is in the pure
-// switchHandbook (logic/handbooks.js); this just applies its result and saves ONCE.
+// switchHandbook (logic/handbooks.js); this applies its result and saves ONCE,
+// behind a brief loading overlay.
 async function switchToHandbook(targetId) {
   const result = switchHandbook(appState, targetId);
   if (!result) return;                             // unknown id / already active → no-op
-  Object.assign(appState, result.flat);            // target's fields (incl. handbookId) in
-  appState.otherHandbooks = result.otherHandbooks; // current handbook stored in its place
-  await persist();                                 // ONE save → every view redraws swapped
+
+  const overlay = document.getElementById("switchOverlay");
+  overlay.style.display = "flex";
+  try {
+    Object.assign(appState, result.flat);            // target's fields (incl. handbookId) in
+    appState.otherHandbooks = result.otherHandbooks; // current handbook stored in its place
+    // Wait for BOTH the save and the minimum display time (whichever is longer).
+    await Promise.all([persist(), delay(MIN_SWITCH_MS)]);
+  } finally {
+    overlay.style.display = "none";                  // never leave the overlay stuck up
+  }
+}
+
+// Delete a STORED handbook (the active one has no delete button — switch away first).
+// Destructive + unrecoverable, so the confirm() names exactly what's being deleted.
+async function deleteHandbook(targetId, label) {
+  const target = (appState.otherHandbooks || []).find((h) => h.id === targetId);
+  if (!target) return;
+  const taskCount = (target.tasks || []).length;
+  const ok = confirm(
+    `Delete ${label || "this handbook"}? Its timetable and ${taskCount} task(s) ` +
+    `will be permanently deleted. This cannot be undone.`
+  );
+  if (!ok) return;
+  appState.otherHandbooks = appState.otherHandbooks.filter((h) => h.id !== targetId);
+  await persist();   // the datachanged redraw removes the row
 }
 
 // Rebuild the list from state. Hidden entirely while there's only one handbook
@@ -227,10 +261,20 @@ function renderHandbookList() {
       btn.className = "hb-switch-btn";
       btn.textContent = "Switch";
       btn.addEventListener("click", () => switchToHandbook(entry.id)); // closes over ITS id
-      row.append(btn);
+
+      const del = document.createElement("button");
+      del.type = "button";
+      del.className = "hb-del-btn";
+      del.innerHTML = `<i data-lucide="trash-2"></i>`;
+      del.title = "Delete handbook";
+      del.setAttribute("aria-label", `Delete ${entry.label || "handbook"}`);
+      del.addEventListener("click", () => deleteHandbook(entry.id, entry.label));
+
+      row.append(btn, del);
     }
     box.append(row);
   }
+  drawIcons();   // render the freshly-injected <i data-lucide> placeholders
 }
 window.addEventListener("modulo:datachanged", renderHandbookList);
 renderHandbookList();

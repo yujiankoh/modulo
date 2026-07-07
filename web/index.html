@@ -449,6 +449,15 @@
     </div>
   </div>
 
+  <!-- Switching-handbook overlay (13.5): shown by handbook.js while a switch persists,
+       so the whole-app swap reads as one deliberate transition (min ~400ms). -->
+  <div id="switchOverlay" class="switch-overlay" style="display: none;">
+    <div class="switch-overlay-card">
+      <div class="switch-spinner"></div>
+      <span>Switching handbook…</span>
+    </div>
+  </div>
+
   <!-- Lucide icons (CDN, UMD build): exposes a global `lucide`. icons.js calls
        lucide.createIcons() to replace every <i data-lucide="name"> with its <svg>. -->
   <script src="https://unpkg.com/lucide@latest"></script>
