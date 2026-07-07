@@ -132,7 +132,7 @@ saveBtn.addEventListener("click", async () => {
   appState.handbookSetup = true;
 
   firstRun = false;
-  await persist();                     // fires modulo:datachanged → views (+ sidebar header) redraw
+  await withOverlay("Saving handbook…", persist); // fires modulo:datachanged → views redraw
   modal.style.display = "none";
 });
 
@@ -177,27 +177,35 @@ function delay(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-// Keep the switch overlay up at least this long: a local save is instant, and a
+// Keep the loading overlay up at least this long: a local save is instant, and a
 // few-ms flash of overlay reads as a glitch; ~400ms reads as a deliberate transition.
-const MIN_SWITCH_MS = 400;
+const MIN_OVERLAY_MS = 400;
+
+// Run an async action behind the loading overlay, showing `message` beside the
+// spinner. Waits for BOTH the action and the minimum display time (whichever is
+// longer); the finally guarantees the overlay never gets stuck up, even on an error.
+async function withOverlay(message, action) {
+  const overlay = document.getElementById("switchOverlay");
+  document.getElementById("switchOverlayText").textContent = message;
+  overlay.style.display = "flex";
+  try {
+    await Promise.all([action(), delay(MIN_OVERLAY_MS)]);
+  } finally {
+    overlay.style.display = "none";
+  }
+}
 
 // Make the handbook with `targetId` active. All the thinking is in the pure
 // switchHandbook (logic/handbooks.js); this applies its result and saves ONCE,
-// behind a brief loading overlay.
+// behind the loading overlay.
 async function switchToHandbook(targetId) {
   const result = switchHandbook(appState, targetId);
   if (!result) return;                             // unknown id / already active → no-op
-
-  const overlay = document.getElementById("switchOverlay");
-  overlay.style.display = "flex";
-  try {
+  await withOverlay("Switching handbook…", async () => {
     Object.assign(appState, result.flat);            // target's fields (incl. handbookId) in
     appState.otherHandbooks = result.otherHandbooks; // current handbook stored in its place
-    // Wait for BOTH the save and the minimum display time (whichever is longer).
-    await Promise.all([persist(), delay(MIN_SWITCH_MS)]);
-  } finally {
-    overlay.style.display = "none";                  // never leave the overlay stuck up
-  }
+    await persist();                                 // ONE save → every view redraws swapped
+  });
 }
 
 // Delete a STORED handbook (the active one has no delete button — switch away first).
