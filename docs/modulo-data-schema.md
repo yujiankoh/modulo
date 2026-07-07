@@ -15,6 +15,7 @@ read and write this same file**.
 ```json
 {
   "schemaVersion": 2,
+  "handbookId": "9f1c3b2a-5e44-4c8a-9b1d-2f0a7e6d4c99",
   "educationLevel": "university",
   "academicYear": "25/26",
   "semester": 2,
@@ -22,6 +23,7 @@ read and write this same file**.
   "termStart": "2026-05-18",
   "termEnd": "2026-08-07",
   "breaks": [{ "start": "2026-06-29", "end": "2026-07-05" }],
+  "otherHandbooks": [],
   "updatedAt": "2026-06-03T09:35:06.606Z",
   "tasks": [
     {
@@ -67,7 +69,8 @@ read and write this same file**.
 | Field            | Type              | Required | Description |
 |------------------|-------------------|----------|-------------|
 | `schemaVersion`  | number            | yes      | The structure version. Currently `2`. Bump when the structure changes. |
-| `educationLevel` | string \| null    | yes      | The user's level: `primary`, `secondary`, `jc`, `poly`, `university`, or `null` if unset. Drives how the timetable parser reads the image. **Set once during handbook onboarding, then locked** (immutable) — it determines the timetable schema/editor rules. |
+| `handbookId`     | string \| null    | no       | **Phase 13.5.** Id (`crypto.randomUUID()`) of the **active handbook** — i.e. of the per-handbook flat fields below. `null`/missing in pre-13.5 files (the web generates one on load). |
+| `educationLevel` | string \| null    | yes      | The user's level: `primary`, `secondary`, `jc`, `poly`, `university`, or `null` if unset. Drives how the timetable parser reads the image. **Chosen when a handbook is created, then locked for that handbook** (Phase 13.5) — different handbooks may have different levels. |
 | `academicYear`   | string \| null    | no       | Academic year (Phase 13 handbook). **Format is level-aware:** tertiary (`university`/`poly`) spans two years → `"YY/YY"` e.g. `"25/26"`; school (`primary`/`secondary`/`jc`) is a single calendar year → `"YYYY"` e.g. `"2026"`. Drives the sidebar "HANDBOOK · …" header (rendered per level). `null` until onboarding. |
 | `semester`       | number \| null    | no       | Current semester, `1` or `2` (Phase 13 handbook). Drives the sidebar header. `null` until onboarding. |
 | `handbookSetup`  | boolean           | no       | `true` once the user has completed handbook onboarding (Phase 13). Gates the first-run setup modal. Defaults `false`; pre-Phase-13 files (no flag) are treated as set up iff `educationLevel` is already chosen. |
@@ -78,7 +81,24 @@ read and write this same file**.
 | `tasks`          | array of Task     | yes      | All of the user's tasks. May be empty (`[]`). |
 | `studySessions`  | array of StudySession | no   | Recorded focus/study sessions (Phase 10). Defaults to `[]`. Used for daily/weekly/cumulative study-time totals + the calendar's per-day average rating |
 | `hiddenModules`  | array of string   | no       | Module labels the user has hidden from the web dashboard + sidebar (Phase 12). Defaults to `[]`. |
+| `otherHandbooks` | array of Handbook | no       | **Phase 13.5.** The **inactive** handbooks (previous/other semesters). Defaults to `[]`. See "Handbook object" below. |
 | `timetable`      | Timetable \| null | yes      | The parsed timetable, or `null` if none yet. |
+
+## Handbook object (Phase 13.5 — multiple handbooks)
+
+A **handbook = one semester's context**. The **top-level flat fields are the ACTIVE
+handbook** (unchanged from before — existing readers keep working); `otherHandbooks[]`
+holds the inactive ones. Each entry has an `id` plus exactly the per-handbook fields:
+
+| Field | Same as top-level field |
+|-------|-------------------------|
+| `id`  | (the handbook's identity — the active one's id is the top-level `handbookId`) |
+| `educationLevel`, `academicYear`, `semester`, `handbookSetup`, `termStart`, `termEnd`, `breaks`, `timetable`, `tasks`, `hiddenModules` | identical types/meaning to the top-level fields of the same name |
+
+**Switching handbooks** (web): the flat fields are snapshotted into `otherHandbooks` and
+the chosen entry's fields are copied out into the flat fields — one atomic save.
+**`studySessions` are GLOBAL** — never part of a handbook — so streaks and cumulative
+study time span semesters.
 
 ## Task object
 
@@ -195,7 +215,8 @@ Two storage locations: Google Drive `appDataFolder` (when linked) and local devi
 ```javascript
 let appState = {
   schemaVersion: 2,
-  educationLevel: null,   // "primary" | "secondary" | "jc" | "poly" | "university" — set once, then locked
+  handbookId: crypto.randomUUID(), // id of the ACTIVE handbook (= the flat fields) — Phase 13.5
+  educationLevel: null,   // "primary" | "secondary" | "jc" | "poly" | "university" — locked per handbook
   academicYear: null,     // level-aware: "YY/YY" (uni/poly) or "YYYY" (school) — Phase 13 handbook
   semester: null,         // 1 | 2 (Phase 13 handbook) — sidebar header
   handbookSetup: false,   // true once onboarding done (Phase 13) — gates first-run modal
@@ -206,6 +227,7 @@ let appState = {
   tasks: [],
   studySessions: [],      // [{ id, start, end, durationMins, rating, createdAt }] — Phase 10
   hiddenModules: [],      // module labels hidden from the dashboard/sidebar (web-only) — Phase 12
+  otherHandbooks: [],     // the INACTIVE handbooks [{ id, ...per-handbook fields }] — Phase 13.5
   timetable: null,        // { educationLevel, modules: [...] }
 };
 ```
@@ -218,6 +240,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class ModuloData(
     val schemaVersion: Int = 2,
+    val handbookId: String? = null,        // id of the ACTIVE handbook (the flat fields) — Phase 13.5
     val educationLevel: String? = null,
     val academicYear: String? = null,      // level-aware: "YY/YY" (uni/poly) or "YYYY" (school)
     val semester: Int? = null,             // 1 or 2
@@ -228,6 +251,22 @@ data class ModuloData(
     val updatedAt: String? = null,
     val tasks: List<Task> = emptyList(),
     val studySessions: List<StudySession> = emptyList(),
+    val hiddenModules: List<String> = emptyList(),
+    val otherHandbooks: List<Handbook> = emptyList(),  // inactive handbooks — Phase 13.5
+    val timetable: Timetable? = null
+)
+
+@Serializable
+data class Handbook(                       // one INACTIVE semester (Phase 13.5)
+    val id: String,
+    val educationLevel: String? = null,
+    val academicYear: String? = null,
+    val semester: Int? = null,
+    val handbookSetup: Boolean = false,
+    val termStart: String? = null,
+    val termEnd: String? = null,
+    val breaks: List<Break> = emptyList(),
+    val tasks: List<Task> = emptyList(),
     val hiddenModules: List<String> = emptyList(),
     val timetable: Timetable? = null
 )
@@ -301,3 +340,4 @@ data class Slot(
 | 2       | 2026-06-24 | Added top-level `studySessions` (array of StudySession `{ id, start, end, durationMins, rating, createdAt }`, default `[]`). Feeds daily/weekly/cumulative study-time totals + the calendar's per-day average rating. |
 | 2       | 2026-06-25 | Added top-level `hiddenModules` (array of strings, default `[]`) — module labels the web app hides from the dashboard + sidebar |
 | 2       | 2026-06-27 | Added top-level `academicYear` (string `"YY/YY"`, default `null`), `semester` (number `1`/`2`, default `null`), and `handbookSetup` (boolean, default `false`) for the handbook/onboarding. Drive the sidebar header + gate the first-run setup modal. |
+| 2       | 2026-07-05 | **Phase 13.5 (multiple handbooks):** added top-level `handbookId` (string, default generated) and `otherHandbooks` (array of Handbook, default `[]`). The flat fields remain **the active handbook**, so existing readers are unaffected — but **kotlinx.serialization must tolerate the new keys** (add the fields per the Kotlin reference, or set `ignoreUnknownKeys = true`), otherwise parsing a web-saved file throws. `studySessions` stay global (never inside a handbook). Education level is now locked **per handbook**. |

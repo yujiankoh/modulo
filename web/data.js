@@ -20,12 +20,14 @@ export let appState = {
   academicYear: null,      // Phase 13: e.g. "25/26" — handbook; drives the sidebar header
   semester: null,          // Phase 13: 1 or 2 — handbook; drives the sidebar header
   handbookSetup: false,    // Phase 13: true once onboarding is done (gates the first-run modal)
+  handbookId: crypto.randomUUID(), // Phase 13.5: id of the ACTIVE handbook (= these flat fields)
   termStart: null,         // "YYYY-MM-DD" Week-1 Monday anchor (Phase 8); null until set
   termEnd: null,           // "YYYY-MM-DD" last day of term; weeks past it are "outside term"
   breaks: [],              // [{ start, end }] date ranges of recess/holiday (non-academic) weeks
   tasks: [],
   studySessions: [],       // Phase 10: recorded focus/study sessions (see modulo-data-schema.md)
   hiddenModules: [],       // Phase 12: module labels hidden from the dashboard + sidebar
+  otherHandbooks: [],      // Phase 13.5: the INACTIVE handbooks (see logic/handbooks.js)
   timetable: null,
   updatedAt: null,
 };
@@ -82,6 +84,10 @@ export async function loadInitialData() {
     // Migrate files saved before Phase 13: no handbookSetup flag. If a level was already
     // chosen, treat the handbook as done (don't re-nag); otherwise it's a fresh first run.
     if (appState.handbookSetup === undefined) appState.handbookSetup = !!appState.educationLevel;
+    // Migrate files saved before Phase 13.5: the single existing handbook gets an id,
+    // and there are no other handbooks yet.
+    if (!appState.handbookId) appState.handbookId = crypto.randomUUID();
+    if (!appState.otherHandbooks) appState.otherHandbooks = [];
   }
   // Announce the load; every view (task list, calendar, timetable) redraws from this.
   window.dispatchEvent(new Event("modulo:datachanged"));
