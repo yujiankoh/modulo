@@ -373,18 +373,6 @@ class AppViewModel(
         _timetableState.value = TimetableState.Idle
     }
 
-    fun saveTermStart(date: LocalDate?) {
-        updateData { currentData ->
-            currentData.copy(termStart = date.toString())
-        }
-    }
-
-    fun saveTermEnd(date: LocalDate?) {
-        updateData { currentData ->
-            currentData.copy(termEnd = date.toString())
-        }
-    }
-
     fun startOrResumeTimer() {
         if (sessionStartTime == null) {
             sessionStartTime = Instant.now().toString()

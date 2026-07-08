@@ -60,7 +60,6 @@ import com.example.modulo.AppViewModel
 import com.example.modulo.EducationLevel
 import com.example.modulo.R
 import com.example.modulo.TimetableState
-import com.example.modulo.components.DropDownMenu
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -74,8 +73,7 @@ fun UploadTimetablePage(
 ) {
     val context = LocalContext.current
     val appData by viewModel.appData.collectAsState();
-    val currEducation = EducationLevel.fromJson(appData.educationLevel) ?: EducationLevel.UNIVERSITY
-    var selectedEducation by remember { mutableStateOf(currEducation) }
+    val selectedEducation = EducationLevel.fromJson(appData.educationLevel) ?: EducationLevel.UNIVERSITY
 
     Scaffold { paddingValues ->
         Column(
@@ -106,12 +104,10 @@ fun UploadTimetablePage(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            DropDownMenu(
-                label = "Education Level",
-                selectedItem = selectedEducation,
-                items = EducationLevel.entries,
-                itemToText = { it?.displayName ?: "" },
-                onItemSelected = { selectedEducation = it }
+            Text(
+                text = "Education Level: ${selectedEducation.displayName}",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
             )
 
             Spacer(modifier = Modifier.height(8.dp))
