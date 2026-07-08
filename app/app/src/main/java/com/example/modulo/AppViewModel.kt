@@ -452,6 +452,7 @@ class AppViewModel(
                     termEnd = currentData.termEnd,
                     breaks = currentData.breaks,
                     tasks = currentData.tasks,
+                    hiddenModules = currentData.hiddenModules,
                     timetable = currentData.timetable
                 )
                 currentData.otherHandbooks + currHandbook
@@ -460,6 +461,7 @@ class AppViewModel(
             }
 
             currentData.copy(
+                handbookId = newHandbook.id,
                 educationLevel = newHandbook.educationLevel,
                 academicYear = newHandbook.academicYear,
                 semester = newHandbook.semester,
@@ -468,7 +470,7 @@ class AppViewModel(
                 breaks = newHandbook.breaks,
                 tasks = emptyList(),
                 timetable = null,
-                handbookId = newHandbook.id,
+                hiddenModules = emptyList(),
                 otherHandbooks = updatedHandbooks
             )
         }
@@ -494,6 +496,7 @@ class AppViewModel(
                     termEnd = currentData.termEnd,
                     breaks = currentData.breaks,
                     tasks = currentData.tasks,
+                    hiddenModules = currentData.hiddenModules,
                     timetable = currentData.timetable
                 )
                 updatedHandbooks.add(currHandbook)
@@ -508,6 +511,7 @@ class AppViewModel(
                 breaks = handbook.breaks,
                 tasks = handbook.tasks,
                 timetable = handbook.timetable,
+                hiddenModules = handbook.hiddenModules,
                 otherHandbooks = updatedHandbooks
             )
         }
@@ -524,7 +528,6 @@ class AppViewModel(
     fun updateHandbook(handbook: Handbook) {
         updateData { currentData ->
             currentData.copy(
-                handbookId = handbook.id,
                 educationLevel = handbook.educationLevel,
                 academicYear = handbook.academicYear,
                 semester = handbook.semester,

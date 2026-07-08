@@ -47,6 +47,7 @@ import com.example.modulo.components.WarningCard
 import com.example.modulo.components.YearInputField
 import com.example.modulo.ui.theme.ModuloTheme
 import java.time.LocalDate
+import java.util.UUID
 
 @Composable
 fun HandbookCreatePage(
@@ -132,7 +133,7 @@ fun HandbookCreatePage(
                 Button(
                     onClick = {
                         val handbook = Handbook(
-                            id = "hb-$academicYear-s$semester",
+                            id = if (isEditMode) appData.handbookId else UUID.randomUUID().toString(),
                             educationLevel = educationLevel.json,
                             academicYear = yearFormat(educationLevel, academicYear),
                             semester = semester,
