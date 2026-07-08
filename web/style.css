@@ -15,6 +15,11 @@
   --danger: #d23b53;      /* validation/error text */
   /* Soft layered card elevation: a tight contact shadow + a wider ambient one. */
   --shadow: 0 1px 2px rgba(20, 30, 60, 0.04), 0 4px 14px rgba(20, 30, 60, 0.06);
+  /* Study-city scene (Phase 15): the island. Daylight palette. */
+  --city-sea: #a9cdf2;
+  --city-sand: #ecdcae;
+  --city-grass: #9ecf90;
+  --city-soil: #b9946a;
 }
 
 /* === Dark theme: same tokens, dark values. Toggled via data-theme="dark" on <html>. === */
@@ -32,6 +37,11 @@
   --today: #16233f;
   --danger: #f2728a;      /* validation/error text (brighter for dark bg) */
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 6px 18px rgba(0, 0, 0, 0.4);
+  /* Study-city scene: the same island at night. */
+  --city-sea: #17304f;
+  --city-sand: #6d5f3e;
+  --city-grass: #2f5c3d;
+  --city-soil: #4a3a28;
 }
 
 body { font-family: "Inter", system-ui, sans-serif; }
@@ -833,10 +843,26 @@ body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
    Top margin separates the city from the timer card above it. */
 .city-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; margin: 28px 0 16px; }
 .city-head .view-title { margin: 0; }
-/* The scene box: placeholder now; steps 4–5 put the layered SVG inside.
+/* The scene box IS the sea: no padding, sea-token background (so the SVG's water
+   runs edge to edge — any letterbox strip matches it exactly), rounded corners
+   clip the drawing, and a visible outline frames the whole scene.
    position:relative makes it the anchor the hammer button pins to. */
-.city-scene { position: relative; min-height: 260px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; }
-.city-scene-placeholder { color: var(--text-muted); font-size: 14px; }
+.city-scene {
+  position: relative;
+  min-height: 260px;
+  padding: 0;
+  overflow: hidden;
+  background: var(--city-sea);
+  border: 1px solid var(--border-strong);
+  margin-bottom: 16px;
+}
+.city-scene-placeholder { color: var(--text-muted); font-size: 14px; text-align: center; padding: 40px 0; }
+/* The scene SVG: fills the card width, capped so it never dwarfs the view. */
+.city-svg { width: 100%; max-height: 420px; height: auto; display: block; }
+/* Reveal engine: unlockable groups are hidden until cityView.js marks them built.
+   (opacity+visibility rather than display, so step 6 can transition the reveal.) */
+.city-svg [data-min-index] { opacity: 0; visibility: hidden; }
+.city-svg [data-min-index].is-built { opacity: 1; visibility: visible; }
 /* The build button: hammer + "Upgrade" pill floating bottom-right of the scene.
    Default = muted (nothing earned yet); .is-ready = primary + pressable. */
 .city-upgrade-btn {

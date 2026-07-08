@@ -7,6 +7,7 @@
 
 import { appState, persist } from "./data.js";
 import { growthState, claimUpgrade } from "./logic/growth.js";
+import { SCENE_SVG } from "./cityScene.js";
 
 const stateName = document.getElementById("cityStateName");
 const upgradeBtn = document.getElementById("cityUpgradeBtn");
@@ -19,11 +20,25 @@ const nextText = document.getElementById("cityNextText");
 // lower → restart the fill from 0) apart from ordinary forward progress.
 let shownPct = 0;
 
+// Mount the scene ONCE: swap the placeholder <p> for the SVG (outerHTML replaces the
+// element itself). Can't innerHTML the whole card — the Upgrade button lives in it too.
+document.querySelector("#cityScene .city-scene-placeholder").outerHTML = SCENE_SVG;
+// Every unlockable group, grabbed once. A static NodeList is fine — the set of
+// groups never changes at runtime, only their is-built class does.
+const levelGroups = document.querySelectorAll("#cityScene [data-min-index]");
+
 function render() {
   const s = growthState(appState.studySessions, appState.cityLevel);
 
   // Header: the BUILT state (what the scene shows), e.g. "Boat houses".
   stateName.textContent = s.built.name;
+
+  // The reveal engine: show every unlockable the user has BUILT, hide the rest.
+  // dataset.minIndex reads the data-min-index attribute (dashes → camelCase) as a
+  // STRING, so Number() converts before comparing.
+  for (const g of levelGroups) {
+    g.classList.toggle("is-built", Number(g.dataset.minIndex) <= s.builtIndex);
+  }
 
   // The Upgrade button: muted + disabled until an upgrade is earned. Multiple
   // pending (studied while away) → the label shows how many presses are queued.
