@@ -62,7 +62,7 @@ import kotlinx.serialization.Serializable
 @Serializable object StudySession
 
 @Serializable object TimetableUpload
-@Serializable data class TimetableManual(val educationLevel: EducationLevel)
+@Serializable data class TimetableManual(val educationLevel: EducationLevel, val isEditMode: Boolean = false)
 @Serializable object Settings
 @Serializable object Timetable
 @Serializable object StudyHistory
@@ -234,7 +234,8 @@ fun NavGraphBuilder.globalNavigation(
         TimetableManualPage(
             viewModel = viewModel,
             onBack = { navController.popBackStack() },
-            currEducationLevel = args.educationLevel
+            currEducationLevel = args.educationLevel,
+            isEditMode = args.isEditMode
         )
     }
 
@@ -252,6 +253,11 @@ fun NavGraphBuilder.globalNavigation(
         TimetablePage(
             viewModel = viewModel,
             onUploadTimetable = { navController.navigate(TimetableUpload) },
+            onEditTimetable = {
+                val educationLevel = EducationLevel.fromJson(viewModel.appData.value.timetable?.educationLevel)
+                    ?: EducationLevel.UNIVERSITY
+                navController.navigate(TimetableManual(educationLevel, isEditMode = true))
+            },
             onBack = { navController.popBackStack() }
         )
     }

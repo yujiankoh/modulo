@@ -28,6 +28,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SecondaryTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -62,6 +63,7 @@ fun TimetablePage(
     viewModel: AppViewModel,
     onBack: () -> Unit,
     onUploadTimetable: () -> Unit,
+    onEditTimetable: () -> Unit,
 ) {
     val appData by viewModel.appData.collectAsState()
     val timetable = appData.timetable
@@ -399,6 +401,13 @@ fun TimetablePage(
                         }
                     }
                 }
+            }
+
+            TextButton(
+                onClick = onEditTimetable,
+                modifier = Modifier.align(Alignment.CenterHorizontally).padding(vertical = 8.dp)
+            ) {
+                Text("Want to edit your timetable?")
             }
         }
     }

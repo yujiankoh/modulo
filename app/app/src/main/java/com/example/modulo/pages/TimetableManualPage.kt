@@ -70,15 +70,40 @@ import kotlin.math.roundToInt
 fun TimetableManualPage(
     currEducationLevel: EducationLevel,
     viewModel: AppViewModel,
+    isEditMode: Boolean = false,
     onBack: () -> Unit
 ) {
+    val existingTimetable = remember { if (isEditMode) viewModel.appData.value.timetable else null }
+
     var educationLevel by remember { mutableStateOf(currEducationLevel) }
     val modules = remember {
-        mutableStateListOf(
+        val existingModules = existingTimetable?.modules?.map { module ->
             FormModule(
-                slots = mutableListOf(FormSlot(sessionType = getDefaultSessionType(currEducationLevel)))
+                code = module.code,
+                name = module.name,
+                slots = module.slots.map { slot ->
+                    FormSlot(
+                        day = slot.day,
+                        start = slot.start,
+                        end = slot.end,
+                        location = slot.location,
+                        sessionType = slot.sessionType,
+                        classNo = slot.classNo,
+                        week = slot.week
+                    )
+                }.toMutableList()
             )
-        )
+        }
+
+        if (!existingModules.isNullOrEmpty()) {
+            mutableStateListOf(*existingModules.toTypedArray())
+        } else {
+            mutableStateListOf(
+                FormModule(
+                    slots = mutableListOf(FormSlot(sessionType = getDefaultSessionType(currEducationLevel)))
+                )
+            )
+        }
     }
 
     var showSaveWarning by remember { mutableStateOf(false) }
@@ -105,7 +130,7 @@ fun TimetableManualPage(
                     }
 
                     Text(
-                        text = "Enter Timetable",
+                        text = if (isEditMode) "Edit Timetable" else "Enter Timetable",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold
                     )
@@ -214,7 +239,7 @@ fun TimetableManualPage(
 
                 viewModel.saveTimetable(newTimetable)
                 onBack()
-                onBack()
+                if (!isEditMode) onBack()
             },
             onDismiss = { showSaveWarning = false }
         )
