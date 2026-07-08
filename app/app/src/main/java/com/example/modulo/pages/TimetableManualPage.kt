@@ -111,7 +111,8 @@ fun TimetableManualPage(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
+                .padding(paddingValues),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Row(
                 modifier = Modifier
@@ -153,6 +154,14 @@ fun TimetableManualPage(
                 }
             }
 
+            Text(
+                text = "Education Level: ${currEducationLevel.displayName}",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
             LazyColumn(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -160,15 +169,6 @@ fun TimetableManualPage(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                item {
-                    Text(
-                        text = "Education Level: ${currEducationLevel.displayName}",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-
                 itemsIndexed(modules) { moduleIndex, module ->
                     ModuleEntryCard(
                         module = module,

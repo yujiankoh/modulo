@@ -126,7 +126,7 @@ fun AllTaskPage(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 if (moduleCodes.isNotEmpty()) {
-                    Text("Filter Module:", style = MaterialTheme.typography.labelMedium)
+                    Text("Filter:", style = MaterialTheme.typography.labelMedium)
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
 
                         item {
@@ -159,7 +159,6 @@ fun AllTaskPage(
                 }
 
                 if (taskTypes.isNotEmpty()) {
-                    Text("Filter Task Type:", style = MaterialTheme.typography.labelMedium)
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
 
                         item {
@@ -175,7 +174,7 @@ fun AllTaskPage(
                             )
                         }
 
-                        // Generate a button for every module code the user has tasks for
+                        // Generate a button for every task type the user has tasks for
                         items(taskTypes) { taskType ->
                             FilterChip(
                                 selected = activeTaskTypeFilter == taskType,

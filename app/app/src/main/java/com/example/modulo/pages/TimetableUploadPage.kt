@@ -102,15 +102,13 @@ fun UploadTimetablePage(
                 )
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
             Text(
                 text = "Education Level: ${selectedEducation.displayName}",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(32.dp))
 
             UploadTimetable(
                 context = context,
