@@ -177,19 +177,59 @@
       <!-- STUDY SESSION (Phase 10): count-up stopwatch + totals + recent sessions. -->
       <section id="view-study" class="view">
         <h2>Study Session</h2>
-        <div class="card study-card">
-          <div id="timerDisplay">00:00:00</div>
-          <div id="timerControls">
-            <button id="timerToggle" type="button"><i data-lucide="play"></i>Start</button>
-            <button id="timerStop" class="btn-primary" type="button"><i data-lucide="square"></i>Stop &amp; Save</button>
+        <!-- Timer card + totals card side by side (totals moved out 2026-07-08). -->
+        <div class="study-row">
+          <div class="card study-card">
+            <div id="timerDisplay">00:00:00</div>
+            <div id="timerControls">
+              <button id="timerToggle" type="button"><i data-lucide="play"></i>Start</button>
+              <button id="timerStop" class="btn-primary" type="button"><i data-lucide="square"></i>Stop &amp; Save</button>
+            </div>
           </div>
 
-          <!-- Study-time totals: derived live from studySessions on redraw. -->
-          <div id="timerTotals">
-            <span>Today: <strong id="totalToday">0m</strong></span>
-            <span>This week: <strong id="totalWeek">0m</strong></span>
-            <span>Total: <strong id="totalAll">0m</strong></span>
+          <!-- Study-time totals: derived live from studySessions on redraw (same ids,
+               so studyTimer.js keeps writing into them unchanged). -->
+          <div class="card study-totals-card">
+            <div class="dash-card-label">Study time</div>
+            <div id="timerTotals">
+              <span>Today <strong id="totalToday">0m</strong></span>
+              <span>This week <strong id="totalWeek">0m</strong></span>
+              <span>Total <strong id="totalAll">0m</strong></span>
+            </div>
           </div>
+        </div>
+
+        <!-- STUDY CITY (Phases 14+15, integrated here — one tab, decided 2026-07-08):
+             the Singapore city that grows with all-time study minutes. cityView.js
+             derives everything from appState.studySessions + cityLevel (growthState)
+             and redraws on modulo:datachanged. The scene box is a placeholder until
+             steps 4–5 add the layered SVG. -->
+        <div class="city-head">
+          <div>
+            <p class="view-eyebrow">STUDY CITY</p>
+            <!-- The BUILT state's name (the scene the user has pressed for). -->
+            <h3 class="view-title" id="cityStateName"></h3>
+          </div>
+        </div>
+
+        <div id="cityScene" class="card city-scene">
+          <p class="city-scene-placeholder">Your city will appear here.</p>
+          <!-- The build button: hammer + label, pinned bottom-right of the scene.
+               Muted + disabled until an upgrade is earned. Label in its own span so
+               cityView.js can update it (pending count) without killing the icon. -->
+          <button id="cityUpgradeBtn" class="city-upgrade-btn" type="button" disabled
+                  title="Keep studying to earn an upgrade">
+            <i data-lucide="hammer"></i><span id="cityUpgradeLabel">Upgrade</span>
+          </button>
+        </div>
+
+        <!-- Growth status: the EXP bar toward the next earned level + one hint line. -->
+        <div class="card city-status">
+          <div class="city-progress-row">
+            <div class="city-progress-track"><div id="cityProgressFill" class="city-progress-fill"></div></div>
+            <span id="cityProgressPct"></span>
+          </div>
+          <p id="cityNextText"></p>
         </div>
 
         <!-- Recent recorded sessions (newest first; capped for a light DOM). -->

@@ -67,6 +67,11 @@ Stages: 1 = Fishing Village, 2 = Kampung, 3 = Shophouses.
    100 when the level is actually earned (max 99 mid-band). At the top row: 100.
 7. **`cityLevel` is GLOBAL** — like `studySessions`, it is never part of a handbook and a
    handbook switch must not change it.
+8. **Display rule for the EXP bar:** while an upgrade is pending (`builtIndex <
+   earnedIndex`) the bar shows **100%** — each press visually "spends" a full bar.
+   The rule-6 `progressPct` is shown only when fully built (`builtIndex ==
+   earnedIndex`). Also: show **no absolute time-to-next-upgrade** anywhere (decided
+   2026-07-08) — thresholds are internal, the filling bar is the only signal.
 
 ## Reference (Kotlin sketch)
 
