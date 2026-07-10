@@ -1,91 +1,34 @@
-// cityView.js — Phase 15: the Study City section INSIDE the Study Session view
-// (#view-study — one tab, decided 2026-07-08). Renders the growth status (built state
-// name, progress bar, "until next upgrade") and owns the Upgrade button — the ONE
-// impure caller of the pure growth logic: a press persists a new cityLevel.
-// Everything shown is derived on each redraw (only cityLevel is stored); redraws on
-// modulo:datachanged like every other view. The scene itself lands in steps 4–5.
+// cityView.js — the Study City section inside the Study Session view (#view-study).
+// Generative-grid design (2026-07-08): the city grows AUTOMATICALLY. This module is
+// the ONE impure caller of the pure city logic — on every redraw it RECONCILES:
+// if study minutes have earned upgrades that aren't applied to the stored grid yet,
+// it rolls their placements (Math.random — outcomes get persisted, so they never
+// need re-deriving), writes appState.city, and persists ONCE. The persist re-fires
+// modulo:datachanged; the follow-up render sees pending 0 and just draws. That
+// pending-0 check is the loop guard — reconcile can never persist twice in a row.
 
 import { appState, persist } from "./data.js";
-import { growthState, claimUpgrade } from "./logic/growth.js";
+import { cityState, applyUpgrades } from "./logic/growth.js";
 import { SCENE_SVG } from "./cityScene.js";
 
-const stateName = document.getElementById("cityStateName");
-const upgradeBtn = document.getElementById("cityUpgradeBtn");
-const upgradeLabel = document.getElementById("cityUpgradeLabel");
-const progressFill = document.getElementById("cityProgressFill");
-const progressPct = document.getElementById("cityProgressPct");
-const nextText = document.getElementById("cityNextText");
-
-// The bar width currently on screen — lets render() tell "bar got spent" (new value
-// lower → restart the fill from 0) apart from ordinary forward progress.
-let shownPct = 0;
-
-// Mount the scene ONCE: swap the placeholder <p> for the SVG (outerHTML replaces the
-// element itself). Can't innerHTML the whole card — the Upgrade button lives in it too.
+// Mount the island backdrop once (step 4 turns this into a real grid renderer that
+// draws appState.city). outerHTML replaces just the placeholder <p>.
 document.querySelector("#cityScene .city-scene-placeholder").outerHTML = SCENE_SVG;
-// Every unlockable group, grabbed once. A static NodeList is fine — the set of
-// groups never changes at runtime, only their is-built class does.
-const levelGroups = document.querySelectorAll("#cityScene [data-min-index]");
 
-function render() {
-  const s = growthState(appState.studySessions, appState.cityLevel);
+async function render() {
+  const s = cityState(appState.studySessions, appState.city);
 
-  // Header: the BUILT state (what the scene shows), e.g. "Boat houses".
-  stateName.textContent = s.built.name;
-
-  // The reveal engine: show every unlockable the user has BUILT, hide the rest.
-  // dataset.minIndex reads the data-min-index attribute (dashes → camelCase) as a
-  // STRING, so Number() converts before comparing.
-  for (const g of levelGroups) {
-    g.classList.toggle("is-built", Number(g.dataset.minIndex) <= s.builtIndex);
+  if (s.pending > 0) {
+    // Earned-but-unapplied upgrades: roll them onto the grid and save. The city is
+    // assigned synchronously (before any await), so a re-entrant render computing
+    // pending from the updated state can never double-apply.
+    appState.city = applyUpgrades(appState.city, s.pending, s.tier, Math.random);
+    await persist(); // fires modulo:datachanged → render runs again with pending 0
+    return;          // the follow-up pass does the drawing
   }
 
-  // The Upgrade button: muted + disabled until an upgrade is earned. Multiple
-  // pending (studied while away) → the label shows how many presses are queued.
-  const pending = s.earnedIndex - s.builtIndex;
-  upgradeBtn.disabled = !s.canUpgrade;
-  upgradeBtn.classList.toggle("is-ready", s.canUpgrade);
-  upgradeBtn.title = s.canUpgrade ? "" : "Keep studying to earn an upgrade";
-  upgradeLabel.textContent = pending > 1 ? `Upgrade (${pending})` : "Upgrade";
-
-  // The EXP bar + one hint line. The bar is BUILT-relative: a pending upgrade shows
-  // a FULL bar (each hammer press visually "spends" one), and the earned-band
-  // progressPct applies only once fully built (the bands coincide then). Deliberately
-  // NO absolute time-to-next-upgrade anywhere (decided 2026-07-08): the user
-  // shouldn't grind toward a known number — the bar filling is the whole signal.
-  const barPct = s.canUpgrade ? 100 : s.progressPct;
-  if (barPct < shownPct) {
-    // The bar just got SPENT (final press) — restart from empty instead of shrinking:
-    // snap to 0 with the transition off, force a reflow so the snap is committed,
-    // then re-enable the transition and let it fill 0 → barPct.
-    progressFill.style.transition = "none";
-    progressFill.style.width = "0%";
-    progressFill.offsetWidth; // reading layout flushes the pending style change
-    progressFill.style.transition = "";
-  }
-  progressFill.style.width = `${barPct}%`;
-  progressPct.textContent = `${barPct}%`;
-  shownPct = barPct;
-  if (s.maxed) {
-    nextText.textContent = s.canUpgrade
-      ? "All eras earned — press the hammer to finish building!"
-      : "Your city is complete. New eras are coming in a future update!";
-  } else {
-    nextText.textContent = s.canUpgrade
-      ? "Upgrade ready — press the hammer to build it!"
-      : "Earn EXP as you study — fill the bar to unlock your next upgrade.";
-  }
+  // Draw: step 4 renders the grid scene from appState.city here.
 }
 
-// The press: compute the new built level (one step, never past earned), store it,
-// persist ONCE. persist() fires modulo:datachanged, which re-renders this view
-// (button count/visibility included) — no manual redraw needed.
-upgradeBtn.addEventListener("click", async () => {
-  const s = growthState(appState.studySessions, appState.cityLevel);
-  if (!s.canUpgrade) return; // stale click (e.g. double-click mid-persist)
-  appState.cityLevel = claimUpgrade(s.builtIndex, s.earnedIndex);
-  await persist();
-});
-
 window.addEventListener("modulo:datachanged", render);
-render(); // initial paint (empty coastline until data loads)
+render(); // initial paint

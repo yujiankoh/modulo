@@ -20,6 +20,13 @@
   --city-sand: #ecdcae;
   --city-grass: #9ecf90;
   --city-soil: #b9946a;
+  /* Building materials (step 5a: fishing village). *-shade = the darker side face
+     that sells the 2.5D depth on every building. */
+  --city-wood: #b07b45;
+  --city-wood-shade: #8a5c31;
+  --city-attap: #caa05e;      /* thatched (attap) roofs */
+  --city-attap-shade: #a37e44;
+  --city-sea-deep: #8fb9e2;   /* ripples + water shadows */
 }
 
 /* === Dark theme: same tokens, dark values. Toggled via data-theme="dark" on <html>. === */
@@ -42,6 +49,12 @@
   --city-sand: #6d5f3e;
   --city-grass: #2f5c3d;
   --city-soil: #4a3a28;
+  /* Building materials at night. */
+  --city-wood: #7a5330;
+  --city-wood-shade: #5a3c22;
+  --city-attap: #8a6b3c;
+  --city-attap-shade: #6b5230;
+  --city-sea-deep: #0f2542;
 }
 
 body { font-family: "Inter", system-ui, sans-serif; }
@@ -863,26 +876,5 @@ body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
    (opacity+visibility rather than display, so step 6 can transition the reveal.) */
 .city-svg [data-min-index] { opacity: 0; visibility: hidden; }
 .city-svg [data-min-index].is-built { opacity: 1; visibility: visible; }
-/* The build button: hammer + "Upgrade" pill floating bottom-right of the scene.
-   Default = muted (nothing earned yet); .is-ready = primary + pressable. */
-.city-upgrade-btn {
-  position: absolute; right: 16px; bottom: 16px;
-  padding: 10px 18px; border-radius: 999px;
-  font-weight: 600;
-  border: 1px solid var(--border);
-  background: var(--pill-bg); color: var(--text-muted);
-  cursor: not-allowed;
-}
-/* Keep the muted state visually inert on hover (the global button:hover recolours borders). */
-.city-upgrade-btn:disabled:hover { border-color: var(--border); }
-.city-upgrade-btn.is-ready {
-  background: var(--primary); border-color: transparent; color: #fff;
-  cursor: pointer; box-shadow: var(--shadow);
-}
-.city-upgrade-btn.is-ready:hover { transform: scale(1.08); }
-/* Progress toward the next EARNED level: a token-coloured track + fill. */
-.city-progress-row { display: flex; align-items: center; gap: 10px; }
-.city-progress-track { flex: 1; height: 10px; border-radius: 999px; background: var(--pill-bg); overflow: hidden; }
-.city-progress-fill { height: 100%; width: 0; border-radius: 999px; background: var(--primary); transition: width 0.4s ease; }
-.city-progress-row span { font-size: 12px; color: var(--text-muted); min-width: 36px; text-align: right; }
-#cityNextText { margin: 10px 0 0; font-size: 14px; color: var(--text-muted); }
+/* The game-rule blurb under the scene (vague on purpose — no numbers). */
+.city-blurb { margin: 0 0 4px; font-size: 13px; color: var(--text-muted); }

@@ -199,38 +199,24 @@
           </div>
         </div>
 
-        <!-- STUDY CITY (Phases 14+15, integrated here — one tab, decided 2026-07-08):
-             the Singapore city that grows with all-time study minutes. cityView.js
-             derives everything from appState.studySessions + cityLevel (growthState)
-             and redraws on modulo:datachanged. The scene box is a placeholder until
-             steps 4–5 add the layered SVG. -->
+        <!-- STUDY CITY (Phases 14+15, generative grid design 2026-07-08): a city that
+             grows AUTOMATICALLY with all-time study minutes. cityView.js reconciles
+             earned-vs-applied upgrades on every redraw (rolls placements, persists the
+             grid) and draws the scene from appState.city. No button, no progress bar,
+             no numbers revealed — just the city and one blurb. -->
         <div class="city-head">
           <div>
             <p class="view-eyebrow">STUDY CITY</p>
-            <!-- The BUILT state's name (the scene the user has pressed for). -->
-            <h3 class="view-title" id="cityStateName"></h3>
+            <h3 class="view-title">Your city</h3>
           </div>
         </div>
 
         <div id="cityScene" class="card city-scene">
           <p class="city-scene-placeholder">Your city will appear here.</p>
-          <!-- The build button: hammer + label, pinned bottom-right of the scene.
-               Muted + disabled until an upgrade is earned. Label in its own span so
-               cityView.js can update it (pending count) without killing the icon. -->
-          <button id="cityUpgradeBtn" class="city-upgrade-btn" type="button" disabled
-                  title="Keep studying to earn an upgrade">
-            <i data-lucide="hammer"></i><span id="cityUpgradeLabel">Upgrade</span>
-          </button>
         </div>
-
-        <!-- Growth status: the EXP bar toward the next earned level + one hint line. -->
-        <div class="card city-status">
-          <div class="city-progress-row">
-            <div class="city-progress-track"><div id="cityProgressFill" class="city-progress-fill"></div></div>
-            <span id="cityProgressPct"></span>
-          </div>
-          <p id="cityNextText"></p>
-        </div>
+        <!-- Game-rule blurb (deliberately vague — no thresholds/times, standing rule). -->
+        <p id="cityBlurb" class="city-blurb">Your city grows as you study — finish
+          study sessions and watch new buildings rise.</p>
 
         <!-- Recent recorded sessions (newest first; capped for a light DOM). -->
         <h3>Recent sessions</h3>
