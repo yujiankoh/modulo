@@ -27,6 +27,8 @@
   --city-b3: #8fc9cf;         /* cyan */
   --city-b4: #d98a7a;         /* terracotta */
   --city-b5: #b3a1e0;         /* lavender */
+  --city-window: rgba(255, 255, 255, 0.78); /* daytime glass */
+  --city-wave: #8fb9e2;       /* sea decoration */
 }
 
 /* === Dark theme: same tokens, dark values. Toggled via data-theme="dark" on <html>. === */
@@ -56,6 +58,8 @@
   --city-b3: #5e989e;
   --city-b4: #a06153;
   --city-b5: #7f6fae;
+  --city-window: #f4cf6d;     /* windows glow warm at night */
+  --city-wave: #23446b;
 }
 
 body { font-family: "Inter", system-ui, sans-serif; }
@@ -872,6 +876,6 @@ body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
 }
 .city-scene-placeholder { color: var(--text-muted); font-size: 14px; text-align: center; padding: 40px 0; }
 /* The scene SVG: fills the card width, capped so it never dwarfs the view. */
-.city-svg { width: 100%; max-height: 420px; height: auto; display: block; margin: 0 auto; }
+.city-svg { width: 100%; max-height: 460px; height: auto; display: block; margin: 0 auto; }
 /* The game-rule blurb under the scene (vague on purpose — no numbers). */
 .city-blurb { margin: 0 0 4px; font-size: 13px; color: var(--text-muted); }
