@@ -40,14 +40,15 @@ val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "se
 val HAS_SEEN_TUTORIAL = booleanPreferencesKey("has_seen_tutorial")
 val IS_DRIVE_SYNC_ENABLED = booleanPreferencesKey("is_drive_sync_enabled")
 
-class AppViewModel(
+class AppViewModel @JvmOverloads constructor(
     application: Application,
-    private val savedStateHandle: SavedStateHandle
+    private val savedStateHandle: SavedStateHandle,
+    // Injectable so tests can supply a fake; the framework uses the two-arg constructor.
+    private val parsingHelper: ParsingHelper = ParsingHelper()
 ) : AndroidViewModel(application) {
     // Helpers
     private val localSaveHelper = LocalSaveHelper(application)
     private var syncingHelper: SyncingHelper? = null
-    private val parsingHelper = ParsingHelper()
     private val networkMonitor = NetworkHelper(application)
 
     // State Flows
