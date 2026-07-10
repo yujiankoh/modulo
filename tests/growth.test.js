@@ -112,6 +112,25 @@ test("appliedUpgrades = total floors, defensive against garbage", () => {
   assert.equal(appliedUpgrades({ buildings: [{ floors: 3 }, { floors: 1 }, { floors: "2" }] }), 4);
 });
 
+test("progression invariant: each tier expands long before its land can fill", () => {
+  // "No candidates" (banked upgrades) must stay unreachable in real play: every
+  // tier's capacity (plots × floorCap) must exceed the most upgrades earnable
+  // BEFORE the next tier unlocks. Reads the tier table itself, so re-tuning
+  // floorCap for visuals breaks THIS test instead of silently breaking the game.
+  // (The final tier is unbounded by design — filling it needs ~16,000 h of study;
+  // the in-code guard only protects against absurd/hand-edited data.)
+  for (let i = 0; i < GRID_TIERS.length - 1; i++) {
+    const tier = GRID_TIERS[i];
+    const capacity = tier.size * tier.size * tier.floorCap;
+    const maxEarnedInTier = earnedUpgrades(GRID_TIERS[i + 1].minMins - 1);
+    assert.ok(
+      maxEarnedInTier < capacity,
+      `tier ${tier.size}×${tier.size} (cap ${tier.floorCap}): can earn ` +
+      `${maxEarnedInTier} but only holds ${capacity}`
+    );
+  }
+});
+
 test("cityState derives pending = earned − applied (never negative)", () => {
   // 36 mins → 3 earned; a city with 1 floor standing → 2 pending.
   const s = cityState([{ durationMins: 36 }], { buildings: [{ x: 0, y: 0, floors: 1 }] });
