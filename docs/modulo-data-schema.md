@@ -47,7 +47,7 @@ read and write this same file**.
       "createdAt": "2026-06-24T13:50:02.140Z"
     }
   ],
-  "cityLevel": 1,
+  "city": { "buildings": [{ "x": 0, "y": 0, "floors": 3 }, { "x": -1, "y": 1, "floors": 1 }] },
   "timetable": {
     "educationLevel": "university",
     "modules": [
@@ -81,7 +81,7 @@ read and write this same file**.
 | `updatedAt`      | string (ISO 8601) | yes      | When the whole state was last saved. Key field for sync + local-save reconciliation. |
 | `tasks`          | array of Task     | yes      | All of the user's tasks. May be empty (`[]`). |
 | `studySessions`  | array of StudySession | no   | Recorded focus/study sessions (Phase 10). Defaults to `[]`. Used for daily/weekly/cumulative study-time totals + the calendar's per-day average rating |
-| `cityLevel`      | number (integer)  | no       | **Phase 14 (study city).** The city level the user has **built** (pressed Upgrade for) so far — a row index into the shared growth table (see `study-city-growth.md`). Defaults to `0`. **GLOBAL like `studySessions`** — never part of a handbook; a handbook switch must not touch it. Readers must clamp it to `[0, earned level]`. |
+| `city`           | City object       | no       | **Phase 14 (study city).** The generative city grid: `{ buildings: [{ x, y, floors }] }` — one entry per occupied plot, `x`/`y` centre-origin integer offsets, `floors ≥ 1`. **Stored** because upgrade placement is random (not re-derivable); every count (earned/applied/pending upgrades, land size) is **derived** per `study-city-growth.md`. Defaults to `{ "buildings": [] }`. **GLOBAL like `studySessions`** — never part of a handbook; a handbook switch must not touch it. |
 | `hiddenModules`  | array of string   | no       | Module labels the user has hidden from the web dashboard + sidebar (Phase 12). Defaults to `[]`. |
 | `otherHandbooks` | array of Handbook | no       | **Phase 13.5.** The **inactive** handbooks (previous/other semesters). Defaults to `[]`. See "Handbook object" below. |
 | `timetable`      | Timetable \| null | yes      | The parsed timetable, or `null` if none yet. |
@@ -99,7 +99,7 @@ holds the inactive ones. Each entry has an `id` plus exactly the per-handbook fi
 
 **Switching handbooks** (web): the flat fields are snapshotted into `otherHandbooks` and
 the chosen entry's fields are copied out into the flat fields — one atomic save.
-**`studySessions` and `cityLevel` are GLOBAL** — never part of a handbook — so streaks,
+**`studySessions` and `city` are GLOBAL** — never part of a handbook — so streaks,
 cumulative study time, and the study city span semesters.
 
 ## Task object
@@ -228,7 +228,7 @@ let appState = {
   updatedAt: null,
   tasks: [],
   studySessions: [],      // [{ id, start, end, durationMins, rating, createdAt }] — Phase 10
-  cityLevel: 0,           // study-city level BUILT so far (GLOBAL, like studySessions) — Phase 14
+  city: { buildings: [] },// study-city grid [{ x, y, floors }] (GLOBAL, like studySessions) — Phase 14
   hiddenModules: [],      // module labels hidden from the dashboard/sidebar (web-only) — Phase 12
   otherHandbooks: [],     // the INACTIVE handbooks [{ id, ...per-handbook fields }] — Phase 13.5
   timetable: null,        // { educationLevel, modules: [...] }
@@ -254,7 +254,7 @@ data class ModuloData(
     val updatedAt: String? = null,
     val tasks: List<Task> = emptyList(),
     val studySessions: List<StudySession> = emptyList(),
-    val cityLevel: Int = 0,                // study-city level BUILT so far (GLOBAL) — Phase 14
+    val city: City = City(),               // study-city grid (GLOBAL) — Phase 14
     val hiddenModules: List<String> = emptyList(),
     val otherHandbooks: List<Handbook> = emptyList(),  // inactive handbooks — Phase 13.5
     val timetable: Timetable? = null
@@ -273,6 +273,18 @@ data class Handbook(                       // one INACTIVE semester (Phase 13.5)
     val tasks: List<Task> = emptyList(),
     val hiddenModules: List<String> = emptyList(),
     val timetable: Timetable? = null
+)
+
+@Serializable
+data class City(                           // the study-city grid (Phase 14)
+    val buildings: List<CityBuilding> = emptyList()
+)
+
+@Serializable
+data class CityBuilding(
+    val x: Int,          // centre-origin plot offsets (0,0 = middle of the land)
+    val y: Int,
+    val floors: Int      // >= 1; each upgrade event adds exactly one floor
 )
 
 @Serializable
@@ -345,4 +357,4 @@ data class Slot(
 | 2       | 2026-06-25 | Added top-level `hiddenModules` (array of strings, default `[]`) — module labels the web app hides from the dashboard + sidebar |
 | 2       | 2026-06-27 | Added top-level `academicYear` (string `"YY/YY"`, default `null`), `semester` (number `1`/`2`, default `null`), and `handbookSetup` (boolean, default `false`) for the handbook/onboarding. Drive the sidebar header + gate the first-run setup modal. |
 | 2       | 2026-07-05 | **Phase 13.5 (multiple handbooks):** added top-level `handbookId` (string, default generated) and `otherHandbooks` (array of Handbook, default `[]`). The flat fields remain **the active handbook**, so existing readers are unaffected — but **kotlinx.serialization must tolerate the new keys** (add the fields per the Kotlin reference, or set `ignoreUnknownKeys = true`), otherwise parsing a web-saved file throws. `studySessions` stay global (never inside a handbook). Education level is now locked **per handbook**. |
-| 2       | 2026-07-08 | **Phase 14 (study city):** added top-level `cityLevel` (integer, default `0`) — the city level the user has **built** so far, a row index into the shared growth table (`study-city-growth.md`). GLOBAL like `studySessions` — never inside a handbook. Everything else about the city is **derived, not stored**. Same kotlinx note as 13.5: tolerate the new key. |
+| 2       | 2026-07-08 | **Phase 14 (study city):** added top-level `city` (`{ buildings: [{ x, y, floors }] }`, default empty) — the generative city grid. Stored because upgrade placement is random; every count is **derived** from `studySessions` per the shared rules in `study-city-growth.md`. GLOBAL like `studySessions` — never inside a handbook. Same kotlinx note as 13.5: tolerate the new key. *(An interim `cityLevel` integer existed only on the web feature branch and never shipped — readers may ignore that key if ever seen.)* |

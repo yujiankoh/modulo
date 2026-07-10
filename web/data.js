@@ -26,7 +26,7 @@ export let appState = {
   breaks: [],              // [{ start, end }] date ranges of recess/holiday (non-academic) weeks
   tasks: [],
   studySessions: [],       // Phase 10: recorded focus/study sessions (see modulo-data-schema.md)
-  cityLevel: 0,            // Phase 14: study-city level BUILT so far (GLOBAL, like studySessions)
+  city: { buildings: [] }, // Phase 14: the study-city grid (GLOBAL, like studySessions) — see study-city-growth.md
   hiddenModules: [],       // Phase 12: module labels hidden from the dashboard + sidebar
   otherHandbooks: [],      // Phase 13.5: the INACTIVE handbooks (see logic/handbooks.js)
   timetable: null,
@@ -89,9 +89,10 @@ export async function loadInitialData() {
     // and there are no other handbooks yet.
     if (!appState.handbookId) appState.handbookId = crypto.randomUUID();
     if (!appState.otherHandbooks) appState.otherHandbooks = [];
-    // Default for files saved before Phase 14. Integer check (not just "missing") so a
-    // corrupt value also resets — growth.js clamps at read-time anyway, belt and braces.
-    if (!Number.isInteger(appState.cityLevel)) appState.cityLevel = 0;
+    // Default for files saved before Phase 14: an empty city grid. Shape-check (not
+    // just "missing") so a malformed value resets rather than crashing the renderer.
+    if (!appState.city || !Array.isArray(appState.city.buildings)) appState.city = { buildings: [] };
+    delete appState.cityLevel; // never shipped (branch-era test data only) — drop the stray key
   }
   // Announce the load; every view (task list, calendar, timetable) redraws from this.
   window.dispatchEvent(new Event("modulo:datachanged"));

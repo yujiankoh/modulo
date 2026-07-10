@@ -1,125 +1,122 @@
 # Study city — growth contract (web ↔ app)
 
-The shared rules for the gamified study motivator: a virtual **Singapore city** that
-grows with **all-time study minutes**. Both the web (JavaScript, `web/logic/growth.js`)
-and the app (Kotlin) must implement **exactly these rules**, or the two devices will
-show different cities for the same data.
+The shared rules for the gamified study motivator: a **generative isometric city** that
+grows automatically with **all-time study minutes** (Forest + git-city style; this
+REPLACES the earlier fixed-stage contract of 2026-07-08 — the stage table is dead).
+Both the web (`web/logic/growth.js`) and the app (Kotlin) must implement **exactly
+these rules**, or the two devices will grow different cities from the same data.
 
 - **Fuel:** the top-level `studySessions` in `modulo-data.json` — **global**, across all
   handbooks/semesters.
-- **Stored state:** exactly ONE field — top-level **`cityLevel`** (see
-  `modulo-data-schema.md`). Everything else below is **derived on the fly and never
-  stored**.
-- Scope: stages 1–3 for MS3. **Stages 4–6 (Early HDB / Modern HDB / MBS skyline) are
-  added later, on both platforms together** — never unilaterally.
+- **Stored state:** exactly ONE field — top-level **`city: { buildings: [{ x, y,
+  floors }] }`** (see `modulo-data-schema.md`). Stored because upgrade *placement* is
+  random and cannot be re-derived. Every count is derived.
+- **No UI reveals numbers** (thresholds, formulas, time-to-next) — the growing city is
+  the only signal.
 
 ---
 
-## The mechanic in one paragraph
+## The game in one paragraph
 
-Studying **earns** city levels automatically; the user presses an **Upgrade** button to
-**build** each earned level, one press = one level. The scene always renders the **built**
-level; the progress numbers (bar, "time until next upgrade") describe the **earned**
-level. `cityLevel` records the built level. The earned level is recomputed from
-`studySessions` every time — it is never written anywhere.
+Studying earns **upgrade events** on a pace that slowly stretches. Each event picks one
+plot on a centre-weighted grid: an empty plot gets a 1-floor building, an occupied one
+grows a floor. Upgrades apply **automatically** (no user action): whenever a client
+notices earned > applied, it rolls the pending events, updates `city`, and saves. The
+land itself expands at study milestones. Result: a skyline that rises from the centre
+of a growing island.
 
-## The growth table
+## Rule 1 — total minutes
 
-Thresholds are in **MINUTES** (the unit `durationMins` is stored in — never convert to
-hours inside logic, only for display). Row order = index 0–11.
+`totalMins` = sum of `durationMins` over ALL `studySessions`. Missing/non-numeric
+`durationMins` counts as 0.
 
-| index | stage | level | name | minMins |
-|---|---|---|---|---|
-| 0 | 0 | 0 | Empty coastline | 0 |
-| 1 | 1 | 1 | Boat houses | 30 |
-| 2 | 1 | 2 | Stilt houses | 90 |
-| 3 | 2 | 1 | Kampung houses | 180 |
-| 4 | 2 | 2 | More kampung houses | 360 |
-| 5 | 2 | 3 | Dirt road | 600 |
-| 6 | 3 | 1 | Early shophouses | 900 |
-| 7 | 3 | 2 | Better road + rickshaw | 1260 |
-| 8 | 3 | 3 | Traditional shophouses I | 1680 |
-| 9 | 3 | 4 | Traditional shophouses II | 2160 |
-| 10 | 3 | 5 | Traditional shophouses III | 2700 |
-| 11 | 3 | 6 | Art Deco shophouses | 3300 |
+## Rule 2 — earned upgrades (pacing)
 
-Stages: 1 = Fishing Village, 2 = Kampung, 3 = Shophouses.
+The (x+1)-th upgrade costs `2x + 10` minutes, so **n upgrades need `n² + 9n` total
+minutes** (thresholds 10, 22, 36, 52, 70, …). Earned upgrades for a given total:
 
-## The rules (each must match bit-for-bit)
+```
+n = floor((-9 + sqrt(81 + 4 * totalMins)) / 2)
+```
 
-1. **Total minutes** = sum of `durationMins` over ALL `studySessions`. A missing or
-   non-numeric `durationMins` counts as **0** (defensive — one bad record must not break
-   the city).
-2. **Earned index** = the highest row with `minMins <= totalMins`. Note **`>=` at the
-   boundary**: exactly 30 total minutes DOES earn row 1.
-3. **Built index** = `cityLevel`, **clamped to `[0, earnedIndex]`**. A missing, negative,
-   non-integer, or too-high stored value must render as if clamped — never trust the
-   stored number to be legal, it may have been written by the other client or a buggy
-   save. (Also clamp before *using* it in rule 4.)
-4. **Upgrade press** → new `cityLevel = min(builtIndex + 1, earnedIndex)` — exactly one
-   level per press, never past what's earned. Save immediately (one write per press).
-   The button is available iff `builtIndex < earnedIndex`.
-5. **Next threshold** = `minMins` of row `earnedIndex + 1`; at the top row there is none
-   (web returns `null` — show a "city complete" state instead of a bar).
-6. **Progress percent** (toward the *next earned* level, not the whole ladder):
-   `floor((totalMins - currentRow.minMins) / (nextRow.minMins - currentRow.minMins) * 100)`
-   where `currentRow` = the earned row. **`floor`, not round** — the bar must only read
-   100 when the level is actually earned (max 99 mid-band). At the top row: 100.
-7. **`cityLevel` is GLOBAL** — like `studySessions`, it is never part of a handbook and a
-   handbook switch must not change it.
-8. **Display rule for the EXP bar:** while an upgrade is pending (`builtIndex <
-   earnedIndex`) the bar shows **100%** — each press visually "spends" a full bar.
-   The rule-6 `progressPct` is shown only when fully built (`builtIndex ==
-   earnedIndex`). Also: show **no absolute time-to-next-upgrade** anywhere (decided
-   2026-07-08) — thresholds are internal, the filling bar is the only signal.
+…then correct for float error until `n²+9n ≤ totalMins < (n+1)²+9(n+1)` holds exactly
+(the web nudges n up/down in a loop; integer arithmetic must be exact at boundaries).
+
+## Rule 3 — land tiers
+
+| totalMins | land | floor cap |
+|---|---|---|
+| 0 | 5×5 | 5 |
+| ≥ 1200 (20 h) | 7×7 | 8 |
+| ≥ 6000 (100 h) | 9×9 | 12 |
+
+Plot coordinates are **centre-origin** integers (x, y ∈ −R…R, R = (size−1)/2), so
+expansion widens the range without re-mapping stored buildings. *(Floor caps may be
+re-tuned for visuals before MS3 ships — treat this table as the single source.)*
+
+## Rule 4 — applied / pending upgrades
+
+`applied` = Σ `floors` over `city.buildings` (every event adds exactly one floor).
+`pending` = max(earned − applied, 0).
+
+## Rule 5 — applying an upgrade event
+
+For each pending event, on the CURRENT tier:
+
+1. **Founding special case:** if the city has no buildings, build at **(0, 0)**. Done.
+2. **Candidates** = every plot whose building (if any) is below the floor cap.
+   If none: stop — remaining events stay banked until the next expansion.
+3. **Weighted pick** among candidates: plot weight = `(R − d + 1)²` with
+   `d = max(|x|, |y|)` (Chebyshev ring distance). Roll `r = random() × totalWeight`,
+   walk candidates in any fixed order subtracting weights; first to push r below 0
+   wins. (Excluding capped plots from candidates ≡ "re-roll until valid", exactly.)
+4. Picked plot empty → append `{ x, y, floors: 1 }`; occupied → `floors += 1`.
+
+Randomness: each client uses its own RNG — outcomes are **persisted**, so devices
+render the same stored city. Simultaneous offline growth on two devices resolves by
+the file's existing last-write-wins rule (acceptable; the city is decorative).
+
+## Rule 6 — reconcile automatically
+
+On load and after any save that changes `studySessions`: if `pending > 0`, apply that
+many events (Rule 5), write the new `city`, persist ONCE. Never persist when pending
+is 0 (loop guard).
+
+## Rule 7 — global
+
+`city` is GLOBAL like `studySessions`: never inside a handbook, untouched by handbook
+switches.
 
 ## Reference (Kotlin sketch)
 
 ```kotlin
-data class GrowthRow(val stage: Int, val level: Int, val name: String, val minMins: Int)
-
-val GROWTH_STAGES = listOf(
-    GrowthRow(0, 0, "Empty coastline", 0),
-    GrowthRow(1, 1, "Boat houses", 30),
-    GrowthRow(1, 2, "Stilt houses", 90),
-    GrowthRow(2, 1, "Kampung houses", 180),
-    GrowthRow(2, 2, "More kampung houses", 360),
-    GrowthRow(2, 3, "Dirt road", 600),
-    GrowthRow(3, 1, "Early shophouses", 900),
-    GrowthRow(3, 2, "Better road + rickshaw", 1260),
-    GrowthRow(3, 3, "Traditional shophouses I", 1680),
-    GrowthRow(3, 4, "Traditional shophouses II", 2160),
-    GrowthRow(3, 5, "Traditional shophouses III", 2700),
-    GrowthRow(3, 6, "Art Deco shophouses", 3300),
-)
-
-fun totalStudyMins(sessions: List<StudySession>): Int =
-    sessions.sumOf { it.durationMins }          // durationMins is non-null Int in Kotlin
-
-fun earnedIndex(totalMins: Int): Int =
-    GROWTH_STAGES.indexOfLast { totalMins >= it.minMins }
-
-fun builtIndex(cityLevel: Int, earned: Int): Int =
-    cityLevel.coerceIn(0, earned)
-
-fun claimUpgrade(built: Int, earned: Int): Int =
-    minOf(built + 1, earned)
-
-fun progressPct(totalMins: Int, earned: Int): Int {
-    if (earned == GROWTH_STAGES.lastIndex) return 100
-    val bandStart = GROWTH_STAGES[earned].minMins
-    val bandEnd = GROWTH_STAGES[earned + 1].minMins
-    return ((totalMins - bandStart) * 100) / (bandEnd - bandStart)   // Int division = floor
+fun earnedUpgrades(totalMins: Int): Int {
+    if (totalMins < 10) return 0
+    var n = ((-9 + Math.sqrt(81.0 + 4.0 * totalMins)) / 2).toInt()
+    while ((n + 1) * (n + 1) + 9 * (n + 1) <= totalMins) n++
+    while (n > 0 && n * n + 9 * n > totalMins) n--
+    return n
 }
+
+fun plotWeight(x: Int, y: Int, size: Int): Int {
+    val r = (size - 1) / 2
+    val w = r - maxOf(Math.abs(x), Math.abs(y)) + 1
+    return w * w
+}
+// applyUpgrades: mirror Rule 5 with kotlin.random.Random; persist the result.
 ```
 
-Worked checks (use as test cases): 0 mins → earned 0, progress 0 · 29 mins → earned 0 ·
-30 mins → earned 1 · 45 mins → earned 1, progress 25 · 89 mins → earned 1, progress 98 ·
-3300 mins → earned 11, maxed · `cityLevel 5` with 30 mins → built clamps to 1, no upgrade
-available · press at built 0 / earned 3 → cityLevel 1.
+## Test vectors (same numbers as the web unit tests)
+
+- `earnedUpgrades`: 9→0 · 10→1 · 21→1 · 22→2 · 36→3 · 52→4 · 1200→30.
+- Tiers: 1199→5×5 · 1200→7×7 · 5999→7×7 · 6000→9×9.
+- `plotWeight` on 5×5: (0,0)→9 · (1,0)→4 · (2,2)→1; on 7×7: (0,0)→16.
+- Empty city + 1 event → exactly `[{x:0, y:0, floors:1}]` regardless of RNG.
+- 5×5 fully at cap (25×5 floors) + 10 events → unchanged (banked).
 
 ## Change log
 
 | Date | Change |
 |------|--------|
-| 2026-07-08 | Initial contract: 12-row table (stages 1–3, MS3 scope), earn/clamp/press/floor rules, `cityLevel` field. |
+| 2026-07-08 | Initial contract (fixed 12-stage table + `cityLevel` + Upgrade button). **Superseded same day** — never implemented on Android. |
+| 2026-07-08 | **Rewrite: generative grid city.** `city.buildings` stored; pacing `n²+9n`; centre-weighted pick; land tiers 5/7/9; automatic upgrades (no button). |
