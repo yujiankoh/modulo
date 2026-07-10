@@ -20,13 +20,13 @@
   --city-sand: #ecdcae;
   --city-grass: #9ecf90;
   --city-soil: #b9946a;
-  /* Building materials (step 5a: fishing village). *-shade = the darker side face
-     that sells the 2.5D depth on every building. */
-  --city-wood: #b07b45;
-  --city-wood-shade: #8a5c31;
-  --city-attap: #caa05e;      /* thatched (attap) roofs */
-  --city-attap-shade: #a37e44;
-  --city-sea-deep: #8fb9e2;   /* ripples + water shadows */
+  --city-grass-alt: #93c785;  /* checker tone so the tile grid reads softly */
+  /* Building hues (one per tower, faces shaded by overlays in the SVG). */
+  --city-b1: #e8b04a;         /* amber */
+  --city-b2: #6f9fe8;         /* blue */
+  --city-b3: #8fc9cf;         /* cyan */
+  --city-b4: #d98a7a;         /* terracotta */
+  --city-b5: #b3a1e0;         /* lavender */
 }
 
 /* === Dark theme: same tokens, dark values. Toggled via data-theme="dark" on <html>. === */
@@ -49,12 +49,13 @@
   --city-sand: #6d5f3e;
   --city-grass: #2f5c3d;
   --city-soil: #4a3a28;
-  /* Building materials at night. */
-  --city-wood: #7a5330;
-  --city-wood-shade: #5a3c22;
-  --city-attap: #8a6b3c;
-  --city-attap-shade: #6b5230;
-  --city-sea-deep: #0f2542;
+  --city-grass-alt: #2a5237;
+  /* Building hues at night (dimmed, still distinct). */
+  --city-b1: #a87f33;
+  --city-b2: #4a72b8;
+  --city-b3: #5e989e;
+  --city-b4: #a06153;
+  --city-b5: #7f6fae;
 }
 
 body { font-family: "Inter", system-ui, sans-serif; }
@@ -871,10 +872,6 @@ body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
 }
 .city-scene-placeholder { color: var(--text-muted); font-size: 14px; text-align: center; padding: 40px 0; }
 /* The scene SVG: fills the card width, capped so it never dwarfs the view. */
-.city-svg { width: 100%; max-height: 420px; height: auto; display: block; }
-/* Reveal engine: unlockable groups are hidden until cityView.js marks them built.
-   (opacity+visibility rather than display, so step 6 can transition the reveal.) */
-.city-svg [data-min-index] { opacity: 0; visibility: hidden; }
-.city-svg [data-min-index].is-built { opacity: 1; visibility: visible; }
+.city-svg { width: 100%; max-height: 420px; height: auto; display: block; margin: 0 auto; }
 /* The game-rule blurb under the scene (vague on purpose — no numbers). */
 .city-blurb { margin: 0 0 4px; font-size: 13px; color: var(--text-muted); }

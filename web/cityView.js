@@ -9,11 +9,9 @@
 
 import { appState, persist } from "./data.js";
 import { cityState, applyUpgrades } from "./logic/growth.js";
-import { SCENE_SVG } from "./cityScene.js";
+import { renderScene } from "./cityScene.js";
 
-// Mount the island backdrop once (step 4 turns this into a real grid renderer that
-// draws appState.city). outerHTML replaces just the placeholder <p>.
-document.querySelector("#cityScene .city-scene-placeholder").outerHTML = SCENE_SVG;
+const scene = document.getElementById("cityScene");
 
 async function render() {
   const s = cityState(appState.studySessions, appState.city);
@@ -27,7 +25,10 @@ async function render() {
     return;          // the follow-up pass does the drawing
   }
 
-  // Draw: step 4 renders the grid scene from appState.city here.
+  // Draw: regenerate the whole scene from the stored city. innerHTML is safe and
+  // cheap here — the scene card contains nothing but the SVG (≤ ~600 shapes at 9×9),
+  // and replacing wholesale keeps the renderer stateless.
+  scene.innerHTML = renderScene(appState.city, s.tier);
 }
 
 window.addEventListener("modulo:datachanged", render);

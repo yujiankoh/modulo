@@ -1,78 +1,121 @@
-// cityScene.js — the study city ART (Phase 15, step 4+). One layered inline SVG:
-// the base 2.5D island scene is always visible; every unlockable sits in its own
-// <g data-min-index="N"> group, revealed by cityView.js when the BUILT level
-// reaches N (indexes = rows of GROWTH_STAGES in logic/growth.js).
+// cityScene.js — the study city RENDERER (Phase 15, generative design 2026-07-08).
+// renderScene(city, tier) → an SVG string of the isometric island + git-city towers,
+// generated from appState.city. Pure string-building (no DOM); cityView.js injects
+// the result into #cityScene on each redraw.
 //
-// HOW TO ADD ART (step 5): draw inside the matching <g> below — each level ADDS
-// buildings to the same scene, nothing is redrawn. Colours must be CSS tokens
-// (var(--city-*), defined in style.css for light AND dark) — never hardcoded.
+// Isometric projection (2:1): grid plot (x, y) — centre-origin, x right-down,
+// y left-down — lands on screen at
+//   sx = CX + (x − y)·W/2      sy = CY + (x + y)·H/2
+// Depth = x + y: bigger is nearer the viewer, so buildings are drawn back-to-front
+// sorted by it (painter's algorithm).
 //
-// Coordinate system: viewBox 0 0 800 440. The island is a diamond (isometric look)
-// centred at (400, 230): sea all around, a sand coastline ring, grass on top.
+// Colours are CSS tokens only. Each building gets ONE hue token (--city-b1..b5,
+// picked deterministically from its coordinates); its three faces are shaded by
+// overlaying the same shape with translucent black/white — one token per hue
+// covers every face in both themes.
 
-export const SCENE_SVG = `
-<svg class="city-svg" viewBox="0 0 800 440" role="img" aria-label="Your study city">
-  <!-- ============ BASE SCENE (always visible): sea, island, coastline ============ -->
-  <!-- The sea fills the whole stage. -->
-  <rect x="0" y="0" width="800" height="440" fill="var(--city-sea)" />
+const W = 64;        // tile width on screen
+const H = 32;        // tile height (2:1 iso)
+const FLOOR_H = 12;  // px per building floor
+const CX = 400;      // island centre in the viewBox
+const CY = 290;
+const VIEW = "0 0 800 500";
 
-  <!-- Island "thickness": two darker side faces peeking below the land diamond —
-       this is what sells the 2.5D look. Drawn first so the land sits on top. -->
-  <polygon points="60,230 400,400 400,428 60,258" fill="var(--city-soil)" />
-  <polygon points="740,230 400,400 400,428 740,258" fill="var(--city-soil)" opacity="0.75" />
+// Screen position of a plot.
+function iso(x, y) {
+  return { sx: CX + ((x - y) * W) / 2, sy: CY + ((x + y) * H) / 2 };
+}
 
-  <!-- Sand coastline diamond (the empty-coastline start state IS this beach). -->
-  <polygon points="400,60 740,230 400,400 60,230" fill="var(--city-sand)" />
+// A diamond's points attribute, centred (sx, sy), half-width w2, half-height h2.
+function diamond(sx, sy, w2, h2) {
+  return `${sx},${sy - h2} ${sx + w2},${sy} ${sx},${sy + h2} ${sx - w2},${sy}`;
+}
 
-  <!-- Grass top, inset from the sand so a beach ring stays visible all round. -->
-  <polygon points="400,95 670,230 400,365 130,230" fill="var(--city-grass)" />
+// Deterministic hue per plot — same plot, same colour, forever, on every device
+// (no stored colour needed). The +25 keeps the modulo positive for negative coords.
+function hueToken(x, y) {
+  return `--city-b${(((x * 31 + y * 17) % 5) + 25) % 5 + 1}`;
+}
 
-  <!-- ============ UNLOCKABLES (revealed at data-min-index <= builtIndex) ==========
-       Step 4: simple placeholder shapes for the first levels, to prove the engine.
-       Step 5 replaces them with real art and fills in the remaining groups. -->
+// One git-city tower: stacked box of `floors` floors — left face, right face, roof,
+// all in the plot's hue token, shaded by translucent overlays; thin seam lines mark
+// the floors.
+function building(b) {
+  const { sx, sy } = iso(b.x, b.y);
+  const w2 = 20, h2 = 10;                 // footprint: a bit smaller than the tile
+  const ht = b.floors * FLOOR_H;          // total height
+  const fill = `var(${hueToken(b.x, b.y)})`;
 
-  <!-- 1 · S1L1 Boat houses (on the sea, off the south-west beach) -->
-  <g data-min-index="1">
-    <rect x="150" y="298" width="54" height="26" rx="4" fill="var(--primary)" />
-    <polygon points="150,298 177,282 204,298" fill="var(--primary)" opacity="0.7" />
-  </g>
+  const left = `${sx - w2},${sy - ht} ${sx},${sy - ht + h2} ${sx},${sy + h2} ${sx - w2},${sy}`;
+  const right = `${sx},${sy - ht + h2} ${sx + w2},${sy - ht} ${sx + w2},${sy} ${sx},${sy + h2}`;
+  const roof = diamond(sx, sy - ht, w2, h2);
 
-  <!-- 2 · S1L2 Stilt houses (over the water's edge, south-east) -->
-  <g data-min-index="2">
-    <line x1="580" y1="330" x2="580" y2="352" stroke="var(--primary)" stroke-width="4" />
-    <line x1="614" y1="330" x2="614" y2="352" stroke="var(--primary)" stroke-width="4" />
-    <rect x="568" y="304" width="58" height="28" rx="4" fill="var(--primary)" />
-    <polygon points="568,304 597,288 626,304" fill="var(--primary)" opacity="0.7" />
-  </g>
+  const parts = [
+    `<polygon points="${left}" fill="${fill}" />`,
+    `<polygon points="${left}" fill="#000" opacity="0.18" />`,   // shade left face
+    `<polygon points="${right}" fill="${fill}" />`,
+    `<polygon points="${right}" fill="#000" opacity="0.32" />`,  // shade right face darker
+    `<polygon points="${roof}" fill="${fill}" />`,
+    `<polygon points="${roof}" fill="#fff" opacity="0.3" />`,    // lit roof
+  ];
+  // Floor seams: one chevron line per storey boundary, across both faces.
+  for (let i = 1; i < b.floors; i++) {
+    const y0 = sy - i * FLOOR_H;
+    parts.push(
+      `<polyline points="${sx - w2},${y0} ${sx},${y0 + h2} ${sx + w2},${y0}" ` +
+      `fill="none" stroke="#000" opacity="0.12" stroke-width="1" />`
+    );
+  }
+  return parts.join("\n    ");
+}
 
-  <!-- 3 · S2L1 Kampung houses (on the grass, north side) -->
-  <g data-min-index="3">
-    <rect x="368" y="160" width="64" height="34" rx="4" fill="var(--primary)" />
-    <polygon points="368,160 400,138 432,160" fill="var(--primary)" opacity="0.7" />
-  </g>
+// The whole scene for a given stored city + land tier.
+export function renderScene(city, tier) {
+  const R = (tier.size - 1) / 2;
 
-  <!-- 4 · S2L2 More kampung houses -->
-  <g data-min-index="4"></g>
+  // Island outline corners (screen): the four extreme plots, pushed out half a tile.
+  const top = iso(-R, -R), rightC = iso(R, -R), bottom = iso(R, R), leftC = iso(-R, R);
+  const landPts =
+    `${top.sx},${top.sy - H / 2} ${rightC.sx + W / 2},${rightC.sy} ` +
+    `${bottom.sx},${bottom.sy + H / 2} ${leftC.sx - W / 2},${leftC.sy}`;
+  // Beach ring: the same diamond, grown by ~a third of a tile.
+  const sandPts =
+    `${top.sx},${top.sy - H / 2 - H * 0.35} ${rightC.sx + W / 2 + W * 0.35},${rightC.sy} ` +
+    `${bottom.sx},${bottom.sy + H / 2 + H * 0.35} ${leftC.sx - W / 2 - W * 0.35},${leftC.sy}`;
+  // Island thickness: soil faces hanging below the beach's south edges.
+  const soilDepth = 22;
+  const soilLeft =
+    `${leftC.sx - W / 2 - W * 0.35},${leftC.sy} ${bottom.sx},${bottom.sy + H / 2 + H * 0.35} ` +
+    `${bottom.sx},${bottom.sy + H / 2 + H * 0.35 + soilDepth} ${leftC.sx - W / 2 - W * 0.35},${leftC.sy + soilDepth}`;
+  const soilRight =
+    `${rightC.sx + W / 2 + W * 0.35},${rightC.sy} ${bottom.sx},${bottom.sy + H / 2 + H * 0.35} ` +
+    `${bottom.sx},${bottom.sy + H / 2 + H * 0.35 + soilDepth} ${rightC.sx + W / 2 + W * 0.35},${rightC.sy + soilDepth}`;
 
-  <!-- 5 · S2L3 Dirt road -->
-  <g data-min-index="5"></g>
+  // Grass tiles, checkered with two tones so the grid reads without hard lines.
+  const tiles = [];
+  for (let x = -R; x <= R; x++) {
+    for (let y = -R; y <= R; y++) {
+      const { sx, sy } = iso(x, y);
+      const tone = (x + y) % 2 === 0 ? "--city-grass" : "--city-grass-alt";
+      tiles.push(`<polygon points="${diamond(sx, sy, W / 2, H / 2)}" fill="var(${tone})" />`);
+    }
+  }
 
-  <!-- 6 · S3L1 Early shophouses -->
-  <g data-min-index="6"></g>
+  // Buildings back-to-front (depth = x + y; ties don't overlap in 2:1 iso).
+  const towers = ((city && city.buildings) || [])
+    .filter((b) => Number.isInteger(b?.floors) && b.floors > 0)
+    .slice()
+    .sort((a, b) => (a.x + a.y) - (b.x + b.y))
+    .map(building);
 
-  <!-- 7 · S3L2 Better road + rickshaw -->
-  <g data-min-index="7"></g>
-
-  <!-- 8 · S3L3 Traditional shophouses I -->
-  <g data-min-index="8"></g>
-
-  <!-- 9 · S3L4 Traditional shophouses II -->
-  <g data-min-index="9"></g>
-
-  <!-- 10 · S3L5 Traditional shophouses III -->
-  <g data-min-index="10"></g>
-
-  <!-- 11 · S3L6 Art Deco shophouses -->
-  <g data-min-index="11"></g>
-</svg>
-`;
+  return `
+<svg class="city-svg" viewBox="${VIEW}" role="img" aria-label="Your study city">
+  <rect x="0" y="0" width="800" height="500" fill="var(--city-sea)" />
+  <polygon points="${soilLeft}" fill="var(--city-soil)" />
+  <polygon points="${soilRight}" fill="var(--city-soil)" opacity="0.75" />
+  <polygon points="${sandPts}" fill="var(--city-sand)" />
+  <polygon points="${landPts}" fill="var(--city-grass)" />
+  ${tiles.join("\n  ")}
+  ${towers.join("\n  ")}
+</svg>`;
+}
