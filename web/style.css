@@ -879,3 +879,26 @@ body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
 .city-svg { width: 100%; max-height: 460px; height: auto; display: block; margin: 0 auto; }
 /* The game-rule blurb under the scene (vague on purpose — no numbers). */
 .city-blurb { margin: 0 0 4px; font-size: 13px; color: var(--text-muted); }
+/* Colour-scheme stepper: a retro game-HUD pill — "▶ NAME 1/6", pixel font, always
+   dark (it's game chrome, not app chrome — same in both themes). Name + arrow are
+   coloured by JS with the scheme's accent. */
+.city-scheme-cycle {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 9px 14px; border-radius: 8px;
+  background: #10152b; border: 1px solid #323d5e;
+  font-family: "Press Start 2P", monospace;
+  font-size: 10px; letter-spacing: 0.5px;
+  color: #8b93ad;                 /* the "1/6" counter */
+}
+.city-scheme-cycle:hover { border-color: #4a578a; }
+.city-scheme-cycle .csc-arrow { font-size: 9px; }
+/* Pop-in for just-built towers: grow up from the plot with a slight overshoot.
+   transform-box makes the SVG group scale about its own bottom edge (its base). */
+.city-svg .city-pop {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: city-pop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+@keyframes city-pop {
+  from { transform: scaleY(0.25); opacity: 0; }
+}

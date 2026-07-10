@@ -14,7 +14,8 @@
   <!-- Inter (Google Fonts) — the app's typeface. -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <!-- Inter = the app typeface; Press Start 2P = the study-city HUD (scheme picker). -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Press+Start+2P&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
   <!-- Google Identity Services: the library that runs the sign-in popup -->
   <script src="https://accounts.google.com/gsi/client" async></script>
@@ -209,6 +210,14 @@
             <p class="view-eyebrow">STUDY CITY</p>
             <h3 class="view-title">Your city</h3>
           </div>
+          <!-- Colour-scheme stepper (per-device, like the theme): a retro HUD pill
+               "▶ NAME 1/6" — click cycles schemes. cityView.js fills the spans. -->
+          <button id="citySchemeBtn" class="city-scheme-cycle" type="button"
+                  title="Change colour scheme">
+            <span class="csc-arrow" aria-hidden="true">▶</span>
+            <span id="cscName"></span>
+            <span id="cscCount"></span>
+          </button>
         </div>
 
         <div id="cityScene" class="card city-scene">
