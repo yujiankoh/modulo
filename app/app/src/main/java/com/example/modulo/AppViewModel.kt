@@ -18,6 +18,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.example.modulo.helpers.AuthenticationHelper
+import com.example.modulo.helpers.CityLogicHelper
 import com.example.modulo.helpers.LocalSaveHelper
 import com.example.modulo.helpers.NetworkHelper
 import com.example.modulo.helpers.NetworkResult
@@ -30,8 +31,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.time.Instant
-import java.time.LocalDate
 import kotlin.math.roundToInt
+import kotlin.time.Duration.Companion.milliseconds
 
 private const val TAG = "ViewModel"
 
@@ -40,14 +41,15 @@ val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "se
 val HAS_SEEN_TUTORIAL = booleanPreferencesKey("has_seen_tutorial")
 val IS_DRIVE_SYNC_ENABLED = booleanPreferencesKey("is_drive_sync_enabled")
 
-class AppViewModel(
+class AppViewModel @JvmOverloads constructor(
     application: Application,
-    private val savedStateHandle: SavedStateHandle
+    private val savedStateHandle: SavedStateHandle,
+    // Injectable so tests can supply a fake; the framework uses the two-arg constructor.
+    private val parsingHelper: ParsingHelper = ParsingHelper()
 ) : AndroidViewModel(application) {
     // Helpers
     private val localSaveHelper = LocalSaveHelper(application)
     private var syncingHelper: SyncingHelper? = null
-    private val parsingHelper = ParsingHelper()
     private val networkMonitor = NetworkHelper(application)
 
     // State Flows
@@ -84,8 +86,18 @@ class AppViewModel(
 
     // Functions for startup
     init {
+        // preload local city
+        reconcileCity()
         startUpChecks()
         autoSync()
+    }
+
+    private fun reconcileCity() {
+        val current = _appData.value
+        val reconciled = CityLogicHelper.reconcile(current.city, current.studySessions)
+        if (reconciled !== current.city) {
+            updateData { it.copy(city = reconciled) }
+        }
     }
 
     // Stores user email for authentication
@@ -161,6 +173,9 @@ class AppViewModel(
             uploadToDrive()
         }
         _syncState.value = SyncState.SYNCED
+
+        // match city building scope
+        reconcileCity()
     }
 
     fun startUpChecks() {
@@ -271,7 +286,7 @@ class AppViewModel(
 
     fun isHigherEducation(): Boolean {
         val currLevel = _appData.value.educationLevel
-        return currLevel == "university" || currLevel == "poly";
+        return currLevel == "university" || currLevel == "poly"
     }
 
     // TODO: other functions to change appdata
@@ -287,7 +302,7 @@ class AppViewModel(
             // Cancel previous delay and start a new one
             delaySync?.cancel()
             delaySync = viewModelScope.launch {
-                delay(1000L) // Wait for 1s of inactivity
+                delay(1000L.milliseconds) // Wait for 1s of inactivity
                 uploadToDrive()
             }
         }
@@ -373,18 +388,6 @@ class AppViewModel(
         _timetableState.value = TimetableState.Idle
     }
 
-    fun saveTermStart(date: LocalDate?) {
-        updateData { currentData ->
-            currentData.copy(termStart = date.toString())
-        }
-    }
-
-    fun saveTermEnd(date: LocalDate?) {
-        updateData { currentData ->
-            currentData.copy(termEnd = date.toString())
-        }
-    }
-
     fun startOrResumeTimer() {
         if (sessionStartTime == null) {
             sessionStartTime = Instant.now().toString()
@@ -393,7 +396,7 @@ class AppViewModel(
         isTimerRunning = true
         timerJob = viewModelScope.launch {
             while (true) {
-                delay(1000L) // Wait 1 second
+                delay(1000L.milliseconds) // Wait 1 second
                 elapsedSeconds += 1
             }
         }
@@ -432,7 +435,9 @@ class AppViewModel(
             )
 
             updateData { currentData ->
-                currentData.copy(studySessions = currentData.studySessions + newSession)
+                // add the seesion and update city
+                val withSession = currentData.copy(studySessions = currentData.studySessions + newSession)
+                withSession.copy(city = CityLogicHelper.reconcile(withSession.city, withSession.studySessions))
             }
         }
 
@@ -452,6 +457,7 @@ class AppViewModel(
                     termEnd = currentData.termEnd,
                     breaks = currentData.breaks,
                     tasks = currentData.tasks,
+                    hiddenModules = currentData.hiddenModules,
                     timetable = currentData.timetable
                 )
                 currentData.otherHandbooks + currHandbook
@@ -460,6 +466,7 @@ class AppViewModel(
             }
 
             currentData.copy(
+                handbookId = newHandbook.id,
                 educationLevel = newHandbook.educationLevel,
                 academicYear = newHandbook.academicYear,
                 semester = newHandbook.semester,
@@ -468,7 +475,7 @@ class AppViewModel(
                 breaks = newHandbook.breaks,
                 tasks = emptyList(),
                 timetable = null,
-                handbookId = newHandbook.id,
+                hiddenModules = emptyList(),
                 otherHandbooks = updatedHandbooks
             )
         }
@@ -494,6 +501,7 @@ class AppViewModel(
                     termEnd = currentData.termEnd,
                     breaks = currentData.breaks,
                     tasks = currentData.tasks,
+                    hiddenModules = currentData.hiddenModules,
                     timetable = currentData.timetable
                 )
                 updatedHandbooks.add(currHandbook)
@@ -508,6 +516,7 @@ class AppViewModel(
                 breaks = handbook.breaks,
                 tasks = handbook.tasks,
                 timetable = handbook.timetable,
+                hiddenModules = handbook.hiddenModules,
                 otherHandbooks = updatedHandbooks
             )
         }
@@ -524,7 +533,6 @@ class AppViewModel(
     fun updateHandbook(handbook: Handbook) {
         updateData { currentData ->
             currentData.copy(
-                handbookId = handbook.id,
                 educationLevel = handbook.educationLevel,
                 academicYear = handbook.academicYear,
                 semester = handbook.semester,

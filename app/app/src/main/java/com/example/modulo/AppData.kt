@@ -102,15 +102,28 @@ data class StudySession(
 )
 
 @Serializable
+data class City(
+    val buildings: List<Building> = emptyList()
+)
+
+@Serializable
+data class Building(
+    val x: Int,
+    val y: Int,
+    val floors: Int
+)
+
+@Serializable
 data class Handbook(
     val id: String,
-    val educationLevel: String?,
-    val academicYear: String?,
-    val semester: Int?,
+    val educationLevel: String? = null,
+    val academicYear: String? = null,
+    val semester: Int? = null,
     val termStart: String? = null,
     val termEnd: String? = null,
     val breaks: List<Break> = emptyList(),
     val tasks: List<Task> = emptyList(),
+    val hiddenModules: List<String> = emptyList(),
     val timetable: Timetable? = null
 )
 
@@ -120,6 +133,7 @@ data class Handbook(
 @Serializable
 data class AppData(
     val schemaVersion: Int = 2,
+    val handbookId: String = "",
     val educationLevel: String? = null,
     val academicYear: String? = null,
     val semester: Int? = null,
@@ -130,8 +144,8 @@ data class AppData(
     val tasks: List<Task> = emptyList(),
     val studySessions: List<StudySession> = emptyList(),
     val hiddenModules: List<String> = emptyList(),
+    val city: City = City(),
     val timetable: Timetable? = null,
-    val handbookId: String = "",
     val otherHandbooks: List<Handbook> = emptyList()
 )
 /**

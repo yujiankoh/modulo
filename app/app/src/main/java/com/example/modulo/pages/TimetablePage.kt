@@ -28,6 +28,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SecondaryTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -49,12 +50,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.example.modulo.AppViewModel
 import com.example.modulo.R
-import com.example.modulo.components.DatePickerMenu
 import com.example.modulo.getModuleColor
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
+import java.util.Locale
 import kotlin.text.isNotBlank
 
 @Composable
@@ -62,23 +63,22 @@ fun TimetablePage(
     viewModel: AppViewModel,
     onBack: () -> Unit,
     onUploadTimetable: () -> Unit,
+    onEditTimetable: () -> Unit,
 ) {
     val appData by viewModel.appData.collectAsState()
     val timetable = appData.timetable
 
-    var termStartDate by remember { mutableStateOf(if (appData.termStart == null) null else LocalDate.parse(appData.termStart)) }
-    var termEndDate by remember { mutableStateOf(if (appData.termEnd == null) null else LocalDate.parse(appData.termEnd)) }
+    val termStartDate = appData.termStart?.let { LocalDate.parse(it) }
+    val termEndDate = appData.termEnd?.let { LocalDate.parse(it) }
 
     // Rounded down to the earliest Monday and latest Friday
-    val baseMonday = remember(termStartDate) {
-        termStartDate?.let { start -> start.minusDays(start.dayOfWeek.value - 1L) }
-    }
-    val endFriday = remember(termEndDate) {
-        termEndDate?.let { date ->
-            val daysToFriday = (5 - date.dayOfWeek.value).let {
-                if (it < 0) it + 7 else it
-            }
-            date.plusDays(daysToFriday.toLong())
+    val baseMonday = remember(termStartDate) { termStartDate?.let { roundDownToMonday(it) } }
+    val endFriday = remember(termEndDate) { termEndDate?.let { roundUpToFriday(it) } }
+
+    val breakRanges = remember(appData.breaks) {
+        appData.breaks.mapNotNull { currBreak ->
+            if (currBreak.start.isBlank() || currBreak.end.isBlank()) return@mapNotNull null
+            LocalDate.parse(currBreak.start) to LocalDate.parse(currBreak.end)
         }
     }
 
@@ -99,6 +99,25 @@ fun TimetablePage(
             1
         }
     }
+
+    // Each calendar week of the term, marked as a break if it overlaps a break
+    val weekInfos = remember(baseMonday, totalWeeks, breakRanges) {
+        if (baseMonday == null) {
+            emptyList()
+        } else {
+            var teachingWeekCounter = 0
+            (1..totalWeeks).map { weekIndex ->
+                val weekStart = baseMonday.plusWeeks((weekIndex - 1).toLong())
+                val weekEnd = weekStart.plusDays(4)
+                val isBreak = breakRanges.any { (breakStart, breakEnd) ->
+                    !weekStart.isAfter(breakEnd) && !breakStart.isAfter(weekEnd)
+                }
+                if (!isBreak) teachingWeekCounter++
+                WeekInfo(weekStart, weekEnd, isBreak, if (isBreak) null else teachingWeekCounter)
+            }
+        }
+    }
+
     val currentWeekNum = remember(baseMonday) {
         baseMonday?.let {
             val daysPassed = ChronoUnit.DAYS.between(it, today)
@@ -128,8 +147,11 @@ fun TimetablePage(
     }
     val hasEvenOddSplit = allDisplaySlots.any { it.week == "even" || it.week == "odd" }
 
+    val selectedWeekInfo = weekInfos.getOrNull(selectedWeekNum - 1)
+
     val activeWeekType = if (termStartDate != null) {
-        if (selectedWeekNum % 2 == 0) "even" else "odd"
+        val teachingWeekNum = selectedWeekInfo?.teachingWeekNum ?: selectedWeekNum
+        if (teachingWeekNum % 2 == 0) "even" else "odd"
     } else {
         manualTab
     }
@@ -170,33 +192,21 @@ fun TimetablePage(
                 }
             }
 
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 16.dp, end = 16.dp, top = 0.dp, bottom = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                DatePickerMenu(
-                    selectedDate = termStartDate,
-                    label = "Term Start",
-                    onDateSelected = { newDate ->
-                        termStartDate = newDate
-                        viewModel.saveTermStart(newDate)
-                    },
-                    modifier = Modifier.weight(1f)
-                )
-
-                Spacer(Modifier.padding(8.dp))
-
-                DatePickerMenu(
-                    selectedDate = termEndDate,
-                    label = "Term End",
-                    onDateSelected = { newDate ->
-                        termEndDate = newDate
-                        viewModel.saveTermEnd(newDate)
-                    },
-                    modifier = Modifier.weight(1f)
-                )
+            if (termStartDate != null && termEndDate != null) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 16.dp, end = 16.dp, top = 0.dp, bottom = 8.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy", Locale.getDefault())
+                    Text(
+                        text = "${termStartDate.format(formatter)} - ${termEndDate.format(formatter)}",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
 
             // No timetable warning
@@ -222,8 +232,8 @@ fun TimetablePage(
                         )
                     }
                 } else {
-                    val weekStart = baseMonday.plusWeeks(selectedWeekNum - 1L)
-                    val weekEnd = weekStart.plusDays(4) // Friday
+                    val weekStart = selectedWeekInfo?.weekStart ?: baseMonday.plusWeeks(selectedWeekNum - 1L)
+                    val weekEnd = selectedWeekInfo?.weekEnd ?: weekStart.plusDays(4)
                     val formatter = DateTimeFormatter.ofPattern("dd MMM")
 
                     // Week Selector
@@ -239,7 +249,11 @@ fun TimetablePage(
                             Icon(painter = painterResource(R.drawable.chevron_left), contentDescription = "Previous Week")
                         }
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("Week $selectedWeekNum", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                            Text(
+                                text = if (selectedWeekInfo?.isBreak == true) "Break" else "Week ${selectedWeekInfo?.teachingWeekNum ?: selectedWeekNum}",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold
+                            )
                             Text(
                                 text = "${weekStart.format(formatter)} - ${weekEnd.format(formatter)}",
                                 style = MaterialTheme.typography.bodyMedium,
@@ -266,7 +280,11 @@ fun TimetablePage(
             }
 
             if (!isOutsideTerm) {
-                val slotsToShow = allDisplaySlots.filter { it.week == "all" || it.week == activeWeekType }
+                val slotsToShow = if (selectedWeekInfo?.isBreak == true) {
+                    emptyList()
+                } else {
+                    allDisplaySlots.filter { it.week == "all" || it.week == activeWeekType }
+                }
                 val dayNames = listOf("MON", "TUE", "WED", "THU", "FRI")
 
                 val (minTime, maxTime, totalHours) = getTimeDetails(slotsToShow)
@@ -400,9 +418,30 @@ fun TimetablePage(
                     }
                 }
             }
+
+            TextButton(
+                onClick = onEditTimetable,
+                modifier = Modifier.align(Alignment.CenterHorizontally).padding(vertical = 8.dp)
+            ) {
+                Text("Want to edit your timetable?")
+            }
         }
     }
 }
+
+fun roundDownToMonday(date: LocalDate): LocalDate = date.minusDays(date.dayOfWeek.value - 1L)
+
+fun roundUpToFriday(date: LocalDate): LocalDate {
+    val daysToFriday = (5 - date.dayOfWeek.value).let { if (it < 0) it + 7 else it }
+    return date.plusDays(daysToFriday.toLong())
+}
+
+data class WeekInfo(
+    val weekStart: LocalDate,
+    val weekEnd: LocalDate,
+    val isBreak: Boolean,
+    val teachingWeekNum: Int?
+)
 
 // Calculate the start and end timing of timetable (minimum 1000 - 1600)
 fun getTimeDetails(slots: List<DisplaySlot>): Triple<LocalTime, LocalTime, Int> {

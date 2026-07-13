@@ -7,8 +7,6 @@ import org.junit.Test
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 
-
-
 class AppLogicTest {
     val task = Task(
         id = 1717059306606,

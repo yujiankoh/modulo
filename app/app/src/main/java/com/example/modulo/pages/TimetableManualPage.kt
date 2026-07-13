@@ -60,7 +60,6 @@ import com.example.modulo.Module
 import com.example.modulo.R
 import com.example.modulo.Slot
 import com.example.modulo.Timetable
-import com.example.modulo.components.DropDownMenu
 import com.example.modulo.components.TimePickerMenu
 import com.example.modulo.components.WarningCard
 import com.example.modulo.ui.theme.ModuloTheme
@@ -70,25 +69,50 @@ import kotlin.math.roundToInt
 fun TimetableManualPage(
     currEducationLevel: EducationLevel,
     viewModel: AppViewModel,
+    isEditMode: Boolean = false,
     onBack: () -> Unit
 ) {
-    var educationLevel by remember { mutableStateOf(currEducationLevel) }
+    val existingTimetable = remember { if (isEditMode) viewModel.appData.value.timetable else null }
+
     val modules = remember {
-        mutableStateListOf(
+        val existingModules = existingTimetable?.modules?.map { module ->
             FormModule(
-                slots = mutableListOf(FormSlot(sessionType = getDefaultSessionType(currEducationLevel)))
+                code = module.code,
+                name = module.name,
+                slots = module.slots.map { slot ->
+                    FormSlot(
+                        day = slot.day,
+                        start = slot.start,
+                        end = slot.end,
+                        location = slot.location,
+                        sessionType = slot.sessionType,
+                        classNo = slot.classNo,
+                        week = slot.week
+                    )
+                }.toMutableList()
             )
-        )
+        }
+
+        if (!existingModules.isNullOrEmpty()) {
+            mutableStateListOf(*existingModules.toTypedArray())
+        } else {
+            mutableStateListOf(
+                FormModule(
+                    slots = mutableListOf(FormSlot(sessionType = getDefaultSessionType(currEducationLevel)))
+                )
+            )
+        }
     }
 
     var showSaveWarning by remember { mutableStateOf(false) }
-    val isHigherEd = educationLevel == EducationLevel.UNIVERSITY || educationLevel == EducationLevel.POLY
+    val isHigherEd = currEducationLevel == EducationLevel.UNIVERSITY || currEducationLevel == EducationLevel.POLY
 
     Scaffold { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
+                .padding(paddingValues),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Row(
                 modifier = Modifier
@@ -105,7 +129,7 @@ fun TimetableManualPage(
                     }
 
                     Text(
-                        text = "Enter Timetable",
+                        text = if (isEditMode) "Edit Timetable" else "Enter Timetable",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold
                     )
@@ -130,6 +154,14 @@ fun TimetableManualPage(
                 }
             }
 
+            Text(
+                text = "Education Level: ${currEducationLevel.displayName}",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
             LazyColumn(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -137,20 +169,10 @@ fun TimetableManualPage(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                item {
-                    DropDownMenu(
-                        label = "Education Level",
-                        selectedItem = educationLevel,
-                        items = EducationLevel.entries,
-                        itemToText = { it?.displayName ?: "" },
-                        onItemSelected = { educationLevel = it }
-                    )
-                }
-
                 itemsIndexed(modules) { moduleIndex, module ->
                     ModuleEntryCard(
                         module = module,
-                        educationLevel = educationLevel,
+                        educationLevel = currEducationLevel,
                         onModuleChange = { updatedModule ->
                             modules[moduleIndex] = updatedModule
                         },
@@ -165,7 +187,7 @@ fun TimetableManualPage(
                         onClick = {
                             modules.add(
                                 FormModule(
-                                    slots = mutableListOf(FormSlot(sessionType = getDefaultSessionType(educationLevel)))
+                                    slots = mutableListOf(FormSlot(sessionType = getDefaultSessionType(currEducationLevel)))
                                 )
                             )
                         },
@@ -208,13 +230,13 @@ fun TimetableManualPage(
                 }
 
                 val newTimetable = Timetable(
-                    educationLevel = educationLevel.json,
+                    educationLevel = currEducationLevel.json,
                     modules = finalModules
                 )
 
                 viewModel.saveTimetable(newTimetable)
                 onBack()
-                onBack()
+                if (!isEditMode) onBack()
             },
             onDismiss = { showSaveWarning = false }
         )

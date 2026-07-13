@@ -63,14 +63,21 @@ fun AllTaskPage(
 
     var currentSort by remember { mutableStateOf(SortOption.DUE_DATE) }
     var activeModuleFilter by remember { mutableStateOf<String?>(null) }
+    var activeTaskTypeFilter by remember { mutableStateOf<String?>(null) }
 
     val moduleCodes = remember {
         appData.tasks.map { it.module }.filter { it.isNotBlank() }.distinct()
+    }
+    val taskTypes = remember {
+        appData.tasks.map { it.type }.filter { it.isNotBlank() }.distinct()
     }
 
     var filteredTasks = appData.tasks
     if (activeModuleFilter != null) {
         filteredTasks = filteredTasks.filter { it.module == activeModuleFilter }
+    }
+    if (activeTaskTypeFilter != null) {
+        filteredTasks = filteredTasks.filter {it.type == activeTaskTypeFilter}
     }
 
     filteredTasks = when (currentSort) {
@@ -119,7 +126,7 @@ fun AllTaskPage(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 if (moduleCodes.isNotEmpty()) {
-                    Text("Filter Module:", style = MaterialTheme.typography.labelMedium)
+                    Text("Filter:", style = MaterialTheme.typography.labelMedium)
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
 
                         item {
@@ -141,6 +148,38 @@ fun AllTaskPage(
                                 selected = activeModuleFilter == moduleCode,
                                 onClick = { activeModuleFilter = moduleCode },
                                 label = { Text(moduleCode) },
+                                shape = RoundedCornerShape(8.dp),
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                                    selectedLabelColor = MaterialTheme.colorScheme.primary
+                                )
+                            )
+                        }
+                    }
+                }
+
+                if (taskTypes.isNotEmpty()) {
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+
+                        item {
+                            FilterChip(
+                                selected = activeTaskTypeFilter == null,
+                                onClick = { activeTaskTypeFilter = null },
+                                label = { Text("All") },
+                                shape = RoundedCornerShape(8.dp),
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                                    selectedLabelColor = MaterialTheme.colorScheme.primary
+                                )
+                            )
+                        }
+
+                        // Generate a button for every task type the user has tasks for
+                        items(taskTypes) { taskType ->
+                            FilterChip(
+                                selected = activeTaskTypeFilter == taskType,
+                                onClick = { activeTaskTypeFilter = taskType },
+                                label = { Text(taskType.replaceFirstChar { it.uppercase() }) },
                                 shape = RoundedCornerShape(8.dp),
                                 colors = FilterChipDefaults.filterChipColors(
                                     selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
