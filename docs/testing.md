@@ -35,7 +35,7 @@ on an ephemeral port and makes a real HTTP request; it asserts the **input-valid
 path, which returns `400` *before* any Gemini call — so the suite **spends no Gemini
 quota** and needs no API key.
 
-Current result: **25 tests, 25 passing.**
+Current result: **37 tests, 37 passing.**
 
 ## Unit tests
 
@@ -49,6 +49,7 @@ they can be tested in isolation.
 | `mergeModules`, `sameSlot` | `web/logic/mergeModules.js` | `tests/mergeModules.test.js` | Same module's slots combine; exact-duplicate slots skipped; differing code/name add a new module; inputs are not mutated |
 | `buildPrompt`, `extractJson` | `server/index.js` | `tests/proxy.test.js` | Prompt includes the level-specific section + falls back to secondary for unknown levels; JSON is extracted from surrounding noise and braces inside strings are ignored |
 | `snapshotHandbook`, `blankHandbook`, `switchHandbook` | `web/logic/handbooks.js` | `tests/handbooks.test.js` | Snapshot captures every `HANDBOOK_FIELDS` entry, deep-copies (no shared references), excludes globals (`studySessions`); switch swaps active↔stored, round-trips losslessly, never mutates its input, no-ops on unknown/active ids (Phase 13.5) |
+| `totalStudyMins`, `earnedUpgrades`, `gridTier`, `plotWeight`, `applyUpgrades`, `appliedUpgrades`, `cityState` | `web/logic/growth.js` | `tests/growth.test.js` | Study-city rules (Phase 14): pacing inverse exact at every `n²+9n` boundary (10/22/36/…/1200→30); tier switches exactly at 20 h/100 h; centre-weighted pick (9/4/1 rings) obeys an **injected scripted RNG** (deterministic tests of random logic); founding building always dead-centre; spawn-vs-grow by occupancy; capped plots excluded; maxed grid banks; inputs never mutated; **progression invariant** — every tier expands long before its land can fill (guards future floor-cap tuning) |
 
 Each test feeds known inputs and asserts the exact output with `node:assert/strict` — e.g.
 `assert.equal(formatAcademicYear(2025, "university"), "25/26")`.
@@ -95,6 +96,12 @@ the actual behaviour.
 | S21 | Delete handbook (13.5) | Handbook list → trash on a stored row | Active row has no trash; confirm names the handbook + its task count; Cancel = no change; OK removes it permanently (survives reload) | To verify |
 | S22 | Level locked per handbook (13.5) | Settings → Edit (set-up handbook) vs Start new semester | Edit shows the level as read-only text + note; a NEW handbook's modal shows the full dropdown | To verify |
 | S23 | Pre-13.5 file migration | Load data saved before 13.5 | Loads cleanly; gains `handbookId` + empty `otherHandbooks` on save; app behaves as a single-handbook state | To verify |
+| S24 | Study city — first building (14/15) | Fresh data → study ≥10 min total → Stop & Save | Empty island + "island is waiting" blurb before; after saving, the founding building pops in at the exact centre; blurb switches to the growth wording | To verify |
+| S25 | Study city — auto growth + persistence | With hours banked, load the app; then reload | Pending upgrades apply automatically (staggered pop-in); the SAME layout persists across reloads (grid is stored, not re-rolled) | To verify |
+| S26 | Study city — land expansion | Cross 20 h total study (or fake mins locally) | Island expands 5×5 → 7×7 (camera zooms out); existing buildings keep their plots; 100 h → 9×9 | To verify |
+| S27 | Study city — global across handbooks (like S20) | Note the city → switch handbook | The city is IDENTICAL before/after any handbook switch (city + studySessions are global) | To verify |
+| S28 | Study city — colour schemes | Click the "▶ SCHEME i/6" HUD pill; toggle light/dark; reload | Cycles all 6 schemes; land + sea + buildings + windows restyle instantly; each scheme has day/night variants; choice persists per device | To verify |
+| S29 | Study city — cross-device render (with Ling Song, when app-side lands) | Same Drive data on web + Android | Both devices show the SAME city layout and building colours (stored grid + shared coordinate hash); visual palettes may differ per device by design | Blocked on app |
 
 > Replace "To verify" with **Pass/Fail** during a manual pass and drop screenshots into a
 > `docs/test-evidence/` folder (or the report), referenced by scenario number.
