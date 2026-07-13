@@ -41,6 +41,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
 import com.example.modulo.AppViewModel
 import com.example.modulo.R
+import com.example.modulo.components.StudyCityView
 import com.example.modulo.emojis
 import java.time.Instant
 import java.time.ZoneId
@@ -117,17 +118,26 @@ fun StudySessionPage(
                 Text("View History")
             }
 
-            Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Game View
+            StudyCityView(
+                city = appData.city,
+                totalMins = totalMins,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+            )
 
             // Timer
             Text(
                 text = timerString,
-                fontSize = 64.sp,
+                fontSize = 32.sp,
                 fontWeight = FontWeight.Light,
                 color = MaterialTheme.colorScheme.primary
             )
 
-            Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.height(24.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -137,8 +147,8 @@ fun StudySessionPage(
                 if (!viewModel.isTimerRunning) {
                     IconButton(
                         onClick = { viewModel.startOrResumeTimer() },
-                        modifier = Modifier.size(80.dp),
-                        shape = RoundedCornerShape(40.dp),
+                        modifier = Modifier.size(60.dp),
+                        shape = RoundedCornerShape(30.dp),
                         colors = IconButtonDefaults.iconButtonColors(
                             containerColor = MaterialTheme.colorScheme.primaryContainer,
                             contentColor = MaterialTheme.colorScheme.onPrimaryContainer
@@ -149,8 +159,8 @@ fun StudySessionPage(
                 } else {
                     IconButton(
                         onClick = { viewModel.pauseTimer() },
-                        modifier = Modifier.size(80.dp),
-                        shape = RoundedCornerShape(40.dp),
+                        modifier = Modifier.size(60.dp),
+                        shape = RoundedCornerShape(30.dp),
                         colors = IconButtonDefaults.iconButtonColors(
                             containerColor = MaterialTheme.colorScheme.primaryContainer,
                             contentColor = MaterialTheme.colorScheme.onPrimaryContainer
@@ -166,8 +176,8 @@ fun StudySessionPage(
                             viewModel.stopTimer()
                             showConfirmDialog = true
                         },
-                        modifier = Modifier.size(80.dp),
-                        shape = RoundedCornerShape(40.dp),
+                        modifier = Modifier.size(60.dp),
+                        shape = RoundedCornerShape(30.dp),
                         colors = IconButtonDefaults.iconButtonColors(
                             containerColor = MaterialTheme.colorScheme.errorContainer,
                             contentColor = MaterialTheme.colorScheme.onErrorContainer
