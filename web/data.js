@@ -25,6 +25,7 @@ export let appState = {
   termEnd: null,           // "YYYY-MM-DD" last day of term; weeks past it are "outside term"
   breaks: [],              // [{ start, end }] date ranges of recess/holiday (non-academic) weeks
   tasks: [],
+  grades: [],              // Phase 16: grade rows [{ id, module, credits, grade }] — per handbook, feeds logic/gpa.js
   studySessions: [],       // Phase 10: recorded focus/study sessions (see modulo-data-schema.md)
   city: { buildings: [] }, // Phase 14: the study-city grid (GLOBAL, like studySessions) — see study-city-growth.md
   hiddenModules: [],       // Phase 12: module labels hidden from the dashboard + sidebar
@@ -93,6 +94,10 @@ export async function loadInitialData() {
     // just "missing") so a malformed value resets rather than crashing the renderer.
     if (!appState.city || !Array.isArray(appState.city.buildings)) appState.city = { buildings: [] };
     delete appState.cityLevel; // never shipped (branch-era test data only) — drop the stray key
+    // Default for files saved before Phase 16: no grades yet. Shape-check like `city`
+    // (stored handbooks in otherHandbooks may also lack `grades` — logic/gpa.js tolerates
+    // that itself, so only the active flat field needs defaulting here).
+    if (!Array.isArray(appState.grades)) appState.grades = [];
   }
   // Announce the load; every view (task list, calendar, timetable) redraws from this.
   window.dispatchEvent(new Event("modulo:datachanged"));

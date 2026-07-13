@@ -10,7 +10,7 @@
 
 // The canonical list of per-handbook flat fields — the ONE place that defines what a
 // handbook is. snapshotHandbook and switchHandbook both read it, so they can never
-// disagree. (Phase 16 adds "grades" here and the swap carries grades automatically.)
+// disagree.
 export const HANDBOOK_FIELDS = [
   "educationLevel",
   "academicYear",
@@ -20,6 +20,7 @@ export const HANDBOOK_FIELDS = [
   "breaks",
   "timetable",
   "tasks",
+  "grades",          // Phase 16: grade rows [{ id, module, credits, grade }] — per semester
   "hiddenModules",
   "handbookSetup",   // per-handbook: a stored, completed handbook doesn't re-run onboarding
 ];
@@ -54,6 +55,7 @@ export function blankHandbook(id) {
     breaks: [],
     timetable: null,
     tasks: [],
+    grades: [],             // Phase 16: a new semester starts with no grades
     hiddenModules: [],
     handbookSetup: false,   // false → the first-run modal opens = new-semester onboarding
   };

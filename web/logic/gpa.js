@@ -53,7 +53,7 @@ export const SCHEMES = {
 // computeGPA and stay unsupported stubs until they're built as their own thing.
 const LEVEL_TO_SCHEME = {
   university: "nus5",
-  polytechnic: "poly4",
+  poly: "poly4",   // "poly" is the stored value (index.html option / schema doc), NOT "polytechnic"
 };
 
 const UNSUPPORTED_REASONS = {

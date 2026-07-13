@@ -28,6 +28,7 @@ function sampleState() {
     },
     tasks: [{ id: 1, title: "Lab 1", module: "CS2040S", due: "2026-08-20",
       type: "assignment", done: false }],
+    grades: [{ id: "g1", module: "CS2040S", credits: 4, grade: "A-" }],  // Phase 16
     hiddenModules: ["GER1000"],
     handbookSetup: true,
     otherHandbooks: [{
@@ -40,6 +41,7 @@ function sampleState() {
       breaks: [],
       timetable: { educationLevel: "jc", modules: [] },
       tasks: [{ id: 2, title: "GP essay", module: "", due: "", type: "assignment", done: true }],
+      grades: [],
       hiddenModules: [],
       handbookSetup: true,
     }],

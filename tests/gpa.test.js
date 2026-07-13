@@ -13,7 +13,7 @@ test("schemeForLevel maps university → nus5 and polytechnic → poly4", () => 
   assert.equal(uni.scheme.id, "nus5");
   assert.equal(uni.scheme.maxPoints, 5.0);
 
-  const poly = schemeForLevel("polytechnic");
+  const poly = schemeForLevel("poly");   // "poly" is the stored educationLevel value
   assert.equal(poly.supported, true);
   assert.equal(poly.scheme.id, "poly4");
   assert.equal(poly.scheme.maxPoints, 4.0);
@@ -204,7 +204,7 @@ test("cumulativeGPA: poly and university never combine even though both are nume
   const state = multiSemesterState();
   state.otherHandbooks = [{
     id: "PAST-POLY",
-    educationLevel: "polytechnic",
+    educationLevel: "poly",
     grades: [{ id: "g4", module: "IT1234", credits: 20, grade: "DIST" }],
   }];
   const result = cumulativeGPA(state);
