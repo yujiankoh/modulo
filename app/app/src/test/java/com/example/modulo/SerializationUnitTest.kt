@@ -35,7 +35,7 @@ class SerializationUnitTest {
             tasks = listOf(task),
             studySessions = listOf(StudySession(id = "s1", start = "a", end = "b", durationMins = 45, rating = 4)),
             hiddenModules = listOf("CS1231S"),
-            cityLevel = 3,
+            city = City(buildings = listOf(Building(x = 0, y = 0, floors = 3), Building(x = -1, y = 1, floors = 1))),
             timetable = Timetable(
                 educationLevel = "university",
                 modules = listOf(
@@ -61,7 +61,7 @@ class SerializationUnitTest {
 
         // With encodeDefaults = true these are present even though they hold default values.
         assertTrue(json.contains("\"schemaVersion\":2"))
-        assertTrue(json.contains("\"cityLevel\":0"))
+        assertTrue(json.contains("\"city\":{\"buildings\":[]}"))
         assertTrue(json.contains("\"tasks\":[]"))
     }
 

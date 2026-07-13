@@ -107,7 +107,7 @@ class ModelUnitTest {
 
         assertEquals(2, data.schemaVersion)
         assertNull(data.educationLevel)
-        assertEquals(0, data.cityLevel)
+        assertTrue(data.city.buildings.isEmpty())
         assertTrue(data.tasks.isEmpty())
         assertTrue(data.studySessions.isEmpty())
         assertTrue(data.otherHandbooks.isEmpty())
