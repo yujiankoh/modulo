@@ -35,7 +35,7 @@ on an ephemeral port and makes a real HTTP request; it asserts the **input-valid
 path, which returns `400` *before* any Gemini call — so the suite **spends no Gemini
 quota** and needs no API key.
 
-Current result: **37 tests, 37 passing.**
+Current result: **54 tests, 54 passing.**
 
 ## Unit tests
 
@@ -50,6 +50,7 @@ they can be tested in isolation.
 | `buildPrompt`, `extractJson` | `server/index.js` | `tests/proxy.test.js` | Prompt includes the level-specific section + falls back to secondary for unknown levels; JSON is extracted from surrounding noise and braces inside strings are ignored |
 | `snapshotHandbook`, `blankHandbook`, `switchHandbook` | `web/logic/handbooks.js` | `tests/handbooks.test.js` | Snapshot captures every `HANDBOOK_FIELDS` entry, deep-copies (no shared references), excludes globals (`studySessions`); switch swaps active↔stored, round-trips losslessly, never mutates its input, no-ops on unknown/active ids (Phase 13.5) |
 | `totalStudyMins`, `earnedUpgrades`, `gridTier`, `plotWeight`, `applyUpgrades`, `appliedUpgrades`, `cityState` | `web/logic/growth.js` | `tests/growth.test.js` | Study-city rules (Phase 14): pacing inverse exact at every `n²+9n` boundary (10/22/36/…/1200→30); tier switches exactly at 20 h/100 h; centre-weighted pick (9/4/1 rings) obeys an **injected scripted RNG** (deterministic tests of random logic); founding building always dead-centre; spawn-vs-grow by occupancy; capped plots excluded; maxed grid banks; inputs never mutated; **progression invariant** — every tier expands long before its land can fill (guards future floor-cap tuning) |
+| `SCHEMES`, `schemeForLevel`, `computeGPA`, `cumulativeGPA` | `web/logic/gpa.js` | `tests/gpa.test.js` | Grade calculator (Phase 16): level→scheme mapping (`university`→5.0, `poly`→4.0, jc/secondary/primary stubbed with a reason); hand-computed weighted averages for both schemes; credit weighting (bigger modules pull harder); S/U/CS/CU and poly `P` excluded from numerator AND denominator; `gpa: null` (not 0) when nothing counts; junk rows (unknown grade, ≤0/string/NaN credits, null row) skipped + counted, never thrown; grade normalisation (`"a+"` counts); cumulative GPA pools only same-scheme handbooks (JC contributes nothing to uni; poly never mixes with uni), tolerates pre-16 handbooks without `grades`; inputs never mutated |
 
 Each test feeds known inputs and asserts the exact output with `node:assert/strict` — e.g.
 `assert.equal(formatAcademicYear(2025, "university"), "25/26")`.
