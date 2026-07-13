@@ -14,7 +14,8 @@
   <!-- Inter (Google Fonts) — the app's typeface. -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <!-- Inter = the app typeface; Press Start 2P = the study-city HUD (scheme picker). -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Press+Start+2P&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
   <!-- Google Identity Services: the library that runs the sign-in popup -->
   <script src="https://accounts.google.com/gsi/client" async></script>
@@ -177,20 +178,54 @@
       <!-- STUDY SESSION (Phase 10): count-up stopwatch + totals + recent sessions. -->
       <section id="view-study" class="view">
         <h2>Study Session</h2>
-        <div class="card study-card">
-          <div id="timerDisplay">00:00:00</div>
-          <div id="timerControls">
-            <button id="timerToggle" type="button"><i data-lucide="play"></i>Start</button>
-            <button id="timerStop" class="btn-primary" type="button"><i data-lucide="square"></i>Stop &amp; Save</button>
+        <!-- Timer card + totals card side by side (totals moved out 2026-07-08). -->
+        <div class="study-row">
+          <div class="card study-card">
+            <div id="timerDisplay">00:00:00</div>
+            <div id="timerControls">
+              <button id="timerToggle" type="button"><i data-lucide="play"></i>Start</button>
+              <button id="timerStop" class="btn-primary" type="button"><i data-lucide="square"></i>Stop &amp; Save</button>
+            </div>
           </div>
 
-          <!-- Study-time totals: derived live from studySessions on redraw. -->
-          <div id="timerTotals">
-            <span>Today: <strong id="totalToday">0m</strong></span>
-            <span>This week: <strong id="totalWeek">0m</strong></span>
-            <span>Total: <strong id="totalAll">0m</strong></span>
+          <!-- Study-time totals: derived live from studySessions on redraw (same ids,
+               so studyTimer.js keeps writing into them unchanged). -->
+          <div class="card study-totals-card">
+            <div class="dash-card-label">Study time</div>
+            <div id="timerTotals">
+              <span>Today <strong id="totalToday">0m</strong></span>
+              <span>This week <strong id="totalWeek">0m</strong></span>
+              <span>Total <strong id="totalAll">0m</strong></span>
+            </div>
           </div>
         </div>
+
+        <!-- STUDY CITY (Phases 14+15, generative grid design 2026-07-08): a city that
+             grows AUTOMATICALLY with all-time study minutes. cityView.js reconciles
+             earned-vs-applied upgrades on every redraw (rolls placements, persists the
+             grid) and draws the scene from appState.city. No button, no progress bar,
+             no numbers revealed — just the city and one blurb. -->
+        <div class="city-head">
+          <div>
+            <p class="view-eyebrow">STUDY CITY</p>
+            <h3 class="view-title">Your city</h3>
+          </div>
+          <!-- Colour-scheme stepper (per-device, like the theme): a retro HUD pill
+               "▶ NAME 1/6" — click cycles schemes. cityView.js fills the spans. -->
+          <button id="citySchemeBtn" class="city-scheme-cycle" type="button"
+                  title="Change colour scheme">
+            <span class="csc-arrow" aria-hidden="true">▶</span>
+            <span id="cscName"></span>
+            <span id="cscCount"></span>
+          </button>
+        </div>
+
+        <div id="cityScene" class="card city-scene">
+          <p class="city-scene-placeholder">Your city will appear here.</p>
+        </div>
+        <!-- Game-rule blurb (deliberately vague — no thresholds/times, standing rule). -->
+        <p id="cityBlurb" class="city-blurb">Your city grows as you study — finish
+          study sessions and watch new buildings rise.</p>
 
         <!-- Recent recorded sessions (newest first; capped for a light DOM). -->
         <h3>Recent sessions</h3>
