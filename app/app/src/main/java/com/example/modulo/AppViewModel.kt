@@ -18,6 +18,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.example.modulo.helpers.AuthenticationHelper
+import com.example.modulo.helpers.CityLogicHelper
 import com.example.modulo.helpers.LocalSaveHelper
 import com.example.modulo.helpers.NetworkHelper
 import com.example.modulo.helpers.NetworkResult
@@ -30,8 +31,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.time.Instant
-import java.time.LocalDate
 import kotlin.math.roundToInt
+import kotlin.time.Duration.Companion.milliseconds
 
 private const val TAG = "ViewModel"
 
@@ -85,8 +86,18 @@ class AppViewModel @JvmOverloads constructor(
 
     // Functions for startup
     init {
+        // preload local city
+        reconcileCity()
         startUpChecks()
         autoSync()
+    }
+
+    private fun reconcileCity() {
+        val current = _appData.value
+        val reconciled = CityLogicHelper.reconcile(current.city, current.studySessions)
+        if (reconciled !== current.city) {
+            updateData { it.copy(city = reconciled) }
+        }
     }
 
     // Stores user email for authentication
@@ -162,6 +173,9 @@ class AppViewModel @JvmOverloads constructor(
             uploadToDrive()
         }
         _syncState.value = SyncState.SYNCED
+
+        // match city building scope
+        reconcileCity()
     }
 
     fun startUpChecks() {
@@ -272,7 +286,7 @@ class AppViewModel @JvmOverloads constructor(
 
     fun isHigherEducation(): Boolean {
         val currLevel = _appData.value.educationLevel
-        return currLevel == "university" || currLevel == "poly";
+        return currLevel == "university" || currLevel == "poly"
     }
 
     // TODO: other functions to change appdata
@@ -288,7 +302,7 @@ class AppViewModel @JvmOverloads constructor(
             // Cancel previous delay and start a new one
             delaySync?.cancel()
             delaySync = viewModelScope.launch {
-                delay(1000L) // Wait for 1s of inactivity
+                delay(1000L.milliseconds) // Wait for 1s of inactivity
                 uploadToDrive()
             }
         }
@@ -382,7 +396,7 @@ class AppViewModel @JvmOverloads constructor(
         isTimerRunning = true
         timerJob = viewModelScope.launch {
             while (true) {
-                delay(1000L) // Wait 1 second
+                delay(1000L.milliseconds) // Wait 1 second
                 elapsedSeconds += 1
             }
         }
@@ -421,7 +435,9 @@ class AppViewModel @JvmOverloads constructor(
             )
 
             updateData { currentData ->
-                currentData.copy(studySessions = currentData.studySessions + newSession)
+                // add the seesion and update city
+                val withSession = currentData.copy(studySessions = currentData.studySessions + newSession)
+                withSession.copy(city = CityLogicHelper.reconcile(withSession.city, withSession.studySessions))
             }
         }
 
