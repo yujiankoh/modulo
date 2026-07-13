@@ -21,8 +21,7 @@
 const W = 80;        // tile width on screen
 const H = 40;        // tile height (2:1 iso)
 const FLOOR_H = 22;  // px per building floor ("one block")
-const BW = 24;       // building footprint half-width
-const BH = 12;       // building footprint half-height
+const BH_MAX = 12;   // biggest footprint half-height (w2 24 → 12) — camera headroom
 
 // Screen position of a plot (island centre = origin).
 function iso(x, y) {
@@ -41,16 +40,21 @@ function hueToken(x, y) {
 }
 
 // One tower: left/right faces + roof in the plot's hue (shade overlays), two window
-// columns per floor per face (reference style), light edge highlights that make the
-// silhouette crisp, an antenna on tall towers.
+// columns per floor per face (reference style), light inner + dark outer edge lines
+// that make the silhouette crisp, an antenna on tall towers. Footprint width varies
+// slightly per plot (coordinate hash, like the hue) so the skyline isn't uniform.
 function building(b) {
   const { sx, sy } = iso(b.x, b.y);
   const ht = b.floors * FLOOR_H;
   const fill = `var(${hueToken(b.x, b.y)})`;
+  // Uniform footprint (tried per-plot variety 2026-07-08, reverted — uniform reads
+  // cleaner). h2 keeps the 2:1 iso proportion.
+  const w2 = 24;
+  const h2 = w2 / 2;
 
-  const left = `${sx - BW},${sy - ht} ${sx},${sy - ht + BH} ${sx},${sy + BH} ${sx - BW},${sy}`;
-  const right = `${sx},${sy - ht + BH} ${sx + BW},${sy - ht} ${sx + BW},${sy} ${sx},${sy + BH}`;
-  const roof = diamond(sx, sy - ht, BW, BH);
+  const left = `${sx - w2},${sy - ht} ${sx},${sy - ht + h2} ${sx},${sy + h2} ${sx - w2},${sy}`;
+  const right = `${sx},${sy - ht + h2} ${sx + w2},${sy - ht} ${sx + w2},${sy} ${sx},${sy + h2}`;
+  const roof = diamond(sx, sy - ht, w2, h2);
 
   const parts = [
     `<polygon points="${left}" fill="${fill}" />`,
@@ -60,10 +64,16 @@ function building(b) {
     `<polygon points="${roof}" fill="${fill}" />`,
     `<polygon points="${roof}" fill="#fff" opacity="0.3" />`,    // lit roof
     // Edge highlights (the reference look): front roof edges + the centre corner.
-    `<polyline points="${sx - BW},${sy - ht} ${sx},${sy - ht + BH} ${sx + BW},${sy - ht}" ` +
+    `<polyline points="${sx - w2},${sy - ht} ${sx},${sy - ht + h2} ${sx + w2},${sy - ht}" ` +
     `fill="none" stroke="#fff" opacity="0.45" stroke-width="1.2" />`,
-    `<line x1="${sx}" y1="${sy - ht + BH}" x2="${sx}" y2="${sy + BH}" ` +
+    `<line x1="${sx}" y1="${sy - ht + h2}" x2="${sx}" y2="${sy + h2}" ` +
     `stroke="#fff" opacity="0.25" stroke-width="1.2" />`,
+    // Dark OUTER corner strokes: define the silhouette (right side darker, matching
+    // the face shading).
+    `<line x1="${sx - w2}" y1="${sy - ht}" x2="${sx - w2}" y2="${sy}" ` +
+    `stroke="#000" opacity="0.2" stroke-width="1.2" />`,
+    `<line x1="${sx + w2}" y1="${sy - ht}" x2="${sx + w2}" y2="${sy}" ` +
+    `stroke="#000" opacity="0.32" stroke-width="1.2" />`,
   ];
 
   // Windows: two columns per face, one row per floor, drawn as parallelograms that
@@ -72,8 +82,8 @@ function building(b) {
   const cols = [[0.18, 0.42], [0.58, 0.82]];
   for (let i = 0; i < b.floors; i++) {
     const mid = sy - i * FLOOR_H - FLOOR_H / 2;   // vertical middle of this storey
-    const lx = (t) => sx - BW + t * BW, ly = (t) => mid + t * BH;      // left face edge
-    const rx = (t) => sx + t * BW,      ry = (t) => mid + BH - t * BH; // right face edge
+    const lx = (t) => sx - w2 + t * w2, ly = (t) => mid + t * h2;      // left face edge
+    const rx = (t) => sx + t * w2,      ry = (t) => mid + h2 - t * h2; // right face edge
     for (const [t1, t2] of cols) {
       parts.push(
         `<polygon points="${lx(t1)},${ly(t1) - winH} ${lx(t2)},${ly(t2) - winH} ` +
@@ -86,14 +96,15 @@ function building(b) {
 
   // Antenna on tall towers (5+ floors): a mast and a beacon dot.
   if (b.floors >= 5) {
-    const topY = sy - ht - BH;
+    const topY = sy - ht - h2;
     parts.push(
       `<line x1="${sx}" y1="${topY + 5}" x2="${sx}" y2="${topY - 11}" ` +
       `stroke="var(--text-muted)" stroke-width="1.6" />`,
       `<circle cx="${sx}" cy="${topY - 13}" r="2" fill="var(--danger)" />`
     );
   }
-  return parts.join("\n    ");
+  // Wrapped in a plot-tagged group so cityView can animate just-changed towers.
+  return `<g data-plot="${b.x},${b.y}">\n    ${parts.join("\n    ")}\n  </g>`;
 }
 
 // The whole scene for a given stored city + land tier.
@@ -137,27 +148,37 @@ export function renderScene(city, tier) {
     .sort((a, b) => (a.x + a.y) - (b.x + b.y))
     .map(building);
 
-  // Decorative waves off the west/east/north water (tier-relative, so they follow
-  // the coast as the land expands).
-  const wave = (wx, wy) =>
-    `<path d="M ${wx} ${wy} q 12 7 24 0 t 24 0" fill="none" ` +
-    `stroke="var(--city-wave)" stroke-width="3" stroke-linecap="round" />`;
+  // Decorative waves (tier-relative, so they follow the coast as the land expands).
+  // s scales a wave's size, o its strength — the variety is what sells the water.
+  const wave = (wx, wy, s = 1, o = 1) =>
+    `<path d="M ${wx} ${wy} q ${12 * s} ${7 * s} ${24 * s} 0 t ${24 * s} 0" fill="none" ` +
+    `stroke="var(--city-wave)" stroke-width="${3 * s}" stroke-linecap="round" opacity="${o}" />`;
   const waves = [
+    // west waters
     wave(leftC.sx - W - 50, leftC.sy + 30),
-    wave(leftC.sx - W + 4, leftC.sy - 52),
+    wave(leftC.sx - W - 110, leftC.sy - 16, 0.7, 0.7),
+    wave(leftC.sx - W + 4, leftC.sy - 52, 0.85, 0.85),
+    wave(leftC.sx - W - 30, leftC.sy + 78, 0.6, 0.55),
+    // east waters
     wave(rightC.sx + W / 2 + 30, rightC.sy + 40),
-    wave(rightC.sx + W / 2 + 70, rightC.sy - 36),
+    wave(rightC.sx + W / 2 + 70, rightC.sy - 36, 0.85, 0.85),
+    wave(rightC.sx + W / 2 + 120, rightC.sy + 6, 0.6, 0.6),
+    wave(rightC.sx + W / 2 + 44, rightC.sy + 92, 0.7, 0.55),
+    // north + south waters
     wave(top.sx + 70, top.sy - H - 54),
+    wave(top.sx - 96, top.sy - H - 30, 0.7, 0.65),
+    wave(bottom.sx - 120, bottom.sy + H + 46, 0.8, 0.7),
+    wave(bottom.sx + 88, bottom.sy + H + 62, 0.65, 0.6),
   ];
 
   // The camera: a viewBox hugging the island + the tallest tower (min 3 floors of
   // headroom so a young city isn't glued to the frame). Margins keep the waves in.
   const maxFloors = Math.max(3, ...valid.map((b) => b.floors));
-  const skyline = maxFloors * FLOOR_H + BH + 18;      // tower + roof + antenna room
+  const skyline = maxFloors * FLOOR_H + BH_MAX + 18;  // tower + roof + antenna room
   const mLeft = leftC.sx - sandE - 90;
   const mRight = rightC.sx + sandE + 90;
   const mTop = top.sy - H / 2 - H * 0.35 - skyline - 24;
-  const mBottom = bottom.sy + H / 2 + H * 0.35 + soilDepth + 30;
+  const mBottom = bottom.sy + H / 2 + H * 0.35 + soilDepth + 56; // room for the south waves
   const viewBox = `${mLeft} ${mTop} ${mRight - mLeft} ${mBottom - mTop}`;
 
   return `
@@ -169,6 +190,8 @@ export function renderScene(city, tier) {
   <polygon points="${sandPts}" fill="var(--city-sand)" />
   <polygon points="${landPts}" fill="var(--city-grass)" />
   ${tiles.join("\n  ")}
+  <polygon points="${sandPts}" fill="none" stroke="#000" opacity="0.18" stroke-width="1.5" />
+  <polygon points="${landPts}" fill="none" stroke="#000" opacity="0.15" stroke-width="1.2" />
   ${towers.join("\n  ")}
 </svg>`;
 }
