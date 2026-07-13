@@ -1,11 +1,12 @@
 package com.example.modulo.pages
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -33,7 +34,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -41,7 +44,10 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
 import com.example.modulo.AppViewModel
 import com.example.modulo.R
+import com.example.modulo.components.CitySchemeStore
 import com.example.modulo.components.StudyCityView
+import com.example.modulo.components.cityScheme
+import com.example.modulo.components.nextCityScheme
 import com.example.modulo.emojis
 import java.time.Instant
 import java.time.ZoneId
@@ -84,7 +90,21 @@ fun StudySessionPage(
     val seconds = elapsedSeconds % 60
     val timerString = String.format(Locale.getDefault(), "%02d:%02d:%02d", hours, minutes, seconds)
 
-    Scaffold { paddingValues ->
+    val context = LocalContext.current
+    val dark = isSystemInDarkTheme()
+    var schemeKey by remember { mutableStateOf(CitySchemeStore.get(context)) }
+    val scheme = cityScheme(schemeKey)
+    val seaColor = if (dark) scheme.night.sea else scheme.day.sea
+    val backgroundBrush = Brush.verticalGradient(
+        colorStops = arrayOf(
+            0f to MaterialTheme.colorScheme.background, // soft fade from the app background…
+            0.35f to seaColor,                          // …into the sea, which then fills to the bottom
+            1f to seaColor
+        )
+    )
+
+    Scaffold(containerColor = Color.Transparent) { paddingValues ->
+        Box(modifier = Modifier.fillMaxSize().background(backgroundBrush)) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -124,6 +144,11 @@ fun StudySessionPage(
             StudyCityView(
                 city = appData.city,
                 totalMins = totalMins,
+                scheme = scheme,
+                onCycleScheme = {
+                    schemeKey = nextCityScheme(schemeKey)
+                    CitySchemeStore.set(context, schemeKey)
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
@@ -189,6 +214,7 @@ fun StudySessionPage(
             }
 
             Spacer(modifier = Modifier.height(32.dp))
+        }
         }
 
         if (showConfirmDialog) {
