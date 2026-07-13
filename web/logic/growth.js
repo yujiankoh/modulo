@@ -57,15 +57,17 @@ export function gridTier(totalMins) {
 
 // --- the pick ---------------------------------------------------------------------
 
-// Centre-weighting: a plot's weight is (R − d + 1)² where d is its ring distance
+// Centre-weighting: a plot's weight is (R − d + 1)³ where d is its ring distance
 // from the centre (Chebyshev: max of |x|,|y| — "which square ring am I on") and
-// R the grid radius. 5×5: centre 9, inner ring 4, edge 1 — the centre is picked
-// 9× as often as a corner, which is what builds the skyline centre-out.
+// R the grid radius. 5×5: centre 27, inner ring 8, edge 1 — the centre is picked
+// 27× as often as a corner, which is what builds the skyline centre-out.
+// (Squared until 2026-07-08; cubed for a stronger downtown. The exponent is the
+// bias knob — and it's part of the Android contract, so change it THERE too.)
 export function plotWeight(x, y, size) {
   const R = (size - 1) / 2;
   const d = Math.max(Math.abs(x), Math.abs(y));
   const w = R - d + 1;
-  return w * w;
+  return w * w * w;
 }
 
 // --- applying upgrades ------------------------------------------------------------

@@ -54,12 +54,12 @@ test("gridTier switches land size exactly at 20h and 100h", () => {
   assert.equal(gridTier(6000).floorCap, 12);
 });
 
-test("plotWeight is centre-heavy: 9 / 4 / 1 on a 5×5, by ring", () => {
-  assert.equal(plotWeight(0, 0, 5), 9);   // centre
-  assert.equal(plotWeight(1, 0, 5), 4);   // inner ring
-  assert.equal(plotWeight(-1, 1, 5), 4);  // ring by Chebyshev distance (max of |x|,|y|)
+test("plotWeight is centre-heavy: 27 / 8 / 1 on a 5×5, by ring (cubed)", () => {
+  assert.equal(plotWeight(0, 0, 5), 27);  // centre
+  assert.equal(plotWeight(1, 0, 5), 8);   // inner ring
+  assert.equal(plotWeight(-1, 1, 5), 8);  // ring by Chebyshev distance (max of |x|,|y|)
   assert.equal(plotWeight(2, 2, 5), 1);   // corner
-  assert.equal(plotWeight(0, 0, 7), 16);  // bigger land → stronger centre pull
+  assert.equal(plotWeight(0, 0, 7), 64);  // bigger land → stronger centre pull
 });
 
 test("the founding building always lands dead centre", () => {
@@ -69,8 +69,8 @@ test("the founding building always lands dead centre", () => {
 
 test("occupied pick grows a floor; empty pick spawns (scripted rolls)", () => {
   // After the centre exists, all 25 plots are candidates. Iteration order is
-  // x=-2..2 outer, y=-2..2 inner; total weight 57 (16×1 + 8×4 + 9).
-  // The centre's weight-interval is [24, 33) → rng 0.5 (roll 28.5) picks it: GROW.
+  // x=-2..2 outer, y=-2..2 inner; total weight 107 (16×1 + 8×8 + 27).
+  // The centre's weight-interval is [40, 67) → rng 0.5 (roll 53.5) picks it: GROW.
   const one = applyUpgrades({ buildings: [{ x: 0, y: 0, floors: 1 }] }, 1, TIER5, scriptedRng(0.5));
   assert.deepEqual(one.buildings, [{ x: 0, y: 0, floors: 2 }]);
 
