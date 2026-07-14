@@ -11,18 +11,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -46,6 +41,7 @@ fun SettingsPage(
     onNavigateToTimetable: () -> Unit,
     onNavigateToHandbookCreate: () -> Unit,
     onNavigateToHandbook: () -> Unit,
+    onNavigateToGPA: () -> Unit,
 ) {
     val userEmail = viewModel.getUserEmail()
     val isSignedIn = userEmail.isNotBlank()
@@ -97,6 +93,15 @@ fun SettingsPage(
                 onClick = onNavigateToTimetable
             )
 
+            if (viewModel.isHigherEducation()) {
+                SettingsRow(
+                    icon = R.drawable.graduation_cap,
+                    title = "Grades",
+                    isClickable = true,
+                    onClick = onNavigateToGPA
+                )
+            }
+
             SettingsRow(
                 icon = R.drawable.notebook_pen,
                 title = "New Handbook",
@@ -123,9 +128,6 @@ fun SettingsPage(
                     onClick = { showSignOutWarning = true }
                 )
             }
-
-
-            // Add Delete Information Button
         }
     }
 
