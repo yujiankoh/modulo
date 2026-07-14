@@ -344,6 +344,28 @@ class AppViewModel @JvmOverloads constructor(
         }
     }
 
+    fun upsertGrade(id: String?, module: String, credits: Double, grade: String, su: Boolean) {
+        val safeCredits = if (credits.isFinite() && credits > 0) credits else 0.0
+        updateData { currentData ->
+            when {
+                grade.isBlank() && id != null ->
+                    currentData.copy(grades = currentData.grades.filter { it.id != id })
+
+                id != null -> {
+                    val updated = currentData.grades.map {
+                        if (it.id == id) it.copy(credits = safeCredits, grade = grade, su = su) else it
+                    }
+                    currentData.copy(grades = updated)
+                }
+
+                else -> {
+                    val entry = Grade(module = module, credits = safeCredits, grade = grade, su = su)
+                    currentData.copy(grades = currentData.grades + entry)
+                }
+            }
+        }
+    }
+
     fun clearTimetableState() {
         _timetableState.value = TimetableState.Idle
     }
@@ -435,7 +457,7 @@ class AppViewModel @JvmOverloads constructor(
             )
 
             updateData { currentData ->
-                // add the seesion and update city
+                // add the session and update city
                 val withSession = currentData.copy(studySessions = currentData.studySessions + newSession)
                 withSession.copy(city = CityLogicHelper.reconcile(withSession.city, withSession.studySessions))
             }
@@ -457,6 +479,7 @@ class AppViewModel @JvmOverloads constructor(
                     termEnd = currentData.termEnd,
                     breaks = currentData.breaks,
                     tasks = currentData.tasks,
+                    grades = currentData.grades,
                     hiddenModules = currentData.hiddenModules,
                     timetable = currentData.timetable
                 )
@@ -474,6 +497,7 @@ class AppViewModel @JvmOverloads constructor(
                 termEnd = newHandbook.termEnd,
                 breaks = newHandbook.breaks,
                 tasks = emptyList(),
+                grades = emptyList(),
                 timetable = null,
                 hiddenModules = emptyList(),
                 otherHandbooks = updatedHandbooks
@@ -501,6 +525,7 @@ class AppViewModel @JvmOverloads constructor(
                     termEnd = currentData.termEnd,
                     breaks = currentData.breaks,
                     tasks = currentData.tasks,
+                    grades = currentData.grades,
                     hiddenModules = currentData.hiddenModules,
                     timetable = currentData.timetable
                 )
@@ -515,6 +540,7 @@ class AppViewModel @JvmOverloads constructor(
                 termEnd = handbook.termEnd,
                 breaks = handbook.breaks,
                 tasks = handbook.tasks,
+                grades = handbook.grades,
                 timetable = handbook.timetable,
                 hiddenModules = handbook.hiddenModules,
                 otherHandbooks = updatedHandbooks
