@@ -30,6 +30,10 @@ export const SCHEMES = {
     // (pass/fail-only modules). They appear on the transcript but contribute to
     // neither the numerator nor the denominator.
     excluded: ["S", "U", "CS", "CU"],
+    // Phase 17: this scheme supports the S/U ELECTION — a row can keep its real
+    // letter grade and set `su: true` to be excluded (see computeGPA). Drives the
+    // S/U column in the UI. The literal "S"/"U" grades above stay valid regardless.
+    suElection: true,
   },
   poly4: {
     id: "poly4",
@@ -45,6 +49,7 @@ export const SCHEMES = {
       "F": 0.0,
     },
     excluded: ["P"],   // pass/fail modules
+    suElection: false, // polys have no S/U election — no S/U column in the UI
   },
 };
 
@@ -91,6 +96,14 @@ export function computeGPA(entries, scheme) {
 
   let weightedPoints = 0;
   for (const entry of entries) {
+    // S/U election (Phase 17): `su: true` keeps the real letter in `grade` but
+    // excludes the row — checked FIRST, letter and credits irrelevant. Strictly
+    // `=== true`: a junk value from another client must not silently exclude a row.
+    if (entry?.su === true) {
+      result.excludedCount += 1;
+      continue;
+    }
+
     const grade = typeof entry?.grade === "string" ? entry.grade.trim().toUpperCase() : null;
 
     // Excluded first: an S/U'd module is excluded no matter what its credits say.

@@ -912,3 +912,51 @@ body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
+
+/* The rows editor. Every row is the SAME grid, so columns line up like a table:
+   colour dot | module label (stretches) | credits | grade | remove. */
+.grades-editor { margin-top: 16px; padding: 14px 18px; }
+.grade-row {
+  display: grid;
+  grid-template-columns: 14px 1fr 90px 110px 28px;
+  gap: 10px;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+}
+/* suElection schemes (nus5) add the S/U checkbox column. */
+.grades-editor--su .grade-row { grid-template-columns: 14px 1fr 90px 110px 40px 28px; }
+.grade-su { justify-self: center; width: 16px; height: 16px; accent-color: var(--primary); }
+.grade-row:last-child { border-bottom: none; }
+.grade-row--head {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+}
+.grade-dot { width: 10px; height: 10px; border-radius: 50%; }
+.grade-mod { font-size: 14px; color: var(--text); overflow-wrap: anywhere; }
+.grade-credits, .grade-grade {
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+}
+.grade-remove {
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 4px;
+}
+.grade-remove:hover { color: var(--text); }
+.grades-empty { margin: 0; font-size: 14px; color: var(--text-muted); }
+
+/* "+ Add module" mini-form under the editor card. */
+.grade-add { display: flex; gap: 8px; margin-top: 10px; }
+.grade-add input { flex: 1; max-width: 320px; }

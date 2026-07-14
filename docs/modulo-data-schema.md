@@ -42,7 +42,8 @@ read and write this same file**.
       "id": "3c7d9e1f-8a25-4b6c-9d0e-5f4a3b2c1d88",
       "module": "CS2030S",
       "credits": 4,
-      "grade": "A-"
+      "grade": "A-",
+      "su": false
     }
   ],
   "studySessions": [
@@ -136,6 +137,7 @@ these rows (web: `web/logic/gpa.js`), so they can't drift.
 | `module`  | string | yes      | Module code (e.g. `"CS2030S"`), or name for school levels. |
 | `credits` | number | yes      | Credit weight (MCs/units). Must be > 0 to count toward a GPA. |
 | `grade`   | string | yes      | Uppercase grade string — a scheme key or an excluded grade (below). |
+| `su`      | boolean | no      | **S/U election** (university scheme only): `true` = the module is S/U'd — `grade` KEEPS the real letter the student received, but the row is **excluded** from every GPA. Missing/absent = `false`. Only the literal boolean `true` elects (defensive rule, both clients). The literal `"S"`/`"U"` grade values also remain valid and excluded (pre-election rows). |
 
 **Grading schemes** (chosen by the handbook's locked `educationLevel`):
 
@@ -149,9 +151,10 @@ these rows (web: `web/logic/gpa.js`), so they can't drift.
   credit-weighted averages; stubbed "not yet supported").
 
 **GPA rules (both clients must match):** GPA = `Σ(points × credits) / Σ(credits)` over
-countable rows; grades are normalised (trim + uppercase) before lookup; unusable rows
-(unknown grade, credits ≤ 0 / non-numeric) are **skipped, never an error**; no countable
-rows → no GPA (not 0). **Cumulative GPA** pools the active handbook's rows with every
+countable rows; rows with `su: true` (strictly the boolean `true`) are **excluded first**,
+whatever their grade/credits; grades are normalised (trim + uppercase) before lookup;
+unusable rows (unknown grade, credits ≤ 0 / non-numeric) are **skipped, never an error**;
+no countable rows → no GPA (not 0). **Cumulative GPA** pools the active handbook's rows with every
 `otherHandbooks` entry of the **same scheme** (university with university, poly with
 poly — never across schemes) and computes ONE weighted average over the pool (not an
 average of per-semester GPAs).
@@ -324,7 +327,8 @@ data class Grade(                          // one module's semester result (Phas
     val id: String,
     val module: String = "",     // module code, or name for school levels
     val credits: Double = 0.0,   // credit weight (MCs/units); must be > 0 to count
-    val grade: String = ""       // uppercase scheme key (e.g. "A-") or excluded ("S", "U", "P")
+    val grade: String = "",      // uppercase scheme key (e.g. "A-") or excluded ("S", "U", "P")
+    val su: Boolean = false      // S/U election (Phase 17): true = keep the letter, exclude from GPA
 )
 
 @Serializable
@@ -411,3 +415,4 @@ data class Slot(
 | 2       | 2026-07-05 | **Phase 13.5 (multiple handbooks):** added top-level `handbookId` (string, default generated) and `otherHandbooks` (array of Handbook, default `[]`). The flat fields remain **the active handbook**, so existing readers are unaffected — but **kotlinx.serialization must tolerate the new keys** (add the fields per the Kotlin reference, or set `ignoreUnknownKeys = true`), otherwise parsing a web-saved file throws. `studySessions` stay global (never inside a handbook). Education level is now locked **per handbook**. |
 | 2       | 2026-07-08 | **Phase 14 (study city):** added top-level `city` (`{ buildings: [{ x, y, floors }] }`, default empty) — the generative city grid. Stored because upgrade placement is random; every count is **derived** from `studySessions` per the shared rules in `study-city-growth.md`. GLOBAL like `studySessions` — never inside a handbook. Same kotlinx note as 13.5: tolerate the new key. *(An interim `cityLevel` integer existed only on the web feature branch and never shipped — readers may ignore that key if ever seen.)* |
 | 2       | 2026-07-13 | **Phase 16 (grade calculator):** added `grades` (array of Grade `{ id, module, credits, grade }`, default `[]`) as a **per-handbook** field — top-level (the active handbook) AND inside each `otherHandbooks` entry, carried by handbook switches like `tasks`. GPAs are never stored — both clients derive them per the "Grade object" section's scheme tables + rules (university = 5.0 scale with S/U/CS/CU excluded; poly = 4.0 with P excluded; jc/secondary/primary = no GPA). Same kotlinx note as 13.5: tolerate the new key. |
+| 2       | 2026-07-13 | **Phase 17 (S/U election):** added optional `su` (boolean, default `false`/absent) to the Grade object — `true` keeps the student's real letter in `grade` but **excludes** the row from every GPA (checked before anything else; only the literal boolean `true` elects). University scheme only; the literal `"S"`/`"U"` grade values stay valid and excluded. Kotlin: `val su: Boolean = false`. |

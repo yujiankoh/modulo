@@ -106,6 +106,36 @@ test("poly P (pass/fail) is excluded the same way", () => {
   assert.equal(result.excludedCount, 1);
 });
 
+test("su flag (S/U election, Phase 17): row keeps its letter but is excluded", () => {
+  const entries = [
+    { id: "1", module: "CS2030S", credits: 4, grade: "A" },
+    { id: "2", module: "ES1103", credits: 4, grade: "B", su: true },  // elected S/U
+  ];
+  const result = computeGPA(entries, SCHEMES.nus5);
+  assert.equal(result.gpa, 5.0, "the elected B must not count");
+  assert.equal(result.gradedCredits, 4);
+  assert.equal(result.excludedCount, 1);
+  assert.equal(result.skippedCount, 0, "elected is excluded, not skipped");
+});
+
+test("su is junk-proof both ways: true excludes even junk rows; non-true never excludes", () => {
+  const entries = [
+    { id: "1", module: "CS2030S", credits: 4, grade: "A" },
+    { id: "2", module: "X1", credits: 0, grade: "??", su: true },   // junk row but elected → excluded
+    { id: "3", module: "MA1521", credits: 4, grade: "B", su: "yes" }, // junk flag → counts normally
+  ];
+  const result = computeGPA(entries, SCHEMES.nus5);
+  // (5.0×4 + 3.5×4) / 8 = 4.25 — row 3 counts; row 2 is excluded, not skipped.
+  assert.equal(result.gpa, 4.25);
+  assert.equal(result.excludedCount, 1);
+  assert.equal(result.skippedCount, 0);
+});
+
+test("suElection is a scheme flag: nus5 supports the election, poly4 doesn't", () => {
+  assert.equal(SCHEMES.nus5.suElection, true);
+  assert.equal(SCHEMES.poly4.suElection, false);
+});
+
 test("all-excluded entries → gpa null (no denominator), not 0", () => {
   const entries = [
     { id: "1", module: "GEC1015", credits: 4, grade: "S" },
