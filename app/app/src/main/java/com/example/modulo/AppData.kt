@@ -62,6 +62,15 @@ data class Task(
 )
 
 @Serializable
+data class Grade(
+    val id: String = UUID.randomUUID().toString(),
+    val module: String = "",
+    val credits: Double = 0.0,
+    val grade: String = "",
+    val su: Boolean = false
+)
+
+@Serializable
 data class Timetable(
     val educationLevel: String,
     val modules: List<Module> = emptyList()
@@ -123,6 +132,7 @@ data class Handbook(
     val termEnd: String? = null,
     val breaks: List<Break> = emptyList(),
     val tasks: List<Task> = emptyList(),
+    val grades: List<Grade> = emptyList(),
     val hiddenModules: List<String> = emptyList(),
     val timetable: Timetable? = null
 )
@@ -142,6 +152,7 @@ data class AppData(
     val breaks: List<Break> = emptyList(),
     val updatedAt: String? = null,
     val tasks: List<Task> = emptyList(),
+    val grades: List<Grade> = emptyList(),
     val studySessions: List<StudySession> = emptyList(),
     val hiddenModules: List<String> = emptyList(),
     val city: City = City(),
