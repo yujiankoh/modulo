@@ -1,9 +1,11 @@
 # CLAUDE.md — MODULO (YJ's side: web + proxy)
 
 Guidance for Claude Code working in this repo. Read this file **and the current-phase
-doc** (`docs/multi-handbook-roadmap.md` — Phase 13.5) at the start of each session — they
-hold the project's history, the current phase, and the decisions already made. (Older
-phase roadmaps live in `docs/guides/`.) For full context also see `modulo-handoff.md`.
+doc** (`docs/handoffs/session-handoff-phase18.md` — Phase 18 next) at the start of each session — they
+hold the project's history, the current phase, and the decisions already made. (Local-only
+docs are organised: phase roadmaps in `docs/roadmaps/`, session handoffs in `docs/handoffs/`,
+YJ's references in `docs/notes/`, Orbital report material in `docs/report/`; older committed
+phase docs live in `docs/guides/`.) For full context also see `modulo-handoff.md`.
 
 ## What this project is
 
@@ -71,11 +73,11 @@ A change I don't understand is not "done". The teaching is part of the task.
 | 11 | ⏸ Deferred | **Cross-device sync demo (web ↔ app)** — *was* the MS2 headline; **parked** (blocked on Ling Song's Android Drive read/write, `AuthenticationHelper.kt`). Picked up once the Android side can read/write `modulo-data.json`. |
 | 12 | ✅ Done | **Core app UI** (the SPA shell + full visual polish). **Shell:** `web/router.js` hash routing (`#dashboard`/`#calendar`/`#tasks`/`#timetable`/`#study`/`#settings`), persistent **left sidebar** (logo · nav · Modules list with colour dots · account chip) + a **top bar** (status link + global **+ Add Task**). **Dashboard** (`web/dashboard.js`): term-week eyebrow, time-of-day greeting, summary, **study-streak + this-week-hours** cards, **today's schedule** + **tasks-due-soon** panels (bucketed: Overdue/Due-this-week), and **Modules** cards → detail modal (notes placeholder + that module's tasks) with a **Manage** popup to hide modules (`appState.hiddenModules`). **Blue design-token theme** + **light/dark mode** (`web/theme.js`, `[data-theme]`, localStorage). **Inter** font, unified card `--shadow`, hue-aware **module colour palette** (`web/sidebar.js` `moduleColor`). **Tasks polished** (`web/task.js`: per-bucket cards, module dots, accent pills, group-by sort). **Timetable restructured (12.5):** grid-first, setup (level + term dates) moved to **Settings**, **Edit** + **Upload** as modals, empty state, redundant read-only list removed. (2026-06-27) |
 | 13 | ✅ Done | **Handbook / onboarding** (`web/handbook.js`). First-run **non-dismissable modal** captures **education level** (then **locked** — immutable, shown as read-only text afterward), a **level-aware academic year** (uni/poly `"25/26"` vs school `"2026"`, with a live "Will show as…" preview), **semester**, and **term dates** (start/end + recess). New additive `appState` fields `academicYear`/`semester`/`handbookSetup` (defaulted + migrated: pre-13 files with a level set are treated as set up; no `schemaVersion` bump; documented for Ling Song). Settings "Timetable setup" card → **read-only Handbook summary + Edit** popup (recess editor relocated into the modal, same ids; old `#eduLevel`/`#termStart`/`#termEnd` listeners removed). **Sidebar header** "HANDBOOK · AY…" from `handbookHeaderLabel()` (one shared formatter). **Polish:** **Lucide icons** (CDN + `data-lucide`, `web/icons.js`, theme-aware via `currentColor`, deferred first draw) across nav/buttons/modal-closes/theme-toggle (moon/sun); study **Start/Pause merged into one play/pause toggle**; Add-Task module field is now a **dropdown of parsed modules + "+ Add other…"**. (2026-06-27) |
-| 13.5 | 🔜 Next (MS3) | **Multiple handbooks** — "Start new semester" onboards a fresh handbook and stores the current one; a **switcher** makes any academic year/semester active again, **fully editable** *(updated 2026-07-05 — was read-only)*; education level **locked per-handbook**. Additive schema (`otherHandbooks`). *(See MS3 phase plans below.)* |
-| 14 | Planned (MS3) | **Gamified study motivator** (logic) — virtual city/garden grows with accumulated study time |
-| 15 | Planned (MS3) | **Gamified study motivator — UI integration** — the city/garden visual screen |
-| 16 | Planned (MS3) | **Grade calculator — core** (logic) — per-school GPA computation |
-| 17 | Planned (MS3) | **Grade calculator — UI integration** — enter modules/grades, show current GPA |
+| 13.5 | ✅ Done | **Multiple handbooks** (`web/logic/handbooks.js` + `handbook.js`). A handbook = one semester's context (`HANDBOOK_FIELDS`: level, AY/sem, term dates + breaks, timetable, tasks, hiddenModules, handbookSetup); the **flat fields stay = the ACTIVE handbook** (Android unchanged) with additive `handbookId` + `otherHandbooks[]` (no version bump; migrated on load). **"Start new semester"** snapshots the current handbook + reuses the first-run modal as onboarding (year pre-filled to the current year); Settings **handbook list** with atomic **Switch** (pure `switchHandbook` → ONE `persist()`, shared `withOverlay` loading screen ≥400ms) + **delete** for stored handbooks (confirm names label + task count); education level now **LOCKED per handbook** (confirm-on-change removed). `studySessions` stay **global** (fuel Phase 14). 8 unit tests (25 total). (2026-07-05) |
+| 14 | ✅ Done | **Study city — logic** (`web/logic/growth.js`). **Generative grid city** (redesigned 2026-07-08 MID-phase: the first fixed-12-stage + Upgrade-button + EXP-bar design was fully built through UI step 3, then superseded — see branch git history). Pacing `t = 2x+10` mins (n upgrades = `n²+9n` total; float-safe integer inverse); **centre-weighted single pick** (weight `(R−d+1)³` by Chebyshev ring — CUBED 2026-07-08, was ², for a stronger downtown; the exponent is a contract value; picked plot empty → spawn, occupied → grow a floor; founding building always dead-centre); land tiers 5×5 → 7×7 @20h → 9×9 @100h, floor caps 5/8/12; upgrades **AUTOMATIC** (reconcile-on-redraw — no button, no numbers ever shown). Stored: ONE additive global field `city: {buildings: [{x,y,floors}]}` (random placement isn't re-derivable; every count derived). RNG **injected** → deterministic unit tests incl. a **tier-capacity invariant** that guards future floor-cap tuning (12 tests; 37 total). Rewrote `docs/study-city-growth.md` contract (7 rules + Kotlin sketch + shared test vectors) for Ling Song's Android mirror. (2026-07-08) |
+| 15 | ✅ Done | **Study city — UI** (`web/cityView.js` + `web/cityScene.js` + `web/citySchemes.js`). Lives INSIDE the Study Session tab (one tab, decided mid-phase; timer totals moved to a side card). `cityView` = the one impure caller: auto-reconciles pending upgrades (assign-before-await, persist ONCE, pending-0 loop guard) then draws. `cityScene.renderScene(city, tier)` = **programmatic isometric SVG** — 2:1 projection, painter's-order depth sort, git-city stacked towers (one hue token per building via coordinate hash `(x·31+y·17)%5`, faces shaded by translucent black/white overlays, window columns lit at night, 22px floors, antennas on 5+ floors, waves), **auto-zoom camera** (viewBox computed from island + tallest tower). **Pop-in animation** for new construction (`data-plot` diff, staggered scaleY via `transform-box: fill-box`). **6 colour schemes** (Classic / Dreamland / Ocean / Sunset / Ember / Midnight) restyling buildings AND land/sea (+ per-scheme window override — Ember's white-hot); retro HUD stepper "▶ NAME i/6" (Press Start 2P); **per-DEVICE localStorage pref — NOT in the schema/contract** (only the coordinate hash is shared, so colour LAYOUT matches cross-device). Final polish: dark outer edge strokes on towers (silhouette), land outlines (sand + grass), 12-wave varied sea; footprint kept uniform (variety tried + reverted). (2026-07-08) |
+| 16 | ✅ Done | **Grade calculator — logic** (`web/logic/gpa.js`, pure). **Schemes as data:** `nus5` (5.0 scale, NUS/NTU-style — **SMU's 4.3 scale NOT supported**, documented) + `poly4` (4.0, SP's core table incl. DIST); `schemeForLevel` maps the stored level values (**`"poly"` not `"polytechnic"`** — caught mid-phase by cross-checking the schema doc after the tests had passed with the same wrong string) and stubs jc/secondary/primary with a reason. `computeGPA(entries, scheme)` = one generic `Σ(pts×credits)/Σ(credits)`: grades normalised (trim+uppercase), **S/U/CS/CU + poly P excluded** from numerator AND denominator (S/U stored as the literal transcript grade — decided over an `su` flag), junk rows **skipped + counted, never thrown** (trust boundary — Android writes the same file), `gpa: null` (not 0) when nothing counts, full precision (UI rounds). `cumulativeGPA(state)` pools active + **same-scheme** `otherHandbooks` grades into ONE weighted average (NOT an average of per-semester GPAs). **Schema (additive):** per-handbook `grades: []` (`{ id, module, credits, grade }`) — in `HANDBOOK_FIELDS` + `blankHandbook` so the 13.5 swap carries it; `data.js` default + shape-checked migration; schema doc "Grade object" section + Kotlin `Grade`. 17 tests (54 total). (2026-07-13) |
+| 17 | ✅ Done | **Grade calculator — UI** (`web/gradesView.js`). `#grades` routed view (nav link + `.view` section = the whole route registration). **Two live stat cards** (semester + cumulative GPA — 2-dp at DISPLAY only, `null` → "—", "5.0 scale" pill per the SMU-limitation labelling). **Rows editor with PHANTOM rows:** every timetable module always SHOWN, a row only STORED once it has a grade (clearing to "—" deletes it; storage stays clean); credits pre-fill **4 (uni) / blank (poly)**; **live persist per `change`** (not per keystroke — focus); `<optgroup>`-sectioned grade dropdown; "+ Add module" (session-only `extraModules` Set until graded); **× only on ungraded manual rows** (grade "—" is the delete elsewhere). **S/U ELECTION — REVERSED 16's option A:** additive `su: boolean` on Grade (absent = false; only the literal boolean `true` elects — trust boundary) + `suElection` scheme flag (nus5 only) → checkbox column, letter KEPT + row excluded; S/U left the dropdown (CS/CU stay); literal "S"/"U" grades valid forever; schema doc + Kotlin + Ling Song heads-up amended. **Semester history** (YJ mid-phase request): read-only per-handbook GPA list — own scheme per row, scale noted when mixed, chronological (`parseStartYear`), "current" chip, renders even when the active level is unsupported. Hint line only for graded-but-skipped rows (YJ cut the phantom hint); **dashboard teaser card CUT** (YJ). 57 tests. (2026-07-14) |
 | 18 | Planned (MS3) | **Grade calculator — advisor** (logic) — grades needed to reach a target GPA |
 | 19 | Planned (MS3) | **Grade calculator advisor — UI integration** — target input + suggestions display |
 | 20 | Planned (MS3) | **Notes & file sync via Drive + simple UI** — upload/list/open notes synced through `appDataFolder`. *(Moved from MS2 → MS3 on 2026-06-21.)* |
@@ -165,6 +167,12 @@ earlier read-only idea). Schema change is **additive** — the existing flat fie
   grade }`. Document + tell Ling Song.
 - **Decided (2026-07-05):** university + poly first; JC (rank points) and secondary (L1R5)
   stubbed with a clear "not yet supported" message, added later if time allows.
+- **Cumulative GPA across semesters (Ling Song, 2026-07-07):** the overall GPA must span the
+  **whole duration of study**, not just the active semester — computed live over the active
+  handbook's grades **plus** every entry in `otherHandbooks` (grades ride their handbook, so
+  13.5 already preserves the history). Rule: only **same-scheme** handbooks combine (levels are
+  locked per handbook, so each semester's scheme is unambiguous; a JC handbook contributes
+  nothing to a university GPA).
 
 ### Phase 17 — Grade calculator (UI)
 
@@ -173,8 +181,10 @@ earlier read-only idea). Schema change is **additive** — the existing flat fie
   timetable's modules), credits input + grade dropdown (options from the active scheme),
   add/remove rows, and a live GPA stat card. Same editor pattern as the timetable editor
   (build from state → edit → harvest → persist).
-- **Steps:** view + route → row editor bound to `appState.grades` → live GPA card →
-  (13.5 tie-in) each handbook carries its own grades, so switching semesters switches the GPA too.
+- **Steps:** view + route → row editor bound to `appState.grades` → live GPA cards
+  (**this semester** + **cumulative across all same-scheme handbooks**) →
+  (13.5 tie-in) each handbook carries its own grades, so switching semesters switches the
+  semester GPA while the cumulative one stays put.
 
 ### Phase 18 — Grade advisor (logic)
 
@@ -231,11 +241,13 @@ than last-write-wins (at minimum: compare `updatedAt` and warn before overwritin
 - **Respect ownership:** work in `web/` and `server/`. Don't edit `app/` (Ling Song's).
 - **Ask before anything destructive/irreversible** — force-push, deleting files, rewriting
   git history, rotating keys. Explain the consequence and wait.
-- **Current working branch:** `main` (MS2 shipped; web deployed to GitHub Pages —
-  https://yujiankoh.github.io/modulo/). Next up is **MS3, starting with Phase 13.5 (multiple
-  handbooks)** — put each feature on its own branch (e.g. `feature/multi-handbook-web`), merge via
-  PR. ⚠️ Render still auto-deploys the **proxy** from `feature/timetable-ai-web` (now behind
-  `main`), so a `server/` change must be pushed there (or repoint Render's deploy branch to `main`).
+- **Current working branch:** `feature/GPA-calculator-web` (Phases 16 + 17, ✅ both built —
+  cut from `feature/study-city-web`, whose 14+15 PR was **not yet merged** at branch time,
+  so this branch's PR shows the study-city commits until that PR merges). Main branch:
+  `main` (web deployed to GitHub Pages — https://yujiankoh.github.io/modulo/). Next up is
+  **Phase 18 (grade advisor — logic)**, new branch per phase. ⚠️ Render still auto-deploys the **proxy** from `feature/timetable-ai-web`
+  (now behind `main`), so a `server/` change must be pushed there (or repoint Render's deploy
+  branch to `main`). 14+15 were web-only — no proxy work.
 
 ## Critical: Gemini free-tier quota is only 20 parses/day
 
@@ -410,9 +422,14 @@ git push               # → Render auto-redeploys feature/timetable-ai-web
 - `server/.env` — `GEMINI_API_KEY` (**gitignored**).
 - `app/` — Ling Song's Android app. **Don't edit; coordinate.**
 - `shared/` — placeholder for cross-platform definitions.
-- `docs/` — `modulo-data-schema.md` (v2 contract), `web-drive-sync-documentation.md`,
-  `timetable-parsing-app-guide.md`, `modulo-roadmap.md`, `timetable-ai-roadmap.md`
-  (current phase). `modulo-handoff.md` (repo root) — full context.
+- `docs/` — **committed (Ling Song-facing):** `modulo-data-schema.md` (v2 contract) +
+  `testing.md` at top level; `guides/` holds `study-city-growth.md` (city contract)
+  + `timetable-parsing-app-guide.md`. **Local-only (never `git add`):** `roadmaps/`
+  (phase roadmaps + `study-city-math.md`; also the formerly-tracked
+  `multi-handbook-roadmap.md` + `timetable-ai-roadmap.md`, untracked 2026-07-13),
+  `handoffs/` (session handoffs), `notes/` (`learning-notes.md`, `web-code-guide.md`),
+  `report/` (challenges, dependencies, poster, video script). `modulo-handoff.md`
+  (repo root) — full context.
 
 ## Key config reference
 
