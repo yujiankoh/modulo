@@ -964,3 +964,28 @@ body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
 /* "+ Add module" mini-form under the editor card. */
 .grade-add { display: flex; gap: 8px; margin-top: 10px; }
 .grade-add input { flex: 1; max-width: 320px; }
+
+/* Semester history (Step 4): one read-only row per handbook. */
+.grades-history-title { margin: 26px 0 10px; font-size: 15px; color: var(--text); }
+.grades-history { padding: 6px 18px; }
+.ghist-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+}
+.ghist-row:last-child { border-bottom: none; }
+.ghist-label { color: var(--text); display: inline-flex; align-items: center; gap: 8px; }
+.ghist-current {
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--pill-bg);
+  color: var(--text-muted);
+}
+.ghist-gpa { color: var(--text); font-weight: 600; }
+.ghist-gpa--na { color: var(--text-muted); font-weight: 400; }

@@ -11,6 +11,7 @@
 
 import { appState, persist } from "./data.js";
 import { schemeForLevel, computeGPA, cumulativeGPA } from "./logic/gpa.js";
+import { formatHeaderLabel, parseStartYear } from "./logic/academicYear.js";
 import { moduleColor } from "./sidebar.js";
 
 const supportedWrap = document.getElementById("gradesSupported");
@@ -20,6 +21,7 @@ const scaleEl = document.getElementById("gradesScale");
 const semGpaEl = document.getElementById("cardSemGpa");
 const cumGpaEl = document.getElementById("cardCumGpa");
 const editorEl = document.getElementById("gradesEditor");
+const historyEl = document.getElementById("gradesHistory");
 const addInput = document.getElementById("gradeAddInput");
 const addBtn = document.getElementById("gradeAddBtn");
 
@@ -257,8 +259,84 @@ function renderEditor(scheme, skippedCount) {
   }
 }
 
+// ---- Semester history (Step 4): read-only, one row per handbook -----------------
+
+// Every handbook, ACTIVE one first-class (rebuilt from the flat fields), sorted
+// chronologically by start year then semester; handbooks without an AY/semester
+// label yet sink to the end.
+function historyEntries() {
+  const active = {
+    educationLevel: appState.educationLevel,
+    academicYear: appState.academicYear,
+    semester: appState.semester,
+    grades: appState.grades,
+    active: true,
+  };
+  const entries = [active, ...(appState.otherHandbooks || [])];
+  const sortKey = (h) => {
+    const year = parseStartYear(h.academicYear, h.educationLevel);
+    return year === null ? 9e9 : year * 10 + (h.semester || 0);
+  };
+  entries.sort((a, b) => sortKey(a) - sortKey(b));
+  return entries;
+}
+
+function renderHistory() {
+  historyEl.innerHTML = "";
+  const entries = historyEntries();
+  if (entries.length < 2) return; // a single semester: the stat cards already say it
+
+  const title = document.createElement("h3");
+  title.className = "grades-history-title";
+  title.textContent = "Semester history";
+
+  const card = document.createElement("div");
+  card.className = "card grades-history";
+
+  // Note each row's scale only when the list actually mixes schemes — a poly 3.8 and
+  // an NUS 3.8 are different yardsticks, so mixed lists must say which is which.
+  const schemeIds = new Set(
+    entries.map((h) => schemeForLevel(h.educationLevel).scheme?.id ?? "unsupported"),
+  );
+  const mixed = schemeIds.size > 1;
+
+  for (const h of entries) {
+    const row = document.createElement("div");
+    row.className = "ghist-row";
+
+    const label = document.createElement("span");
+    label.className = "ghist-label";
+    label.textContent =
+      formatHeaderLabel(h.educationLevel, h.academicYear, h.semester) || "Unnamed semester";
+    if (h.active) {
+      const tag = document.createElement("span");
+      tag.className = "ghist-current";
+      tag.textContent = "current";
+      label.append(tag);
+    }
+
+    const gpa = document.createElement("span");
+    gpa.className = "ghist-gpa";
+    const res = schemeForLevel(h.educationLevel);
+    if (!res.supported) {
+      gpa.textContent = "no GPA";        // e.g. a JC handbook — listed honestly
+      gpa.classList.add("ghist-gpa--na");
+    } else {
+      const value = formatGPA(computeGPA(h.grades || [], res.scheme).gpa);
+      gpa.textContent = mixed ? `${value} (${res.scheme.maxPoints.toFixed(1)})` : value;
+    }
+
+    row.append(label, gpa);
+    card.append(row);
+  }
+  historyEl.append(title, card);
+}
+
 function render() {
   const { supported, scheme, reason } = schemeForLevel(appState.educationLevel);
+
+  // History first — it spans ALL handbooks, so it renders whatever the active level is.
+  renderHistory();
 
   // Unsupported level (jc/secondary/primary, or no handbook yet): show the reason
   // panel instead of the calculator — the logic's message, verbatim.
