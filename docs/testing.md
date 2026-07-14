@@ -35,7 +35,7 @@ on an ephemeral port and makes a real HTTP request; it asserts the **input-valid
 path, which returns `400` *before* any Gemini call — so the suite **spends no Gemini
 quota** and needs no API key.
 
-Current result: **54 tests, 54 passing.**
+Current result: **57 tests, 57 passing.**
 
 ## Unit tests
 
@@ -50,7 +50,7 @@ they can be tested in isolation.
 | `buildPrompt`, `extractJson` | `server/index.js` | `tests/proxy.test.js` | Prompt includes the level-specific section + falls back to secondary for unknown levels; JSON is extracted from surrounding noise and braces inside strings are ignored |
 | `snapshotHandbook`, `blankHandbook`, `switchHandbook` | `web/logic/handbooks.js` | `tests/handbooks.test.js` | Snapshot captures every `HANDBOOK_FIELDS` entry, deep-copies (no shared references), excludes globals (`studySessions`); switch swaps active↔stored, round-trips losslessly, never mutates its input, no-ops on unknown/active ids (Phase 13.5) |
 | `totalStudyMins`, `earnedUpgrades`, `gridTier`, `plotWeight`, `applyUpgrades`, `appliedUpgrades`, `cityState` | `web/logic/growth.js` | `tests/growth.test.js` | Study-city rules (Phase 14): pacing inverse exact at every `n²+9n` boundary (10/22/36/…/1200→30); tier switches exactly at 20 h/100 h; centre-weighted pick (9/4/1 rings) obeys an **injected scripted RNG** (deterministic tests of random logic); founding building always dead-centre; spawn-vs-grow by occupancy; capped plots excluded; maxed grid banks; inputs never mutated; **progression invariant** — every tier expands long before its land can fill (guards future floor-cap tuning) |
-| `SCHEMES`, `schemeForLevel`, `computeGPA`, `cumulativeGPA` | `web/logic/gpa.js` | `tests/gpa.test.js` | Grade calculator (Phase 16): level→scheme mapping (`university`→5.0, `poly`→4.0, jc/secondary/primary stubbed with a reason); hand-computed weighted averages for both schemes; credit weighting (bigger modules pull harder); S/U/CS/CU and poly `P` excluded from numerator AND denominator; `gpa: null` (not 0) when nothing counts; junk rows (unknown grade, ≤0/string/NaN credits, null row) skipped + counted, never thrown; grade normalisation (`"a+"` counts); cumulative GPA pools only same-scheme handbooks (JC contributes nothing to uni; poly never mixes with uni), tolerates pre-16 handbooks without `grades`; inputs never mutated |
+| `SCHEMES`, `schemeForLevel`, `computeGPA`, `cumulativeGPA` | `web/logic/gpa.js` | `tests/gpa.test.js` | Grade calculator (Phase 16): level→scheme mapping (`university`→5.0, `poly`→4.0, jc/secondary/primary stubbed with a reason); hand-computed weighted averages for both schemes; credit weighting (bigger modules pull harder); S/U/CS/CU and poly `P` excluded from numerator AND denominator; `gpa: null` (not 0) when nothing counts; junk rows (unknown grade, ≤0/string/NaN credits, null row) skipped + counted, never thrown; grade normalisation (`"a+"` counts); cumulative GPA pools only same-scheme handbooks (JC contributes nothing to uni; poly never mixes with uni), tolerates pre-16 handbooks without `grades`; **S/U election** (Phase 17): `su: true` keeps the letter but excludes the row (excluded, not skipped), junk-proof both ways (only the literal boolean `true` elects; an elected junk row is still excluded), `suElection` scheme flags (nus5 yes, poly4 no); inputs never mutated |
 
 Each test feeds known inputs and asserts the exact output with `node:assert/strict` — e.g.
 `assert.equal(formatAcademicYear(2025, "university"), "25/26")`.
@@ -103,6 +103,11 @@ the actual behaviour.
 | S27 | Study city — global across handbooks (like S20) | Note the city → switch handbook | The city is IDENTICAL before/after any handbook switch (city + studySessions are global) | To verify |
 | S28 | Study city — colour schemes | Click the "▶ SCHEME i/6" HUD pill; toggle light/dark; reload | Cycles all 6 schemes; land + sea + buildings + windows restyle instantly; each scheme has day/night variants; choice persists per device | To verify |
 | S29 | Study city — cross-device render (with Ling Song, when app-side lands) | Same Drive data on web + Android | Both devices show the SAME city layout and building colours (stored grid + shared coordinate hash); visual palettes may differ per device by design | Blocked on app |
+| S30 | Grades — enter grades, live GPA (17) | #grades → set credits + grade on timetable rows | Every timetable module pre-listed (phantom rows, credits pre-filled 4 for uni / blank for poly); picking a grade stores the row + both GPA cards update instantly; reload keeps grades; setting a grade back to "—" deletes the row (phantom returns) | To verify |
+| S31 | Grades — S/U election (17, uni only) | Tick S/U on a graded module | Letter grade STAYS visible; semester + cumulative GPA recompute without it; untick → counts again; reload keeps the tick; poly handbooks show NO S/U column | To verify |
+| S32 | Grades — per-handbook (17) | Note both GPAs → switch handbook → switch back | Rows + semester GPA swap with the handbook; cumulative GPA identical before/after (same-scheme pooling); JC handbook shows the "not supported" panel instead | To verify |
+| S33 | Grades — unsupported level (17) | Switch to a jc/secondary handbook → #grades | Cards + editor replaced by the "no grade calculator for this level yet" panel with the reason text; semester history still renders below | To verify |
+| S34 | Grades — semester history (17) | ≥2 handbooks, some with grades | One row per handbook, chronological, "current" chip on the active one; each GPA in ITS OWN scheme (scale shown when mixed, e.g. "3.80 (4.0)"); JC rows say "no GPA"; single-handbook states show no history card | To verify |
 
 > Replace "To verify" with **Pass/Fail** during a manual pass and drop screenshots into a
 > `docs/test-evidence/` folder (or the report), referenced by scenario number.
