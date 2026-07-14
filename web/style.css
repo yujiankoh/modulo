@@ -935,6 +935,9 @@ body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
   color: var(--text-muted);
   border-bottom: 1px solid var(--border);
 }
+/* Header cells line up with their column's CONTENT, not the cell edge: */
+.grade-th--inset { padding-left: 9px; }  /* inputs' 8px padding + 1px border */
+.grade-th--center { justify-self: center; }
 .grade-dot { width: 10px; height: 10px; border-radius: 50%; }
 .grade-mod { font-size: 14px; color: var(--text); overflow-wrap: anywhere; }
 .grade-credits, .grade-grade {

@@ -220,13 +220,22 @@ function renderEditor(scheme) {
     return;
   }
 
-  // Column headers (styled like the card labels).
+  // Column headers (styled like the card labels). Each cell aligns like its column's
+  // CONTENT: an empty first cell keeps "Module" over the labels (not the dots);
+  // Credits/Grade are inset to match the inputs' text; S/U centres over the checkbox.
   const head = document.createElement("div");
   head.className = "grade-row grade-row--head";
-  const headings = ["Module", "Credits", "Grade", ...(scheme.suElection ? ["S/U"] : []), ""];
-  for (const text of headings) {
+  const headings = [
+    ["", ""],
+    ["Module", ""],
+    ["Credits", "grade-th--inset"],
+    ["Grade", "grade-th--inset"],
+    ...(scheme.suElection ? [["S/U", "grade-th--center"]] : []),
+    ["", ""],
+  ];
+  for (const [text, cls] of headings) {
     const cell = document.createElement("span");
-    if (text === "Module") cell.style.gridColumn = "1 / 3"; // span dot + label columns
+    if (cls) cell.className = cls;
     cell.textContent = text;
     head.append(cell);
   }
