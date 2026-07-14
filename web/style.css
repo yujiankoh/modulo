@@ -959,6 +959,7 @@ body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
 }
 .grade-remove:hover { color: var(--text); }
 .grades-empty { margin: 0; font-size: 14px; color: var(--text-muted); }
+.grades-hint { margin: 10px 0 0; font-size: 13px; color: var(--text-muted); }
 
 /* "+ Add module" mini-form under the editor card. */
 .grade-add { display: flex; gap: 8px; margin-top: 10px; }

@@ -206,7 +206,7 @@ function buildRow(row, scheme) {
   return rowEl;
 }
 
-function renderEditor(scheme) {
+function renderEditor(scheme, skippedCount) {
   editorEl.innerHTML = ""; // wipe, then rebuild from state (house pattern)
   // Rows have an extra column on suElection schemes — the class switches the grid.
   editorEl.classList.toggle("grades-editor--su", scheme.suElection);
@@ -242,6 +242,19 @@ function renderEditor(scheme) {
   editorEl.append(head);
 
   for (const row of rows) editorEl.append(buildRow(row, scheme));
+
+  // Safety hint (narrowed 2026-07-13 after YJ's feedback): phantoms are obvious from
+  // their "—" grade, so they get NO hint. It only appears for stored rows computeGPA
+  // SKIPPED — a row with a grade but unusable credits (e.g. poly's blank default)
+  // looks finished while silently not counting, and nothing else would say so.
+  if (skippedCount > 0) {
+    const hint = document.createElement("p");
+    hint.className = "grades-hint";
+    hint.textContent = skippedCount === 1
+      ? "1 graded module isn't counted — check its credits."
+      : `${skippedCount} graded modules aren't counted — check their credits.`;
+    editorEl.append(hint);
+  }
 }
 
 function render() {
@@ -259,9 +272,10 @@ function render() {
 
   // Say WHICH scale (SMU-limitation decision): "5.0 scale" / "4.0 scale".
   scaleEl.textContent = `${scheme.maxPoints.toFixed(1)} scale`;
-  semGpaEl.textContent = formatGPA(computeGPA(appState.grades, scheme).gpa);
+  const semester = computeGPA(appState.grades, scheme); // once — card AND hint use it
+  semGpaEl.textContent = formatGPA(semester.gpa);
   cumGpaEl.textContent = formatGPA(cumulativeGPA(appState).gpa);
-  renderEditor(scheme);
+  renderEditor(scheme, semester.skippedCount);
 }
 
 // "+ Add module": a module not in the timetable (dropped module, school subject, …).

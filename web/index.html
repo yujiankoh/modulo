@@ -257,8 +257,16 @@
               <div class="dash-card-value" id="cardCumGpa">—</div>
             </div>
           </div>
-          <!-- Step 2 fills this with the per-module rows editor. -->
-          <div id="gradesEditor"></div>
+          <!-- The per-module rows editor: gradesView.js rebuilds it from state on every
+               redraw (stored grade entries + phantom rows for ungraded timetable modules). -->
+          <div id="gradesEditor" class="card grades-editor"></div>
+
+          <!-- Static (not rebuilt on render) so its listeners bind once and typing
+               focus survives redraws. For modules the timetable doesn't know. -->
+          <div class="grade-add">
+            <input id="gradeAddInput" type="text" placeholder="Add another module (e.g. GEC1015)" />
+            <button id="gradeAddBtn" type="button"><i data-lucide="plus"></i>Add module</button>
+          </div>
         </div>
 
         <!-- Shown INSTEAD of the calculator when the level has no scheme. -->
