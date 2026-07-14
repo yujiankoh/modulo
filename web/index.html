@@ -45,6 +45,7 @@
         <a class="nav-link" href="#tasks"><i data-lucide="list-checks"></i>All Tasks</a>
         <a class="nav-link" href="#timetable"><i data-lucide="calendar-clock"></i>Timetable</a>
         <a class="nav-link" href="#study"><i data-lucide="timer"></i>Study Session</a>
+        <a class="nav-link" href="#grades"><i data-lucide="graduation-cap"></i>Grades</a>
         <!-- Modules list (12.4d): sidebar.js fills this with the distinct modules from the
              timetable + tasks, each with a colour dot. Empty until there are any. -->
         <div id="moduleNav" class="module-nav"></div>
@@ -231,6 +232,53 @@
         <h3>Recent sessions</h3>
         <p id="sessionNote"></p>
         <ul id="sessionList"></ul>
+      </section>
+
+      <!-- GRADES (Phase 17): the grade calculator. gradesView.js renders everything from
+           the pure logic in logic/gpa.js — GPAs are DERIVED on every redraw, never stored.
+           Which scheme applies follows the handbook's locked education level; unsupported
+           levels (jc/secondary/primary) see the reason panel instead of the calculator. -->
+      <section id="view-grades" class="view">
+        <div class="grades-head">
+          <h2>Grades</h2>
+          <!-- Scale label ("5.0 scale") — the SMU-limitation decision: say WHICH scale. -->
+          <span id="gradesScale" class="grades-scale"></span>
+        </div>
+
+        <div id="gradesSupported">
+          <!-- Same stat-card look as the dashboard (shared .dash-card classes). -->
+          <div class="dash-cards">
+            <div class="dash-card">
+              <div class="dash-card-label">Semester GPA</div>
+              <div class="dash-card-value" id="cardSemGpa">—</div>
+            </div>
+            <div class="dash-card dash-card--accent">
+              <div class="dash-card-label">Cumulative GPA</div>
+              <div class="dash-card-value" id="cardCumGpa">—</div>
+            </div>
+          </div>
+          <!-- The per-module rows editor: gradesView.js rebuilds it from state on every
+               redraw (stored grade entries + phantom rows for ungraded timetable modules). -->
+          <div id="gradesEditor" class="card grades-editor"></div>
+
+          <!-- Static (not rebuilt on render) so its listeners bind once and typing
+               focus survives redraws. For modules the timetable doesn't know. -->
+          <div class="grade-add">
+            <input id="gradeAddInput" type="text" placeholder="Add another module (e.g. GEC1015)" />
+            <button id="gradeAddBtn" type="button"><i data-lucide="plus"></i>Add module</button>
+          </div>
+        </div>
+
+        <!-- Shown INSTEAD of the calculator when the level has no scheme. -->
+        <div id="gradesUnsupported" class="card tt-empty" style="display: none;">
+          <h3>No grade calculator for this level yet</h3>
+          <p id="gradesUnsupportedReason"></p>
+        </div>
+
+        <!-- Semester history (Step 4): read-only, one row per handbook, each GPA in
+             ITS OWN scheme. Outside the supported/unsupported branch on purpose —
+             stored semesters stay visible whatever the active level is. -->
+        <div id="gradesHistory"></div>
       </section>
 
       <!-- SETTINGS: account + storage. The connect/local/status/reload controls used to

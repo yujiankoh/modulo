@@ -37,6 +37,15 @@ read and write this same file**.
       "updatedAt": "2026-06-03T09:35:06.606Z"
     }
   ],
+  "grades": [
+    {
+      "id": "3c7d9e1f-8a25-4b6c-9d0e-5f4a3b2c1d88",
+      "module": "CS2030S",
+      "credits": 4,
+      "grade": "A-",
+      "su": false
+    }
+  ],
   "studySessions": [
     {
       "id": "9f1c3b2a-5e44-4c8a-9b1d-2f0a7e6d4c11",
@@ -80,6 +89,7 @@ read and write this same file**.
 | `breaks`         | array of `{ start, end }` (each `YYYY-MM-DD`) | no | Recess/holiday date ranges. Any week overlapping a range is non-academic: skipped in week numbering (so parity continues across it) and shows no classes. Defaults to `[]` |
 | `updatedAt`      | string (ISO 8601) | yes      | When the whole state was last saved. Key field for sync + local-save reconciliation. |
 | `tasks`          | array of Task     | yes      | All of the user's tasks. May be empty (`[]`). |
+| `grades`         | array of Grade    | no       | **Phase 16 (grade calculator).** The active handbook's grade rows — one per module, `{ id, module, credits, grade }`. Defaults to `[]`. **Per-handbook** (rides a handbook switch, like `tasks`). GPAs are always **derived** from these rows, never stored. See "Grade object" below. |
 | `studySessions`  | array of StudySession | no   | Recorded focus/study sessions (Phase 10). Defaults to `[]`. Used for daily/weekly/cumulative study-time totals + the calendar's per-day average rating |
 | `city`           | City object       | no       | **Phase 14 (study city).** The generative city grid: `{ buildings: [{ x, y, floors }] }` — one entry per occupied plot, `x`/`y` centre-origin integer offsets, `floors ≥ 1`. **Stored** because upgrade placement is random (not re-derivable); every count (earned/applied/pending upgrades, land size) is **derived** per `study-city-growth.md`. Defaults to `{ "buildings": [] }`. **GLOBAL like `studySessions`** — never part of a handbook; a handbook switch must not touch it. |
 | `hiddenModules`  | array of string   | no       | Module labels the user has hidden from the web dashboard + sidebar (Phase 12). Defaults to `[]`. |
@@ -95,7 +105,7 @@ holds the inactive ones. Each entry has an `id` plus exactly the per-handbook fi
 | Field | Same as top-level field |
 |-------|-------------------------|
 | `id`  | (the handbook's identity — the active one's id is the top-level `handbookId`) |
-| `educationLevel`, `academicYear`, `semester`, `handbookSetup`, `termStart`, `termEnd`, `breaks`, `timetable`, `tasks`, `hiddenModules` | identical types/meaning to the top-level fields of the same name |
+| `educationLevel`, `academicYear`, `semester`, `handbookSetup`, `termStart`, `termEnd`, `breaks`, `timetable`, `tasks`, `grades`, `hiddenModules` | identical types/meaning to the top-level fields of the same name |
 
 **Switching handbooks** (web): the flat fields are snapshotted into `otherHandbooks` and
 the chosen entry's fields are copied out into the flat fields — one atomic save.
@@ -114,6 +124,40 @@ cumulative study time, and the study city span semesters.
 | `done`      | boolean           | yes      | Whether completed. |
 | `createdAt` | string (ISO 8601) | yes      | When created. |
 | `updatedAt` | string (ISO 8601) | yes      | When last changed. |
+
+## Grade object (Phase 16 — grade calculator)
+
+One module's result for a semester. **Per-handbook** (inside the flat fields / each
+`otherHandbooks` entry). GPAs are **never stored** — both clients derive them live from
+these rows (web: `web/logic/gpa.js`), so they can't drift.
+
+| Field     | Type   | Required | Description |
+|-----------|--------|----------|-------------|
+| `id`      | string | yes      | Unique id (`crypto.randomUUID()`). |
+| `module`  | string | yes      | Module code (e.g. `"CS2030S"`), or name for school levels. |
+| `credits` | number | yes      | Credit weight (MCs/units). Must be > 0 to count toward a GPA. |
+| `grade`   | string | yes      | Uppercase grade string — a scheme key or an excluded grade (below). |
+| `su`      | boolean | no      | **S/U election** (university scheme only): `true` = the module is S/U'd — `grade` KEEPS the real letter the student received, but the row is **excluded** from every GPA. Missing/absent = `false`. Only the literal boolean `true` elects (defensive rule, both clients). The literal `"S"`/`"U"` grade values also remain valid and excluded (pre-election rows). |
+
+**Grading schemes** (chosen by the handbook's locked `educationLevel`):
+
+- `university` → **5.0 scale** (NUS/NTU-style): `A+`/`A` 5.0, `A-` 4.5, `B+` 4.0, `B` 3.5,
+  `B-` 3.0, `C+` 2.5, `C` 2.0, `D+` 1.5, `D` 1.0, `F` 0.0. **Excluded** (valid, never
+  counted in numerator or denominator): `S`, `U`, `CS`, `CU`. *(Known limitation: SMU's
+  4.3-max scale is NOT supported — "university" means the 5.0-scale schools.)*
+- `poly` → **4.0 scale** (SP's published core table, shared across the polys): `DIST`/`A`
+  4.0, `B+` 3.5, `B` 3.0, `C+` 2.5, `C` 2.0, `D+` 1.5, `D` 1.0, `F` 0.0. **Excluded:** `P`.
+- `jc` / `secondary` / `primary` → **no GPA computed** (rank points / L1R5 aren't
+  credit-weighted averages; stubbed "not yet supported").
+
+**GPA rules (both clients must match):** GPA = `Σ(points × credits) / Σ(credits)` over
+countable rows; rows with `su: true` (strictly the boolean `true`) are **excluded first**,
+whatever their grade/credits; grades are normalised (trim + uppercase) before lookup;
+unusable rows (unknown grade, credits ≤ 0 / non-numeric) are **skipped, never an error**;
+no countable rows → no GPA (not 0). **Cumulative GPA** pools the active handbook's rows with every
+`otherHandbooks` entry of the **same scheme** (university with university, poly with
+poly — never across schemes) and computes ONE weighted average over the pool (not an
+average of per-semester GPAs).
 
 ## StudySession object
 
@@ -227,6 +271,7 @@ let appState = {
   breaks: [],             // ["YYYY-MM-DD", ...] recess/holiday week Mondays
   updatedAt: null,
   tasks: [],
+  grades: [],             // [{ id, module, credits, grade }] per-handbook grade rows — Phase 16
   studySessions: [],      // [{ id, start, end, durationMins, rating, createdAt }] — Phase 10
   city: { buildings: [] },// study-city grid [{ x, y, floors }] (GLOBAL, like studySessions) — Phase 14
   hiddenModules: [],      // module labels hidden from the dashboard/sidebar (web-only) — Phase 12
@@ -253,6 +298,7 @@ data class ModuloData(
     val breaks: List<Break> = emptyList(), // recess/holiday date ranges
     val updatedAt: String? = null,
     val tasks: List<Task> = emptyList(),
+    val grades: List<Grade> = emptyList(),  // per-handbook grade rows — Phase 16
     val studySessions: List<StudySession> = emptyList(),
     val city: City = City(),               // study-city grid (GLOBAL) — Phase 14
     val hiddenModules: List<String> = emptyList(),
@@ -271,8 +317,18 @@ data class Handbook(                       // one INACTIVE semester (Phase 13.5)
     val termEnd: String? = null,
     val breaks: List<Break> = emptyList(),
     val tasks: List<Task> = emptyList(),
+    val grades: List<Grade> = emptyList(),  // per-handbook grade rows — Phase 16
     val hiddenModules: List<String> = emptyList(),
     val timetable: Timetable? = null
+)
+
+@Serializable
+data class Grade(                          // one module's semester result (Phase 16)
+    val id: String,
+    val module: String = "",     // module code, or name for school levels
+    val credits: Double = 0.0,   // credit weight (MCs/units); must be > 0 to count
+    val grade: String = "",      // uppercase scheme key (e.g. "A-") or excluded ("S", "U", "P")
+    val su: Boolean = false      // S/U election (Phase 17): true = keep the letter, exclude from GPA
 )
 
 @Serializable
@@ -358,3 +414,5 @@ data class Slot(
 | 2       | 2026-06-27 | Added top-level `academicYear` (string `"YY/YY"`, default `null`), `semester` (number `1`/`2`, default `null`), and `handbookSetup` (boolean, default `false`) for the handbook/onboarding. Drive the sidebar header + gate the first-run setup modal. |
 | 2       | 2026-07-05 | **Phase 13.5 (multiple handbooks):** added top-level `handbookId` (string, default generated) and `otherHandbooks` (array of Handbook, default `[]`). The flat fields remain **the active handbook**, so existing readers are unaffected — but **kotlinx.serialization must tolerate the new keys** (add the fields per the Kotlin reference, or set `ignoreUnknownKeys = true`), otherwise parsing a web-saved file throws. `studySessions` stay global (never inside a handbook). Education level is now locked **per handbook**. |
 | 2       | 2026-07-08 | **Phase 14 (study city):** added top-level `city` (`{ buildings: [{ x, y, floors }] }`, default empty) — the generative city grid. Stored because upgrade placement is random; every count is **derived** from `studySessions` per the shared rules in `study-city-growth.md`. GLOBAL like `studySessions` — never inside a handbook. Same kotlinx note as 13.5: tolerate the new key. *(An interim `cityLevel` integer existed only on the web feature branch and never shipped — readers may ignore that key if ever seen.)* |
+| 2       | 2026-07-13 | **Phase 16 (grade calculator):** added `grades` (array of Grade `{ id, module, credits, grade }`, default `[]`) as a **per-handbook** field — top-level (the active handbook) AND inside each `otherHandbooks` entry, carried by handbook switches like `tasks`. GPAs are never stored — both clients derive them per the "Grade object" section's scheme tables + rules (university = 5.0 scale with S/U/CS/CU excluded; poly = 4.0 with P excluded; jc/secondary/primary = no GPA). Same kotlinx note as 13.5: tolerate the new key. |
+| 2       | 2026-07-13 | **Phase 17 (S/U election):** added optional `su` (boolean, default `false`/absent) to the Grade object — `true` keeps the student's real letter in `grade` but **excludes** the row from every GPA (checked before anything else; only the literal boolean `true` elects). University scheme only; the literal `"S"`/`"U"` grade values stay valid and excluded. Kotlin: `val su: Boolean = false`. |
