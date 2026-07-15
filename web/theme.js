@@ -9,17 +9,17 @@ function currentTheme() {
   return document.documentElement.dataset.theme === "dark" ? "dark" : "light";
 }
 
-// Keep both toggles' labels matching the active theme. The icon shows what you'll switch
-// TO: a sun while in dark mode, a moon while in light mode. We set innerHTML with a fresh
+// Keep the toggles matching the active theme. The Settings button's icon shows what
+// you'll switch TO (sun while dark, moon while light) — innerHTML with a fresh
 // <i data-lucide> placeholder; icons.js (re)draws it on the modulo:datachanged that
-// applyTheme fires (and once at startup).
+// applyTheme fires. The topbar SWITCH needs no label work — its knob position is pure
+// CSS off [data-theme] — only the aria-checked state (it's role="switch") is JS's job.
 function updateLabels(theme) {
   const dark = theme === "dark";
   const icon = dark ? "sun" : "moon";
-  const side = document.getElementById("themeToggleSide");
   const settings = document.getElementById("themeToggle");
-  if (side) side.innerHTML = `<i data-lucide="${icon}"></i>${dark ? "Light mode" : "Dark mode"}`;
   if (settings) settings.innerHTML = `<i data-lucide="${icon}"></i>${dark ? "Switch to light mode" : "Switch to dark mode"}`;
+  document.getElementById("themeSwitch")?.setAttribute("aria-checked", String(dark));
 }
 
 // Set the theme on <html> (CSS [data-theme="dark"] reacts), remember it, refresh labels.
@@ -36,6 +36,6 @@ function toggleTheme() {
   applyTheme(currentTheme() === "dark" ? "light" : "dark");
 }
 
-document.getElementById("themeToggleSide")?.addEventListener("click", toggleTheme);
+document.getElementById("themeSwitch")?.addEventListener("click", toggleTheme);
 document.getElementById("themeToggle")?.addEventListener("click", toggleTheme);
 updateLabels(currentTheme());
