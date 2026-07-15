@@ -83,12 +83,19 @@ button:hover { border-color: var(--border-strong); }
 button, input, select { font-family: inherit; }
 /* Lucide icon inside any button: small + non-shrinking (stroke = currentColor). */
 button svg { width: 16px; height: 16px; flex: none; }
-/* Selects (filters, type pickers): match the button look. */
+/* Selects (filters, type pickers): match the button look. The chevron is our own
+   (polish 2026-07-15): appearance:none suppresses the native arrow (browsers pin it
+   to the edge — it can't be spaced), and an inline-SVG background draws it 12px in.
+   The stroke is a literal (data URIs can't read var()) — both themes' --text-muted
+   are the same mid-grey, so ONE colour serves. Extra right padding clears the text. */
 select {
-  padding: 6px 10px;
+  appearance: none;
+  padding: 6px 30px 6px 10px;
   font-size: 13px;
   color: var(--text);
-  background: var(--surface);
+  background: var(--surface)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%238890a4' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
+    no-repeat right 12px center;
   border: 1px solid var(--border);
   border-radius: 8px;
   cursor: pointer;
@@ -530,8 +537,8 @@ select {
 /* Modal form rows (Add Task + handbook): label stacked above its input. */
 .task-field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
 .task-field > span { font-size: 12px; color: var(--text-muted); }
-.task-field > input,
-.task-field > select { padding: 6px 8px; font-size: 14px; }
+.task-field > input { padding: 6px 8px; font-size: 14px; }
+.task-field > select { padding: 6px 30px 6px 8px; font-size: 14px; } /* right padding clears the chevron */
 .task-modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
 
 /* Handbook onboarding (Phase 13): live academic-year preview + validation error line. */
@@ -600,7 +607,7 @@ select {
 .view-eyebrow { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); margin: 0 0 4px; }
 .view-title { font-size: 30px; font-weight: 700; color: var(--text); margin: 0; }
 .tasks-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
-.task-controls select { border-radius: 999px; padding: 6px 14px; }  /* pill-style filters */
+.task-controls select { border-radius: 999px; padding: 6px 30px 6px 14px; }  /* pill filters; right padding clears the chevron */
 
 #taskList { margin: 0; padding: 0; }            /* plain container; cards are per-bucket */
 .task-card {
@@ -881,9 +888,12 @@ body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
   font-size: 13px;
   border: 1px solid var(--border);
   border-radius: 8px;
-  background: var(--surface);
+  /* background-COLOR, not the shorthand — the shorthand would erase the global
+     select chevron image (polish 2026-07-15). */
+  background-color: var(--surface);
   color: var(--text);
 }
+.slot-row select { padding-right: 24px; } /* the shared 8px would run text under the chevron */
 /* "✕" delete-slot button: icon-quiet, red on hover. */
 .slot-del { border: none; background: transparent; font-size: 13px; color: var(--text-muted); padding: 2px; }
 .slot-del:hover { color: var(--danger); border-color: transparent; }
@@ -925,12 +935,23 @@ body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
 .city-scheme-cycle {
   display: inline-flex; align-items: center; gap: 8px;
   padding: 9px 14px; border-radius: 8px;
-  background: #10152b; border: 1px solid #323d5e;
+  /* Light mode (2026-07-15): theme pill with a DARK border — the hairline --border
+     blended into the page (YJ). Dark mode below restores the original fixed HUD. */
+  background: var(--pill-bg); border: 1px solid var(--text-muted);
   font-family: "Press Start 2P", monospace;
   font-size: 10px; letter-spacing: 0.5px;
-  color: #8b93ad;                 /* the "1/6" counter */
+  color: var(--text-muted);       /* the "1/6" counter */
 }
-.city-scheme-cycle:hover { border-color: #4a578a; }
+.city-scheme-cycle:hover { border-color: var(--text); }
+/* Dark mode: the ORIGINAL fixed game-chrome HUD, verbatim (YJ 2026-07-15: "keep to
+   what we had previously") — deliberately hardcoded, the one sanctioned exception. */
+[data-theme="dark"] .city-scheme-cycle { background: #10152b; border-color: #323d5e; color: #8b93ad; }
+[data-theme="dark"] .city-scheme-cycle:hover { border-color: #4a578a; }
+/* Light theme: the scheme accents were tuned to glow on a dark pill — darken the
+   rendered glyphs a notch so pale accents (Dreamland, Sunset) stay readable.
+   (Light = the ABSENCE of data-theme="dark", hence the :not selector.) */
+:root:not([data-theme="dark"]) .city-scheme-cycle .csc-arrow,
+:root:not([data-theme="dark"]) #cscName { filter: brightness(0.72) saturate(1.3); }
 .city-scheme-cycle .csc-arrow { font-size: 9px; }
 /* Pop-in for just-built towers: grow up from the plot with a slight overshoot.
    transform-box makes the SVG group scale about its own bottom edge (its base). */
@@ -1003,7 +1024,20 @@ body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
 
 /* "+ Add module" mini-form under the editor card. */
 .grade-add { display: flex; gap: 8px; margin-top: 10px; }
-.grade-add input { flex: 1; max-width: 320px; }
+/* Skinned like the app's other inputs (.slot-row) — it was browser-default before
+   (polish 2026-07-15): surface box, token border, rounded like the buttons beside it. */
+.grade-add input {
+  flex: 1;
+  max-width: 320px;
+  padding: 8px 12px;
+  font-size: 13px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+}
+.grade-add input::placeholder { color: var(--text-muted); }
+.grade-add input:hover { border-color: var(--border-strong); }
 
 /* Semester history (Step 4): one read-only row per handbook. */
 .grades-history-title { margin: 26px 0 10px; font-size: 15px; color: var(--text); }
