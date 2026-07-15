@@ -511,7 +511,11 @@
   <div id="moduleModal" class="tcal-popup" style="display: none;">
     <div class="tcal-popup-card">
       <button id="moduleModalClose" class="tcal-popup-close" type="button"><i data-lucide="x"></i></button>
-      <h3 id="moduleModalTitle"></h3>
+      <!-- Coloured header band (polish 2026-07-15, like the dashboard module cards):
+           dashboard.js sets its background to the module's colour on open. -->
+      <div id="moduleModalHead" class="module-modal-head">
+        <h3 id="moduleModalTitle"></h3>
+      </div>
       <div class="module-modal-label">My notes</div>
       <!-- Phase 20: this module's notes (active handbook), filled by notesView.js's
            showModuleNotes(). Upload pre-tags the file to this module. -->
@@ -529,11 +533,19 @@
   <div id="noteUploadModal" class="tcal-popup" style="display: none;">
     <div class="tcal-popup-card">
       <button id="noteUploadClose" class="tcal-popup-close" type="button"><i data-lucide="x"></i></button>
-      <h3>Upload a note</h3>
-      <p class="module-modal-placeholder">A PDF or an image, up to 5&nbsp;MB. Notes are stored
-        as files in your own Google Drive.</p>
+      <h3>Upload notes</h3>
 
-      <input id="noteFile" type="file" />
+      <!-- Drop zone (polish 2026-07-15): the real <input type="file"> is hidden — this
+           button opens it, and also accepts drag & drop (notesView.js assigns the
+           dropped FileList to the input, so the upload path stays ONE code path). -->
+      <button id="noteDrop" class="note-drop" type="button">
+        <i data-lucide="upload"></i>
+        <span class="note-drop-title">Choose files or drag them here</span>
+        <span class="note-drop-sub">PDFs &amp; images · up to 5&nbsp;MB each · stored in your own Google Drive</span>
+      </button>
+      <input id="noteFile" type="file" multiple style="display: none;" />
+      <!-- The picked files, validated LIVE (name + size; invalid ones flagged red). -->
+      <ul id="notePickList" class="note-pick-list"></ul>
 
       <label class="task-field">
         <span>Module/Subject</span>
@@ -636,12 +648,14 @@
       <button id="ratingClose" class="tcal-popup-close" type="button"><i data-lucide="x"></i></button>
       <h3>How did that session go?</h3>
       <p id="ratingSummary"></p>
+      <!-- Ratings are STORED as 1–5 (schema unchanged); the emojis are display only
+           (polish 2026-07-15). data-rating still carries the real value. -->
       <div id="ratingButtons">
-        <button type="button" data-rating="1">1</button>
-        <button type="button" data-rating="2">2</button>
-        <button type="button" data-rating="3">3</button>
-        <button type="button" data-rating="4">4</button>
-        <button type="button" data-rating="5">5</button>
+        <button type="button" data-rating="1" title="1/5">🗑️</button>
+        <button type="button" data-rating="2" title="2/5">💩</button>
+        <button type="button" data-rating="3" title="3/5">😐</button>
+        <button type="button" data-rating="4" title="4/5">🔥</button>
+        <button type="button" data-rating="5" title="5/5">💡</button>
       </div>
       <button id="ratingSkip" type="button">Skip rating</button>
     </div>

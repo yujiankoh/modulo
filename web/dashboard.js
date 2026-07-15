@@ -296,6 +296,9 @@ function moduleTitle(m) {
 
 // Open the module detail modal: this module's notes (Phase 20) + its tasks.
 function openModuleModal(m) {
+  // The header band carries the module's colour (like the dashboard cards —
+  // background inline, same palette-sample rule as module-card-head).
+  document.getElementById("moduleModalHead").style.background = moduleColor(m.label);
   document.getElementById("moduleModalTitle").textContent = moduleTitle(m);
   showModuleNotes(m.label); // notes are tagged by label — same code||name rule
 

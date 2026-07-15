@@ -477,7 +477,7 @@ select {
   padding: 2px 6px;
   font-size: 11px;
   color: var(--text);
-  background: var(--pill-bg);          /* neutral; per-module colours come with the module field */
+  background: var(--pill-bg);   /* neutral fallback; calendarView.js tints per module (hex+22) */
   border-radius: 4px;
   white-space: nowrap;          /* keep each pill on one line... */
   overflow: hidden;            /* ...and clip overflow... */
@@ -485,8 +485,11 @@ select {
 }
 .tcal-pill--done { text-decoration: line-through; color: var(--text-muted); background: var(--hover); }
 .tcal-more { margin-top: 4px; font-size: 11px; font-weight: 600; color: var(--text-muted); }
-/* Phase 10: per-day rounded average study rating, shown as gold stars. */
-.tcal-rating { margin-top: 4px; font-size: 12px; line-height: 1; color: #d4a017; letter-spacing: 1px; }
+/* Phase 10: per-day rounded average study rating — its emoji since 2026-07-15 (was stars). */
+.tcal-rating { margin-top: 4px; font-size: 14px; line-height: 1; }
+/* Rating modal: emoji buttons (values still 1–5 via data-rating). */
+#ratingButtons { display: flex; gap: 8px; margin: 6px 0 12px; }
+#ratingButtons button { font-size: 21px; padding: 6px 10px; line-height: 1; }
 .tcal-cell--has-tasks { cursor: pointer; }       /* signals the day is clickable */
 .tcal-cell--has-tasks:hover { background: var(--hover); }
 
@@ -803,9 +806,9 @@ body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
 /* Fixed band height + 2-line clamp so every card's coloured header is the SAME height,
    whether the name is one line ("Probability") or two ("Data Structures and Algorithms"). */
 .module-card-head {
-  padding: 14px 16px; color: #fff;          /* background colour set inline */
+  padding: 10px 16px; color: #fff;          /* background colour set inline */
   box-sizing: border-box;                   /* min-height includes the padding */
-  min-height: 88px;
+  min-height: 56px;                         /* slimmed from 88px (polish 2026-07-15) */
 }
 .module-card-code { font-size: 11px; letter-spacing: 0.06em; opacity: 0.9; }
 .module-card-name {
@@ -1080,6 +1083,63 @@ body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
 .note-action svg { width: 14px; height: 14px; }
 .note-name-cell .note-action { flex: none; } /* the pencil never shrinks away */
 
+/* Module detail modal: coloured header band (polish 2026-07-15 — the dashboard
+   module-card look). Negative margins cancel the card's 20px/22px padding so the
+   band bleeds to the edges; top corners match the card's 14px radius. Text is #fff
+   like .module-card-head — the background is an inline palette colour in both themes. */
+.module-modal-head {
+  margin: -20px -22px 16px;
+  padding: 16px 22px 14px;
+  border-radius: 14px 14px 0 0;
+}
+.module-modal-head h3 { margin: 0 24px 0 0; color: #fff; }
+/* The ✕ sits on the band (absolute, card top-right) — muted grey would vanish. */
+#moduleModal .tcal-popup-close { color: rgba(255, 255, 255, 0.85); }
+#moduleModal .tcal-popup-close:hover { color: #fff; }
+
+/* Upload-notes modal (polish 2026-07-15): the drop zone + live picked-files list.
+   The zone is a <button> fronting the hidden file input, so it overrides the global
+   button look (dashed outline, stacked layout) and gets keyboard focus for free. */
+.note-drop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  width: 100%;
+  margin: 2px 0 12px;
+  padding: 20px 12px;
+  border: 1.5px dashed var(--border-strong);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--text-muted);
+  text-align: center;
+  cursor: pointer;
+}
+.note-drop:hover,
+.note-drop--over { border-color: var(--primary); background: var(--hover); }
+.note-drop svg { width: 22px; height: 22px; margin-bottom: 2px; }
+.note-drop-title { font-size: 14px; font-weight: 500; color: var(--text); }
+.note-drop-sub { font-size: 11.5px; }
+.note-pick-list {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+  max-height: 132px;      /* ~6 rows, then scroll — an 18-file pick stays contained */
+  overflow-y: auto;
+}
+.note-pick-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  padding: 3px 2px;
+  font-size: 13px;
+  color: var(--text);
+}
+.npl-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.npl-size { flex: none; font-size: 12px; color: var(--text-muted); }
+.npl-bad, .npl-bad .npl-size { color: var(--danger); }
+
 /* Module modal "My notes" (step 5): read-only mini list + a preset upload button. */
 .mm-note-row {
   display: flex;
@@ -1091,5 +1151,15 @@ body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
 }
 .mm-note-row:last-child { border-bottom: none; }
 .mm-note-empty { margin: 4px 0; font-size: 13px; color: var(--text-muted); }
+/* "View all N notes" (capped modal list) — quiet text link into #notes, pre-filtered. */
+.mm-note-more {
+  border: none;
+  background: transparent;
+  padding: 7px 0 0;
+  color: var(--primary);
+  font-size: 13px;
+  cursor: pointer;
+}
+.mm-note-more:hover { text-decoration: underline; }
 .mm-upload { margin: 8px 0 14px; font-size: 13px; padding: 6px 12px; }
 .note-remove:hover { color: var(--danger); }
