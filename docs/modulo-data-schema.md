@@ -245,6 +245,34 @@ to the level and leaves the rest as `""`; the STORAGE shape is identical for eve
 
 ---
 
+## Note files (Phase 20 — separate Drive files, NOT inside `modulo-data.json`)
+
+Uploaded study-note files (PDFs/images) live as **individual Drive files next to
+`modulo-data.json`** in the same `appDataFolder` — never inside the JSON (they'd
+bloat every save and fight the sync/conflict story). They are **web-managed for
+now**; Android support is optional/later.
+
+⚠️ **Rule for every reader of the folder:** select `modulo-data.json` **by file
+name**. Never assume it is the only file in the `appDataFolder` — once a user
+uploads a note, it isn't. Unrecognised files must be left alone.
+
+**Identifying a note file** — Drive `appProperties` (custom key→value metadata,
+queryable in `files.list`):
+
+| appProperties key | Value | Meaning |
+|-------------------|-------|---------|
+| `moduloKind` | `"note"` | Marks the file as a MODULO note. **The** discriminator — list notes with the query `appProperties has { key='moduloKind' and value='note' }`. |
+| `module` | e.g. `"CS2030S"` | Module tag — same label strings as Task `module` (code, or name for school levels). `""` = untagged. |
+| `handbook` | a `handbookId` UUID | The **active handbook when the note was uploaded**. Notes are stored GLOBALLY (they outlive semesters, like `studySessions`); this tag only drives the web's default "this semester" display filter. A deleted handbook's notes remain valid (shown under "All semesters"). |
+
+**Other properties:** the Drive file `name` = the user's chosen filename (renameable
+in the UI; duplicates allowed — Drive identifies by `id`); the Drive `mimeType` = the
+uploaded file's type. The web currently allows `application/pdf` and `image/*`, max
+**5 MB** per file (Google's recommended ceiling for non-resumable uploads). Files
+count against the **user's own Drive quota** (hence delete support).
+
+---
+
 ## Time fields, sync, and local save
 
 Two storage locations: Google Drive `appDataFolder` (when linked) and local device storage (local-only mode). The top-level `updatedAt` makes them reconcilable:
@@ -416,3 +444,4 @@ data class Slot(
 | 2       | 2026-07-08 | **Phase 14 (study city):** added top-level `city` (`{ buildings: [{ x, y, floors }] }`, default empty) — the generative city grid. Stored because upgrade placement is random; every count is **derived** from `studySessions` per the shared rules in `study-city-growth.md`. GLOBAL like `studySessions` — never inside a handbook. Same kotlinx note as 13.5: tolerate the new key. *(An interim `cityLevel` integer existed only on the web feature branch and never shipped — readers may ignore that key if ever seen.)* |
 | 2       | 2026-07-13 | **Phase 16 (grade calculator):** added `grades` (array of Grade `{ id, module, credits, grade }`, default `[]`) as a **per-handbook** field — top-level (the active handbook) AND inside each `otherHandbooks` entry, carried by handbook switches like `tasks`. GPAs are never stored — both clients derive them per the "Grade object" section's scheme tables + rules (university = 5.0 scale with S/U/CS/CU excluded; poly = 4.0 with P excluded; jc/secondary/primary = no GPA). Same kotlinx note as 13.5: tolerate the new key. |
 | 2       | 2026-07-13 | **Phase 17 (S/U election):** added optional `su` (boolean, default `false`/absent) to the Grade object — `true` keeps the student's real letter in `grade` but **excludes** the row from every GPA (checked before anything else; only the literal boolean `true` elects). University scheme only; the literal `"S"`/`"U"` grade values stay valid and excluded. Kotlin: `val su: Boolean = false`. |
+| 2       | 2026-07-15 | **Phase 20 (notes):** `modulo-data.json` itself is **unchanged**. NEW: uploaded study-note files now live **beside it** in the `appDataFolder` — one Drive file per note, marked `appProperties.moduloKind = "note"` + `module`/`handbook` tags (see "Note files"). ⚠️ Every reader must select `modulo-data.json` **by name** and ignore unrecognised files — the data file is no longer the only file in the folder. |
