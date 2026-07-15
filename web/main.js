@@ -4,7 +4,6 @@
 
 import { initTokenClient, getToken } from "./auth.js";
 import { loadInitialData, setStorageMode, getSavedMode, getStorageMode } from "./data.js";
-import { setStatus } from "./ui.js";
 import "./timetable.js"; // side-effect import: runs timetable's event wiring
 import "./timetableEditor.js"; // side-effect import: runs the manual editor's wiring
 import "./timetableView.js"; // side-effect import: renders the calendar grid
@@ -46,34 +45,21 @@ updateTopbarConnect();
 window.onload = () => {
   initTokenClient();
 
-  // Restore the user's saved mode on reload.
+  // Restore the user's saved mode on reload. No status messages here any more —
+  // the account chip shows the mode, and the Connect button is the call to action.
   const savedMode = getSavedMode();
   if (savedMode === "local") {
     setStorageMode("local");
-    setStatus("Local mode (this device only).");
     loadInitialData();
-  } else if (savedMode === "drive") {
-    // The topbar Connect button is the call to action now — the status stays short.
-    setStatus("Not connected.");
   }
+  // savedMode "drive": wait for the user to click Connect (tokens don't survive reloads).
 };
 
 document.getElementById("connectBtn").addEventListener("click", connectDrive);
 topbarConnect.addEventListener("click", connectDrive);
-
-// The account chip links to Settings — right for a connected/local user. But while
-// NOT connected ("Tap to connect"), a tap should DO the connecting: swallow the
-// navigation and open the sign-in popup directly (the click is a real user gesture,
-// so the popup isn't blocked).
-document.getElementById("accountChip").addEventListener("click", (e) => {
-  if (!getStorageMode()) {
-    e.preventDefault(); // stay on the current view instead of jumping to Settings
-    connectDrive();
-  }
-});
+// (The account chip is a pure indicator since 2026-07-15 — no click wiring.)
 
 document.getElementById("localBtn").addEventListener("click", () => {
   setStorageMode("local");
-  setStatus("Local mode (this device only).");
   loadInitialData();
 });

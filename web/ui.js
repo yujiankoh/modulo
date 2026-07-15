@@ -4,7 +4,10 @@
 
 const statusEl = document.getElementById("status");
 
-// Write a message to the status line under the heading.
+// Write a message to the topbar status line. Since the account chip took over the
+// persistent mode text (polish 2026-07-15), this is for TRANSIENT/actionable messages
+// only (sign-in errors, "please reconnect") — hidden entirely while empty.
 export function setStatus(text) {
   statusEl.textContent = text;
+  statusEl.style.display = text ? "" : "none";
 }

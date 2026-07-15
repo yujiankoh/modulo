@@ -83,8 +83,10 @@ function renderAccount() {
     modeEl.textContent = "Local mode";
     subEl.textContent = "This device only";
   } else {
+    // Pure indicator (2026-07-15) — no "Tap to connect": the chip isn't clickable;
+    // the topbar Connect button is the action.
     modeEl.textContent = "Not connected";
-    subEl.textContent = "Tap to connect";
+    subEl.textContent = "Not synced";
   }
 }
 

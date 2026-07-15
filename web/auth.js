@@ -30,7 +30,10 @@ export function initTokenClient() {
       }
       accessToken = response.access_token;
       tokenExpiry = Date.now() + (response.expires_in - 60) * 1000;
-      setStatus("Connected to Google Drive.");
+      // Success needs no status line — the account chip flips to "Google Drive ·
+      // Synced" on the datachanged that follows (polish 2026-07-15). A previous
+      // error message shouldn't linger, though:
+      setStatus("");
       if (resolveToken) { resolveToken(true); resolveToken = null; }
     },
   });
