@@ -784,15 +784,35 @@ body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
 .dash-list { list-style: none; padding: 0; margin: 0; }
 .dash-empty { color: var(--text-muted); font-size: 13px; padding: 6px 0; }
 
-/* schedule rows: time gutter + details */
-.dash-class { display: flex; gap: 12px; padding: 8px 0; border-top: 1px solid var(--border); font-size: 14px; }
-.dash-class:first-child { border-top: none; }
+/* schedule rows: time gutter + details. The module accent strip works like the
+   All-Tasks one (2026-07-15): bleed over the panel's 18px padding, 16px transparent
+   border coloured inline, 2px padding puts content back where it was. */
+.dash-class {
+  display: flex; gap: 12px; font-size: 14px;
+  border-top: 1px solid var(--border);
+  border-left: 16px solid transparent;
+  margin-left: -18px;
+  padding: 8px 0 8px 2px;
+}
+/* The first row KEEPS its top divider (2026-07-15 — it bookends the accent strips
+   under the panel head; they floated awkwardly without a line to start from). */
 .dash-class-time { color: var(--text-muted); font-size: 13px; white-space: nowrap; }
 .dash-class-loc { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
 
 /* task rows: title/meta on the left, due pill on the right */
-.dash-task { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid var(--border); }
+.dash-task {
+  display: flex; align-items: center; gap: 10px;
+  border-top: 1px solid var(--border);
+  border-left: 16px solid transparent;   /* module accent strip, as .dash-class */
+  margin-left: -18px;
+  padding: 8px 0 8px 2px;
+}
 .dash-task:first-child { border-top: none; }
+/* Closing hairline under each panel's LAST row — the strips end at a line instead
+   of floating above the rounded corner (2026-07-15). Scoped to the dashboard panels:
+   the module modal reuses .dash-task and must not gain a stray bottom border. */
+#dashSchedule .dash-class:last-child,
+#dashTasks .dash-task:last-child { border-bottom: 1px solid var(--border); }
 .dash-task > div { flex: 1; font-size: 14px; color: var(--text); }
 .dash-task-meta { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
 .dash-task-pill {
