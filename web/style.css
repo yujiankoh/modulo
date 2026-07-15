@@ -607,7 +607,16 @@ select {
 .view-eyebrow { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); margin: 0 0 4px; }
 .view-title { font-size: 30px; font-weight: 700; color: var(--text); margin: 0; }
 .tasks-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
-.task-controls select { border-radius: 999px; padding: 6px 30px 6px 14px; }  /* pill filters; right padding clears the chevron */
+/* Pill filters: width follows the SELECTED option's text (field-sizing, Chromium 123+ —
+   the appearance:none intrinsic width under-counts our padding and clipped labels;
+   polish 2026-07-15), capped so a long module name can't blow up the toolbar.
+   Unsupported browsers just keep the old intrinsic sizing. */
+.task-controls select {
+  border-radius: 999px;
+  padding: 6px 30px 6px 14px;   /* right padding clears the chevron */
+  field-sizing: content;
+  max-width: 220px;
+}
 
 #taskList { margin: 0; padding: 0; }            /* plain container; cards are per-bucket */
 .task-card {
