@@ -497,7 +497,10 @@
       <button id="moduleModalClose" class="tcal-popup-close" type="button"><i data-lucide="x"></i></button>
       <h3 id="moduleModalTitle"></h3>
       <div class="module-modal-label">My notes</div>
-      <p class="module-modal-placeholder">Notes &amp; files are coming soon.</p>
+      <!-- Phase 20: this module's notes (active handbook), filled by notesView.js's
+           showModuleNotes(). Upload pre-tags the file to this module. -->
+      <div id="moduleModalNotes"></div>
+      <button id="moduleModalUpload" class="mm-upload" type="button"><i data-lucide="upload"></i>Upload note</button>
       <div class="module-modal-label">Tasks</div>
       <ul id="moduleModalTasks" class="dash-list"></ul>
     </div>

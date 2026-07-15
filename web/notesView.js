@@ -52,6 +52,9 @@ const emptyTitleEl = document.getElementById("notesEmptyTitle");
 const emptyTextEl = document.getElementById("notesEmptyText");
 const gateEl = document.getElementById("notesGate");
 
+const mmNotesEl = document.getElementById("moduleModalNotes");
+const mmUploadBtn = document.getElementById("moduleModalUpload");
+
 const renameModal = document.getElementById("noteRenameModal");
 const renameClose = document.getElementById("noteRenameClose");
 const renameCancel = document.getElementById("noteRenameCancel");
@@ -294,11 +297,69 @@ function render() {
     ? "No notes match these filters — try All semesters or All modules."
     : "Upload a PDF or a photo of your notes to keep it synced with this device.";
 
+  // The module modal's notes section shows the same cache — keep it in step
+  // (an upload/delete/fetch landing while the modal is open updates it live).
+  fillModuleNotes();
+
   // The rename buttons are <i data-lucide> placeholders; render() also runs
   // WITHOUT a modulo:datachanged (filter change, fetch landing), so icons.js's
   // event listener won't always fire — draw them ourselves (idempotent).
   drawIcons();
 }
+
+// ---- module modal "My notes" (step 5) --------------------------------------------
+// The module detail modal (dashboard.js) shows THIS module's notes — a reading
+// surface only (open + upload); managing notes stays in the #notes view.
+
+let modalModuleLabel = null; // which module the modal is showing; null = closed/never
+
+// Called by dashboard.js every time the module modal opens. Draws immediately
+// from whatever we have (cache, loading note, or the local-mode gate) and kicks
+// off the lazy fetch — ensureCache()'s final render() re-fills this section.
+export function showModuleNotes(label) {
+  modalModuleLabel = label;
+  fillModuleNotes();
+  ensureCache();
+}
+
+function fillModuleNotes() {
+  if (modalModuleLabel === null) return; // modal never opened this session
+  mmNotesEl.innerHTML = "";
+
+  const gated = getStorageMode() !== "drive";
+  mmUploadBtn.style.display = gated ? "none" : "";
+  const message = (text) => {
+    const p = document.createElement("p");
+    p.className = "mm-note-empty";
+    p.textContent = text;
+    mmNotesEl.append(p);
+  };
+  if (gated) { message("Notes need Google Drive — connect in Settings."); return; }
+  if (cache === null) { message(loading ? "Loading notes…" : "Couldn't load notes — see the Notes view."); return; }
+
+  // Decision 4 scoping: the modal's module cards belong to the ACTIVE handbook,
+  // so its notes section scopes the same way (the #notes view has All semesters).
+  const notes = visibleNotes(cache, { handbookId: appState.handbookId, module: modalModuleLabel });
+  if (notes.length === 0) { message("No notes for this module yet."); return; }
+
+  for (const note of notes) {
+    const row = document.createElement("div");
+    row.className = "mm-note-row";
+    const name = document.createElement("button");
+    name.className = "note-name";
+    name.type = "button";
+    name.textContent = note.name;
+    name.title = `Open ${note.name}`;
+    name.addEventListener("click", () => openNote(note));
+    const size = document.createElement("span");
+    size.className = "note-meta";
+    size.textContent = formatSize(note.size);
+    row.append(name, size);
+    mmNotesEl.append(row);
+  }
+}
+
+mmUploadBtn.addEventListener("click", () => openUploadModal(modalModuleLabel || ""));
 
 // ---- upload modal ---------------------------------------------------------------
 
@@ -314,12 +375,20 @@ function knownModuleLabels() {
   return [...set].sort();
 }
 
-function openUploadModal() {
+// `preset` (step 5): the module modal's upload button pre-selects its module.
+function openUploadModal(preset = "") {
+  const labels = knownModuleLabels();
+  // A task-only module (no timetable entry, no note yet) can be missing from the
+  // known list — the preset must still be pickable, so add it.
+  if (preset && !labels.includes(preset)) {
+    labels.push(preset);
+    labels.sort();
+  }
   moduleSelect.innerHTML = "";
   moduleSelect.append(new Option("— None —", ""));
-  for (const m of knownModuleLabels()) moduleSelect.append(new Option(m, m));
+  for (const m of labels) moduleSelect.append(new Option(m, m));
   moduleSelect.append(new Option("+ Add other…", OTHER));
-  moduleSelect.value = "";
+  moduleSelect.value = preset;
   moduleOtherField.style.display = "none";
   moduleOtherInput.value = "";
   fileInput.value = ""; // stale pick from a cancelled attempt must not linger
@@ -362,7 +431,9 @@ async function doUpload() {
   }
 }
 
-uploadBtn.addEventListener("click", openUploadModal);
+// Wrapped: passing openUploadModal directly would hand it the click EVENT as
+// its `preset` parameter.
+uploadBtn.addEventListener("click", () => openUploadModal());
 modalGo.addEventListener("click", doUpload);
 modalClose.addEventListener("click", closeUploadModal);
 modalCancel.addEventListener("click", closeUploadModal);
