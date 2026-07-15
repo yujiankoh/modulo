@@ -32,6 +32,7 @@ import com.example.modulo.pages.AddTaskPage
 import com.example.modulo.pages.AllTaskPage
 import com.example.modulo.pages.AuthenticatePage
 import com.example.modulo.pages.CalendarPage
+import com.example.modulo.pages.GPAPage
 import com.example.modulo.pages.HandbookCreatePage
 import com.example.modulo.pages.HandbookPage
 import com.example.modulo.pages.HomePage
@@ -65,6 +66,7 @@ import kotlinx.serialization.Serializable
 @Serializable data class TimetableManual(val educationLevel: EducationLevel, val isEditMode: Boolean = false)
 @Serializable object Settings
 @Serializable object Timetable
+@Serializable object GPA
 @Serializable object StudyHistory
 @Serializable object HandbookCreate
 @Serializable object Handbook
@@ -245,7 +247,15 @@ fun NavGraphBuilder.globalNavigation(
             onBack = { navController.popBackStack() },
             onNavigateToTimetable = { navController.navigate(Timetable) },
             onNavigateToHandbookCreate = { navController.navigate(HandbookCreate) },
-            onNavigateToHandbook = { navController.navigate(Handbook) }
+            onNavigateToHandbook = { navController.navigate(Handbook) },
+            onNavigateToGPA = { navController.navigate(GPA) }
+        )
+    }
+
+    composable<GPA> {
+        GPAPage(
+            viewModel = viewModel,
+            onBack = { navController.popBackStack() }
         )
     }
 

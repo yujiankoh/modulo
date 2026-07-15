@@ -30,13 +30,10 @@ class AppViewModelTest : AppViewModelTestBase() {
     override val networkConnected: Boolean = true
 
     override fun onBeforeViewModelCreated() {
-        // Mock before construction: init -> startUpChecks() -> attemptSilentSignIn() fires immediately
-        // for the sync-enabled/connected profile, so the real helpers must never be reached.
         mockkObject(AuthenticationHelper)
         mockkObject(SyncingHelper.Companion)
         every { SyncingHelper.getSyncService(any(), any()) } returns syncingHelper
         coEvery { syncingHelper.downloadAppData() } returns null
-        // Default: init's silent sign-in fails quietly (routes to AUTHENTICATE); tests override.
         coEvery { AuthenticationHelper.silentSignIn(any(), any(), any(), captureLambda()) } answers {
             lambda<() -> Unit>().captured.invoke()
         }

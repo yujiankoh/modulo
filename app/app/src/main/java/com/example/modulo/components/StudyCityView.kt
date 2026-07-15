@@ -267,7 +267,6 @@ private fun DrawScope.drawTower(b: Building, pal: CityPalette) {
     for (i in 0 until b.floors) {
         val mid = sy - i * FLOOR_H - FLOOR_H / 2f
         for ((t1, t2) in cols) {
-            // Left face edge: t walks outer-corner (0) → back-centre (1).
             val la = Offset(sx - BLD_W + t1 * BLD_W, mid + t1 * BLD_H)
             val lb = Offset(sx - BLD_W + t2 * BLD_W, mid + t2 * BLD_H)
             fillPoly(
