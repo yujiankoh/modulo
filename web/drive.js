@@ -151,6 +151,22 @@ export async function downloadNote(id) {
   return await res.blob();
 }
 
+// Rename a note (added mid-phase 2026-07-15, YJ's request). Metadata-only update
+// = a PATCH to the normal files endpoint (NOT /upload — no bytes involved).
+// Returns the updated note in the same shape listNotes uses.
+export async function renameNote(id, name) {
+  const res = await fetch(
+    "https://www.googleapis.com/drive/v3/files/" + id + "?fields=" + NOTE_FIELDS,
+    {
+      method: "PATCH",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ name }),
+    }
+  );
+  if (!res.ok) throw await driveError(res);
+  return await res.json();
+}
+
 // Delete a note file (reclaims the user's Drive quota; UI confirms first).
 // A 404 counts as success: "already deleted on another device" reaches the
 // same goal state, so erroring would only confuse.

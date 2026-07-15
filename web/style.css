@@ -989,3 +989,57 @@ body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
 }
 .ghist-gpa { color: var(--text); font-weight: 600; }
 .ghist-gpa--na { color: var(--text-muted); font-weight: 400; }
+
+/* ---- Notes (Phase 20) ---- */
+/* List card + rows: same grid-with-columns pattern as .grade-row so it reads as
+   a table — dot | filename | module | size | date | ×. */
+.notes-card { padding: 4px 18px; }
+.notes-status { margin: 0 0 12px; font-size: 13px; color: var(--text-muted); }
+.note-row {
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr) 110px 70px 105px 28px;
+  gap: 10px;
+  align-items: center;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--border);
+}
+.note-row:last-child { border-bottom: none; }
+/* Name + rename pencil share the 1fr column; min-width:0 lets the name shrink
+   (a flex child refuses to shrink below its content without it — the ellipsis
+   would never trigger). */
+.note-name-cell { display: flex; align-items: center; gap: 2px; min-width: 0; }
+/* The filename doubles as the "open" button — styled as a link, ellipsized.
+   display:block overrides the global button inline-flex: flex CENTERS its
+   content via justify-content (text-align can't win there), and text-overflow
+   only ellipsizes block containers. */
+.note-name {
+  display: block;
+  min-width: 0;                  /* flex child: allow shrinking so the ellipsis can kick in */
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 500;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.note-name:hover { color: var(--primary); text-decoration: underline; }
+.note-mod { font-size: 13px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.note-meta { font-size: 13px; color: var(--text-muted); white-space: nowrap; }
+/* Row actions (rename pencil + delete ×): quiet, colour only on hover. */
+.note-action {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 16px;
+  padding: 0 4px;
+  cursor: pointer;
+}
+.note-action:hover { color: var(--text); }
+.note-action svg { width: 14px; height: 14px; }
+.note-name-cell .note-action { flex: none; } /* the pencil never shrinks away */
+.note-remove:hover { color: var(--danger); }
