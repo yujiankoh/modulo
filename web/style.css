@@ -622,11 +622,15 @@ select {
 .task-card {
   list-style: none;
   margin: 0 0 16px;            /* gap between bucket cards */
-  padding: 4px 18px;
+  /* No vertical padding (2026-07-15): the first/last rows' accent bars must reach
+     the card's very top/bottom so overflow:hidden curves them through the rounded
+     corners — card padding left a bare notch there. Rows carry the spacing instead. */
+  padding: 0 18px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 14px;
   box-shadow: var(--shadow);
+  overflow: hidden;              /* clips the flush accent bars into the rounded corners */
 }
 .task-card .task-row:first-child { border-top: none; }  /* no divider at the card's top */
 .task-group {
@@ -640,10 +644,13 @@ select {
   display: flex;
   align-items: center;
   gap: 10px;
-  /* Module accent bar (polish 2026-07-15): transparent by default, coloured inline
-     per row — left padding keeps content clear of it. */
-  border-left: 3px solid transparent;
-  padding: 8px 0 8px 10px;
+  /* Module accent bar (polish 2026-07-15, made FLUSH with the card edge on YJ's
+     review): the negative margin cancels the card's 18px padding so the bar sits
+     on the card's left edge; padding restores the content inset. Transparent by
+     default, coloured inline per row. */
+  border-left: 20px solid transparent;  /* settled width (YJ 2026-07-15, via 3px→4→8→12) */
+  margin-left: -18px;
+  padding: 10px 0 10px 12px;            /* border+padding = 28px — content doesn't shift */
   border-top: 1px solid var(--border);
 }
 .task-check { width: 16px; height: 16px; flex: none; accent-color: var(--primary); cursor: pointer; }
