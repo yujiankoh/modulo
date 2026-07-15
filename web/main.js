@@ -16,6 +16,7 @@ import "./sidebar.js"; // side-effect import: sidebar modules list + account chi
 import "./handbook.js"; // side-effect import: handbook onboarding modal (Phase 13)
 import "./cityView.js"; // side-effect import: Study City view (Phases 14+15)
 import "./gradesView.js"; // side-effect import: Grades view — GPA cards + editor (Phase 17)
+import "./notesView.js"; // side-effect import: Notes view — Drive note files (Phase 20)
 import "./router.js"; // side-effect import: SPA view-switcher + hash routing (Phase 12)
 import "./theme.js"; // side-effect import: light/dark theme toggle (Phase 12 polish)
 import "./icons.js"; // side-effect import: renders Lucide icons (data-lucide → <svg>)

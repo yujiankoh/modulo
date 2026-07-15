@@ -46,6 +46,7 @@
         <a class="nav-link" href="#timetable"><i data-lucide="calendar-clock"></i>Timetable</a>
         <a class="nav-link" href="#study"><i data-lucide="timer"></i>Study Session</a>
         <a class="nav-link" href="#grades"><i data-lucide="graduation-cap"></i>Grades</a>
+        <a class="nav-link" href="#notes"><i data-lucide="file-text"></i>Notes</a>
         <!-- Modules list (12.4d): sidebar.js fills this with the distinct modules from the
              timetable + tasks, each with a colour dot. Empty until there are any. -->
         <div id="moduleNav" class="module-nav"></div>
@@ -281,6 +282,51 @@
         <div id="gradesHistory"></div>
       </section>
 
+      <!-- NOTES (Phase 20): study-note FILES synced as separate Drive files in the same
+           appDataFolder (never inside modulo-data.json). notesView.js fetches the list
+           lazily on first visit, keeps it in a session cache, and renders these. Notes
+           are stored globally but SHOWN per semester by default (decision 2026-07-15). -->
+      <section id="view-notes" class="view">
+        <div class="tasks-head">
+          <div>
+            <p class="view-eyebrow">NOTES</p>
+            <h2 class="view-title">My notes</h2>
+          </div>
+          <!-- Hidden entirely while notes are gated (local mode). -->
+          <div id="notesControls" class="task-controls">
+            <select id="notesSemFilter">
+              <option value="current">This semester</option>
+              <option value="all">All semesters</option>
+            </select>
+            <select id="notesModFilter"><option value="all">All modules</option></select>
+            <select id="notesSort">
+              <option value="name">A–Z</option>
+              <option value="newest">Newest</option>
+            </select>
+            <button id="notesRefreshBtn" type="button" title="Reload the list from Drive"><i data-lucide="refresh-cw"></i>Refresh</button>
+            <button id="notesUploadBtn" class="btn-primary" type="button"><i data-lucide="upload"></i>Upload note</button>
+          </div>
+        </div>
+
+        <!-- Loading / error line for the LIST (upload errors show inside the modal). -->
+        <p id="notesStatus" class="notes-status" style="display: none;"></p>
+        <div id="notesList" class="card notes-card" style="display: none;"></div>
+
+        <!-- Two empty states: no notes at all vs no match for the current filters
+             (notesView.js swaps the text). -->
+        <div id="notesEmpty" class="card tt-empty" style="display: none;">
+          <h3 id="notesEmptyTitle">No notes yet</h3>
+          <p id="notesEmptyText">Upload a PDF or a photo of your notes to keep it synced with this device.</p>
+        </div>
+
+        <!-- Drive-only gate (decision 2026-07-15): in local mode notes are unavailable —
+             they ARE Drive files, there's nothing to fall back to. -->
+        <div id="notesGate" class="card tt-empty" style="display: none;">
+          <h3>Notes need Google Drive</h3>
+          <p>Notes are synced as files in your own Google Drive. Connect Google Drive in Settings to use them.</p>
+        </div>
+      </section>
+
       <!-- SETTINGS: account + storage. The connect/local/status/reload controls used to
            sit at the top of the page; they keep the same ids so main.js/data.js work. -->
       <section id="view-settings" class="view">
@@ -451,9 +497,62 @@
       <button id="moduleModalClose" class="tcal-popup-close" type="button"><i data-lucide="x"></i></button>
       <h3 id="moduleModalTitle"></h3>
       <div class="module-modal-label">My notes</div>
-      <p class="module-modal-placeholder">Notes &amp; files are coming soon.</p>
+      <!-- Phase 20: this module's notes (active handbook), filled by notesView.js's
+           showModuleNotes(). Upload pre-tags the file to this module. -->
+      <div id="moduleModalNotes"></div>
+      <button id="moduleModalUpload" class="mm-upload" type="button"><i data-lucide="upload"></i>Upload note</button>
       <div class="module-modal-label">Tasks</div>
       <ul id="moduleModalTasks" class="dash-list"></ul>
+    </div>
+  </div>
+
+  <!-- Upload-note modal (Phase 20): file picker + module tag. notesView.js wires it;
+       the accept filter is set from logic/notes.js's NOTE_ACCEPT so the picker and the
+       real validation share ONE allowlist. Module select mirrors the Add-Task pattern:
+       known modules + "+ Add other…" revealing a free-text field. -->
+  <div id="noteUploadModal" class="tcal-popup" style="display: none;">
+    <div class="tcal-popup-card">
+      <button id="noteUploadClose" class="tcal-popup-close" type="button"><i data-lucide="x"></i></button>
+      <h3>Upload a note</h3>
+      <p class="module-modal-placeholder">A PDF or an image, up to 5&nbsp;MB. Notes are stored
+        as files in your own Google Drive.</p>
+
+      <input id="noteFile" type="file" />
+
+      <label class="task-field">
+        <span>Module/Subject</span>
+        <select id="noteModule">
+          <option value="">— None —</option>
+        </select>
+      </label>
+      <label class="task-field" id="noteModuleOtherField" style="display: none;">
+        <span>New module/subject</span>
+        <input id="noteModuleOther" type="text" placeholder="e.g. CS2030S" />
+      </label>
+
+      <div class="task-modal-actions">
+        <button id="noteUploadCancel" type="button">Cancel</button>
+        <button id="noteUploadGo" class="btn-primary" type="button"><i data-lucide="upload"></i>Upload</button>
+      </div>
+      <p id="noteUploadError" class="hb-error"></p>
+    </div>
+  </div>
+
+  <!-- Rename-note modal (Phase 20, replaced prompt() 2026-07-15): one text field.
+       notesView.js opens it from the pencil button next to a note's name. -->
+  <div id="noteRenameModal" class="tcal-popup" style="display: none;">
+    <div class="tcal-popup-card">
+      <button id="noteRenameClose" class="tcal-popup-close" type="button"><i data-lucide="x"></i></button>
+      <h3>Rename note</h3>
+      <label class="task-field">
+        <span>Name</span>
+        <input id="noteRenameInput" type="text" />
+      </label>
+      <div class="task-modal-actions">
+        <button id="noteRenameCancel" type="button">Cancel</button>
+        <button id="noteRenameSave" class="btn-primary" type="button"><i data-lucide="save"></i>Save</button>
+      </div>
+      <p id="noteRenameError" class="hb-error"></p>
     </div>
   </div>
 
