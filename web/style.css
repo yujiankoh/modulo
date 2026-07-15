@@ -1042,4 +1042,17 @@ body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
 .note-action:hover { color: var(--text); }
 .note-action svg { width: 14px; height: 14px; }
 .note-name-cell .note-action { flex: none; } /* the pencil never shrinks away */
+
+/* Module modal "My notes" (step 5): read-only mini list + a preset upload button. */
+.mm-note-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+}
+.mm-note-row:last-child { border-bottom: none; }
+.mm-note-empty { margin: 4px 0; font-size: 13px; color: var(--text-muted); }
+.mm-upload { margin: 8px 0 14px; font-size: 13px; padding: 6px 12px; }
 .note-remove:hover { color: var(--danger); }

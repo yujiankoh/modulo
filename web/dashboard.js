@@ -11,6 +11,7 @@ import { appState, persist } from "./data.js";
 import { currentWeekInfo, totalTeachingWeeks } from "./timetableView.js";
 import { moduleColor } from "./sidebar.js"; // shared module-colour palette
 import { toggleTask } from "./task.js"; // complete a task from the due-soon checkbox
+import { showModuleNotes } from "./notesView.js"; // fill the modal's My-notes section (Phase 20)
 
 // --- shared helpers (used by the summary line + the schedule/tasks panels) ---
 
@@ -293,9 +294,10 @@ function moduleTitle(m) {
   return m.name && m.name !== m.label ? `${m.label} · ${m.name}` : m.label;
 }
 
-// Open the module detail modal: notes placeholder (filled in HTML) + this module's tasks.
+// Open the module detail modal: this module's notes (Phase 20) + its tasks.
 function openModuleModal(m) {
   document.getElementById("moduleModalTitle").textContent = moduleTitle(m);
+  showModuleNotes(m.label); // notes are tagged by label — same code||name rule
 
   const list = document.getElementById("moduleModalTasks");
   list.innerHTML = "";
