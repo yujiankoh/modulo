@@ -654,7 +654,7 @@ select {
      review): the negative margin cancels the card's 18px padding so the bar sits
      on the card's left edge; padding restores the content inset. Transparent by
      default, coloured inline per row. */
-  border-left: 20px solid transparent;  /* settled width (YJ 2026-07-15, via 3px→4→8→12) */
+  border-left: 18px solid transparent;  /* settled width (YJ 2026-07-15, via 3px→4→8→12) */
   margin-left: -18px;
   padding: 10px 0 10px 12px;            /* border+padding = 28px — content doesn't shift */
   border-top: 1px solid var(--border);
@@ -803,7 +803,10 @@ body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
 }
 /* The first row KEEPS its top divider (2026-07-15 — it bookends the accent strips
    under the panel head; they floated awkwardly without a line to start from). */
-.dash-class-time { color: var(--text); font-size: 13px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+/* Stacked time gutter (2026-07-16): start over end, fixed width so rows align. */
+.dash-class-time { min-width: 46px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.dct-start { font-size: 13px; font-weight: 600; color: var(--text); }
+.dct-end { font-size: 11.5px; color: var(--text-muted); margin-top: 1px; }
 .dash-class-loc { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
 
 /* task rows: title/meta on the left, due pill on the right */

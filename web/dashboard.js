@@ -183,9 +183,17 @@ function renderSchedule() {
     // Module accent strip, matching the All-Tasks rows (polish 2026-07-15).
     if (c.module) li.style.borderLeftColor = moduleColor(c.module) + "66";
 
+    // Stacked time gutter (2026-07-16): start bold over end muted — reads as
+    // "starts at / ends at" without a long dash-range fighting the title.
     const time = document.createElement("span");
     time.className = "dash-class-time";
-    time.textContent = `${c.start}–${c.end}`;
+    const start = document.createElement("div");
+    start.className = "dct-start";
+    start.textContent = c.start;
+    const end = document.createElement("div");
+    end.className = "dct-end";
+    end.textContent = c.end;
+    time.append(start, end);
 
     const main = document.createElement("div");
     const title = document.createElement("div");
