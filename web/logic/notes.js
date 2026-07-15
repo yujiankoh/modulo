@@ -71,13 +71,14 @@ export function formatSize(bytes) {
 
 // ---------- filtering (decision 4: stored global, shown per semester) ----------
 
-// The notes a view should show, newest first. Non-mutating (like
-// getVisibleTasks): the input array and its objects are never touched.
+// The notes a view should show. Non-mutating (like getVisibleTasks): the input
+// array and its objects are never touched.
 //   handbookId — only notes tagged with this handbook; null = ALL semesters.
 //   module     — only notes tagged with this module label; null = all modules.
+//   sort       — "name" (default, added 2026-07-15 — YJ's call) or "newest".
 // A note with missing/garbled appProperties simply fails every specific filter
 // (it still shows under "All semesters" — nothing is ever unreachable).
-export function visibleNotes(notes, { handbookId = null, module = null } = {}) {
+export function visibleNotes(notes, { handbookId = null, module = null, sort = "name" } = {}) {
   if (!Array.isArray(notes)) return [];
   const shown = notes.filter((note) => {
     const props = note?.appProperties || {};
@@ -85,10 +86,18 @@ export function visibleNotes(notes, { handbookId = null, module = null } = {}) {
     if (module !== null && props.module !== module) return false;
     return true;
   });
-  // Newest first. Drive's modifiedTime is RFC 3339 UTC ("2026-07-15T09:30:00.000Z"),
-  // and same-format ISO timestamps order correctly as plain strings — no Date
-  // parsing needed. A missing timestamp sorts last ("" < any real time).
-  shown.sort((a, b) => String(b?.modifiedTime || "").localeCompare(String(a?.modifiedTime || "")));
+  if (sort === "newest") {
+    // Drive's modifiedTime is RFC 3339 UTC ("2026-07-15T09:30:00.000Z"), and
+    // same-format ISO timestamps order correctly as plain strings — no Date
+    // parsing needed. A missing timestamp sorts last ("" < any real time).
+    shown.sort((a, b) => String(b?.modifiedTime || "").localeCompare(String(a?.modifiedTime || "")));
+  } else {
+    // A–Z by filename. numeric:true sorts "Lec 2" before "Lec 10" (plain string
+    // order would compare "1" < "2" and get it wrong); base sensitivity ignores case.
+    shown.sort((a, b) => String(a?.name || "").localeCompare(String(b?.name || ""), undefined, {
+      numeric: true, sensitivity: "base",
+    }));
+  }
   return shown;
 }
 

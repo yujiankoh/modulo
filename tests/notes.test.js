@@ -77,25 +77,29 @@ test("formatSize accepts Drive's string sizes; junk → empty string", () => {
 
 // ---------- visibleNotes ----------
 
-test("visibleNotes filters by handbook, by module, and by both", () => {
+test("visibleNotes filters by handbook, by module, and by both (A–Z default)", () => {
   const notes = [
     note("a", "CS2030S", "hb1", "2026-07-01T10:00:00.000Z"),
     note("b", "CS2030S", "hb2", "2026-07-02T10:00:00.000Z"),
     note("c", "MA1521", "hb1", "2026-07-03T10:00:00.000Z"),
   ];
-  assert.deepEqual(visibleNotes(notes, { handbookId: "hb1" }).map((n) => n.id), ["c", "a"]);
-  assert.deepEqual(visibleNotes(notes, { module: "CS2030S" }).map((n) => n.id), ["b", "a"]);
+  assert.deepEqual(visibleNotes(notes, { handbookId: "hb1" }).map((n) => n.id), ["a", "c"]);
+  assert.deepEqual(visibleNotes(notes, { module: "CS2030S" }).map((n) => n.id), ["a", "b"]);
   assert.deepEqual(visibleNotes(notes, { handbookId: "hb1", module: "CS2030S" }).map((n) => n.id), ["a"]);
 });
 
-test("visibleNotes: null filters = all semesters/modules, newest first, input not mutated", () => {
+test("visibleNotes sorts: A–Z by default (numeric-aware), newest on request; input not mutated", () => {
   const notes = [
-    note("old", "CS2030S", "hb1", "2026-06-01T10:00:00.000Z"),
-    note("new", "MA1521", "hb2", "2026-07-10T10:00:00.000Z"),
-    note("mid", "CS2030S", "hb1", "2026-07-01T10:00:00.000Z"),
+    { ...note("old", "CS2030S", "hb1", "2026-06-01T10:00:00.000Z"), name: "Lec 10.pdf" },
+    { ...note("new", "MA1521", "hb2", "2026-07-10T10:00:00.000Z"), name: "lec 2.pdf" },
+    { ...note("mid", "CS2030S", "hb1", "2026-07-01T10:00:00.000Z"), name: "Aims.pdf" },
   ];
   const before = notes.map((n) => n.id).join(",");
-  assert.deepEqual(visibleNotes(notes).map((n) => n.id), ["new", "mid", "old"]);
+  // Default = alphabetical: Aims, then lec 2 BEFORE Lec 10 (numeric-aware +
+  // case-insensitive — plain string order would put "Lec 10" first).
+  assert.deepEqual(visibleNotes(notes).map((n) => n.id), ["mid", "new", "old"]);
+  // sort:"newest" = by modifiedTime, most recent first.
+  assert.deepEqual(visibleNotes(notes, { sort: "newest" }).map((n) => n.id), ["new", "mid", "old"]);
   assert.equal(notes.map((n) => n.id).join(","), before, "input order must be untouched");
 });
 
