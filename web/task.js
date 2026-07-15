@@ -151,6 +151,10 @@ function dueLabel(task) {
 function renderTaskRow(task) {
   const li = document.createElement("li");
   li.className = "task-row";
+  // Module colour as a left accent bar (polish 2026-07-15) — the same visual
+  // language as the timetable's session blocks. CSS default is transparent, so
+  // module-less rows keep their alignment without a stray grey bar.
+  if (task.module) li.style.borderLeftColor = moduleColor(task.module);
 
   // Done is now a checkbox (replaces the old Done/Undo button). Ticking it toggles done.
   const checkbox = document.createElement("input");
@@ -169,12 +173,16 @@ function renderTaskRow(task) {
   const meta = document.createElement("div");
   meta.className = "task-meta";
   if (task.module) {
-    const dot = document.createElement("span");
-    dot.className = "task-dot";
-    dot.style.background = moduleColor(task.module); // module colour dot before the meta
-    meta.append(dot);
+    // The module NAME carries its colour (replaced the dot, 2026-07-15 — with the
+    // accent bar a dot was double bookkeeping). The type stays muted text.
+    const mod = document.createElement("span");
+    mod.className = "task-meta-mod";
+    mod.style.color = moduleColor(task.module);
+    mod.textContent = task.module;
+    meta.append(mod, document.createTextNode(` · ${task.type}`));
+  } else {
+    meta.append(document.createTextNode(task.type));
   }
-  meta.append(document.createTextNode(task.module ? `${task.module} · ${task.type}` : task.type));
   main.append(title, meta);
 
   // Right side: the relative-date pill + a Delete button.

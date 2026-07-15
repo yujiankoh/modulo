@@ -640,13 +640,17 @@ select {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 8px 0;
+  /* Module accent bar (polish 2026-07-15): transparent by default, coloured inline
+     per row — left padding keeps content clear of it. */
+  border-left: 3px solid transparent;
+  padding: 8px 0 8px 10px;
   border-top: 1px solid var(--border);
 }
 .task-check { width: 16px; height: 16px; flex: none; accent-color: var(--primary); cursor: pointer; }
 .task-main { flex: 1; }                                  /* title block takes the slack */
 .task-title { font-size: 14px; font-weight: 600; color: var(--text); }
 .task-meta { font-size: 12px; color: var(--text-muted); margin-top: 2px; }  /* "module · type" line */
+.task-meta-mod { font-weight: 600; }  /* the module name; its colour is set inline per module */
 /* Delete stays hidden until you hover the row (keeps rows clean, like the mockup). */
 .task-del { opacity: 0; border: none; background: transparent; color: var(--text-muted); font-size: 12px; padding: 2px 6px; transition: opacity 0.12s; }
 .task-row:hover .task-del { opacity: 1; }
