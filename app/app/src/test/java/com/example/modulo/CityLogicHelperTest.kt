@@ -6,9 +6,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * Unit tests for the generative study-city logic ([com.example.modulo.helpers.CityLogicHelper]) — the Kotlin mirror of the
- * web's tests/growth.test.js. Same numbers, same scripted-RNG technique, so the two
- * platforms are provably computing the same contract (docs/study-city-growth.md).
+ * Unit tests for the generative study-city logic ([CityLogicHelper])
  */
 class CityLogicHelperTest {
 
@@ -34,13 +32,12 @@ class CityLogicHelperTest {
         // Gaps 10, 12, 14, … so cumulative thresholds are 10, 22, 36, 52, 70.
         assertEquals(0, CityLogicHelper.earnedUpgrades(0))
         assertEquals(0, CityLogicHelper.earnedUpgrades(9))
-        assertEquals(1, CityLogicHelper.earnedUpgrades(10)) // >= at the boundary earns
+        assertEquals(1, CityLogicHelper.earnedUpgrades(10))
         assertEquals(1, CityLogicHelper.earnedUpgrades(21))
         assertEquals(2, CityLogicHelper.earnedUpgrades(22))
         assertEquals(3, CityLogicHelper.earnedUpgrades(36))
         assertEquals(3, CityLogicHelper.earnedUpgrades(51))
         assertEquals(4, CityLogicHelper.earnedUpgrades(52))
-        // 20 h = 1200 mins: 30²+9·30 = 1170 ≤ 1200 < 31²+9·31 = 1240.
         assertEquals(30, CityLogicHelper.earnedUpgrades(1200))
     }
 
@@ -72,14 +69,11 @@ class CityLogicHelperTest {
 
     @Test
     fun `occupied pick grows a floor, empty pick spawns (scripted rolls)`() {
-        // After the centre exists, all 25 plots are candidates; total weight 107
-        // (16×1 + 8×8 + 27). The centre's interval is [40, 67) → roll 53.5 picks it.
         val one = CityLogicHelper.applyUpgrades(
             City(listOf(Building(0, 0, 1))), 1, tier5, scriptedRng(0.5)
         )
         assertEquals(listOf(Building(0, 0, 2)), one.buildings)
 
-        // roll 0 picks the first candidate, the (-2,-2) corner: SPAWN.
         val two = CityLogicHelper.applyUpgrades(
             City(listOf(Building(0, 0, 1))), 1, tier5, scriptedRng(0.0)
         )
@@ -89,8 +83,6 @@ class CityLogicHelperTest {
 
     @Test
     fun `capped plots are excluded from the pick`() {
-        // Centre at the tier cap (5). roll 0.5 would have picked it, but capped plots
-        // aren't candidates, so it lands elsewhere and the centre stays put.
         val next = CityLogicHelper.applyUpgrades(
             City(listOf(Building(0, 0, 5))), 1, tier5, scriptedRng(0.5)
         )
@@ -124,8 +116,6 @@ class CityLogicHelperTest {
 
     @Test
     fun `progression invariant each tier expands long before its land can fill`() {
-        // Every tier's capacity (plots × floorCap) must exceed the most upgrades
-        // earnable before the next tier unlocks, so "banked" stays unreachable in play.
         for (i in 0 until CityLogicHelper.GRID_TIERS.size - 1) {
             val tier = CityLogicHelper.GRID_TIERS[i]
             val capacity = tier.size * tier.size * tier.floorCap
@@ -145,7 +135,6 @@ class CityLogicHelperTest {
         assertEquals(2, s.pending)
         assertEquals(5, s.tier.size)
 
-        // Bad data (more floors than earned) clamps pending to 0 instead of negative.
         val bad = CityLogicHelper.cityState(emptyList(), City(listOf(Building(0, 0, 7))))
         assertEquals(0, bad.pending)
     }
@@ -153,13 +142,11 @@ class CityLogicHelperTest {
     @Test
     fun `reconcile returns the same city when nothing is pending`() {
         val city = City(listOf(Building(0, 0, 1)))
-        // 10 mins earns exactly 1 upgrade, which is already applied → same instance.
         assertTrue(CityLogicHelper.reconcile(city, sessions(10)) === city)
     }
 
     @Test
     fun `reconcile applies all pending events in one pass`() {
-        // 36 mins → 3 earned, empty city → 3 applied afterwards.
         val reconciled = CityLogicHelper.reconcile(City(), sessions(36), scriptedRng(0.5, 0.5, 0.5))
         assertEquals(3, CityLogicHelper.appliedUpgrades(reconciled))
     }

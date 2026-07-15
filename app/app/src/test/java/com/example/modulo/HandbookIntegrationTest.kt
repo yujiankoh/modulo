@@ -133,11 +133,6 @@ class HandbookIntegrationTest : AppViewModelTestBase() {
         assertTrue(viewModel.appData.value.updatedAt!!.isNotBlank())
     }
 
-    /**
-     * There is no public setter for startupState, but saving a handbook from onboarding is only
-     * meaningful when we are in the HANDBOOK gate. `startUpChecks` in init already routes a
-     * sync-disabled, education-level-null profile to HANDBOOK, so we simply assert that precondition.
-     */
     private fun setStartupToHandbook() {
         assertEquals(StartupState.HANDBOOK, viewModel.startupState.value)
     }
