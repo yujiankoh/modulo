@@ -4,7 +4,7 @@
 // semester, and the term dates. Auto-opens on first run (while appState.handbookSetup
 // is false); closing it then snoozes it until reload. Reuses the .tcal-popup recipe.
 
-import { appState, persist } from "./data.js";
+import { appState, persist, getStorageMode } from "./data.js";
 import { isTertiary, formatAcademicYear, parseStartYear, formatHeaderLabel } from "./logic/academicYear.js";
 import { snapshotHandbook, blankHandbook, switchHandbook } from "./logic/handbooks.js"; // 13.5: pure swap helpers
 import { drawIcons } from "./icons.js"; // redraw the trash icons the handbook list injects
@@ -313,6 +313,11 @@ window.addEventListener("modulo:datachanged", renderSummary);
 // completed AND the modal isn't already open, auto-open it as the non-dismissable setup.
 // The "already open" guard stops a stray datachanged from wiping what the user is typing.
 window.addEventListener("modulo:datachanged", () => {
+  // No storage mode chosen yet → nowhere to SAVE a handbook (persist() would write to
+  // neither backend — the setup would vanish on reload), and pre-mode datachanged events
+  // aren't loads anyway (the theme toggle fires this event too — the bug that added this
+  // guard, 2026-07-15). Wait for the mode pick; loadInitialData re-fires the event then.
+  if (!getStorageMode()) return;
   if (!appState.handbookSetup && !dismissed && modal.style.display === "none") {
     firstRun = true;
     openHandbook();
