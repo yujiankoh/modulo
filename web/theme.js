@@ -9,24 +9,18 @@ function currentTheme() {
   return document.documentElement.dataset.theme === "dark" ? "dark" : "light";
 }
 
-// Keep the toggles matching the active theme. The Settings button's icon shows what
-// you'll switch TO (sun while dark, moon while light) — innerHTML with a fresh
-// <i data-lucide> placeholder; icons.js (re)draws it on the modulo:datachanged that
-// applyTheme fires. The topbar SWITCH needs no label work — its knob position is pure
-// CSS off [data-theme] — only the aria-checked state (it's role="switch") is JS's job.
-function updateLabels(theme) {
-  const dark = theme === "dark";
-  const icon = dark ? "sun" : "moon";
-  const settings = document.getElementById("themeToggle");
-  if (settings) settings.innerHTML = `<i data-lucide="${icon}"></i>${dark ? "Switch to light mode" : "Switch to dark mode"}`;
-  document.getElementById("themeSwitch")?.setAttribute("aria-checked", String(dark));
+// The ONE theme control is the Settings switch (2026-07-15; the old labelled buttons
+// are gone). Its knob position and icons are pure CSS off [data-theme] — the only
+// JS-owned state is aria-checked (it's role="switch", announced on/off).
+function updateSwitch(theme) {
+  document.getElementById("themeSwitch")?.setAttribute("aria-checked", String(theme === "dark"));
 }
 
-// Set the theme on <html> (CSS [data-theme="dark"] reacts), remember it, refresh labels.
+// Set the theme on <html> (CSS [data-theme="dark"] reacts) and remember it.
 function applyTheme(theme) {
   document.documentElement.dataset.theme = theme;
   localStorage.setItem(KEY, theme);
-  updateLabels(theme);
+  updateSwitch(theme);
   // Module colours are applied inline at render time (per theme), so redraw the views that
   // use them (dots/cards/timeline) to pick up the right palette immediately.
   window.dispatchEvent(new Event("modulo:datachanged"));
@@ -37,5 +31,4 @@ function toggleTheme() {
 }
 
 document.getElementById("themeSwitch")?.addEventListener("click", toggleTheme);
-document.getElementById("themeToggle")?.addEventListener("click", toggleTheme);
-updateLabels(currentTheme());
+updateSwitch(currentTheme());

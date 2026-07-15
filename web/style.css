@@ -143,20 +143,20 @@ select {
 .module-dot { width: 9px; height: 9px; border-radius: 50%; flex: none; } /* colour set inline per module */
 
 /* Sidebar account chip (12.4d): pinned at the bottom of the sidebar card. */
+/* Account chip — moved to the TOPBAR as a pure status indicator (2026-07-15):
+   compact, no hover, default cursor — it deliberately does not look clickable. */
 .account-chip {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-top: 12px;
-  padding: 10px;
-  border-radius: 12px;
+  gap: 8px;
+  flex: none;
+  padding: 4px 10px 4px 4px;
+  border-radius: 999px;
   background: var(--hover);
-  text-decoration: none;
 }
-.account-chip:hover { background: var(--pill-bg); }
 .account-avatar {
-  width: 32px;
-  height: 32px;
+  width: 26px;
+  height: 26px;
   flex: none;
   border-radius: 50%;
   background: var(--primary);
@@ -164,15 +164,15 @@ select {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 600;
 }
 .account-info { display: flex; flex-direction: column; line-height: 1.25; }
 .account-name { font-size: 13px; font-weight: 600; color: var(--text); }
 .account-sub { font-size: 11px; color: var(--text-muted); }
 
-/* Sidebar light/dark toggle (12 polish: night mode) */
-/* Theme switch (topbar, polish 2026-07-15 — replaced the sidebar text button).
+/* Theme switch (Settings → Appearance; 2026-07-15 — briefly in the topbar the same
+   day, then YJ settled it in Settings as the ONE theme control).
    A pill track with sun (left) / moon (right); the knob slides onto the ACTIVE side,
    so the icon left showing is the mode a click switches TO (the old buttons' rule).
    Position is pure CSS off [data-theme] — nothing for JS to sync, and the flip
@@ -212,6 +212,15 @@ select {
   transition: transform 0.2s ease;
 }
 [data-theme="dark"] .ts-knob { transform: translateX(28px); }
+/* The Settings Appearance row: label left, switch right, across the whole card
+   (.settings-card is a flex row — width:100% makes this row its own line). */
+.appearance-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+.appearance-label { font-size: 14px; color: var(--text); }
 
 /* --- Phase 6: timetable calendar grid --- */
 #timetableCalendar {

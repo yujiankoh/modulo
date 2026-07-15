@@ -53,15 +53,8 @@
         <a class="nav-link nav-link--bottom" href="#settings"><i data-lucide="settings"></i>Settings</a>
       </nav>
 
-      <!-- Account chip (12.4d): shows the storage mode; links to Settings. sidebar.js fills it. -->
-      <!-- (The light/dark toggle moved to the topbar switch, polish 2026-07-15.) -->
-      <a id="accountChip" class="account-chip" href="#settings">
-        <span class="account-avatar">M</span>
-        <span class="account-info">
-          <span class="account-name" id="accountMode">Not connected</span>
-          <span class="account-sub" id="accountSub">Tap to connect</span>
-        </span>
-      </a>
+      <!-- (The light/dark toggle and the account chip both moved to the topbar,
+           polish 2026-07-15.) -->
     </aside>
 
     <!-- ---- Main area: persistent top bar + the swappable views ---- -->
@@ -74,14 +67,19 @@
            then + Add Task (global — keeps id="openAddTask" so task.js's handler
            still opens the modal). No search bar (per decision). -->
       <header id="topbar">
-        <a id="status" class="topbar-status" href="#settings">Not connected</a>
-        <!-- Theme switch (polish 2026-07-15, moved from the sidebar): sun left, moon
-             right, knob slides via CSS on [data-theme] — theme.js only wires the click. -->
-        <button id="themeSwitch" class="theme-switch" type="button" role="switch" aria-checked="false" aria-label="Toggle dark mode">
-          <span class="ts-icon ts-sun"><i data-lucide="sun"></i></span>
-          <span class="ts-icon ts-moon"><i data-lucide="moon"></i></span>
-          <span class="ts-knob"></span>
-        </button>
+        <!-- Transient/actionable messages ONLY (sign-in errors, "please reconnect") —
+             ui.js hides it while empty. The persistent mode text lives in the chip now. -->
+        <a id="status" class="topbar-status" href="#settings" style="display: none;"></a>
+        <!-- Account chip (12.4d; moved from the sidebar 2026-07-15): a PURE storage-mode
+             indicator — a div, never clickable (YJ's call; the Connect button is the
+             action). sidebar.js still fills it (same ids). -->
+        <div id="accountChip" class="account-chip">
+          <span class="account-avatar">M</span>
+          <span class="account-info">
+            <span class="account-name" id="accountMode">Not connected</span>
+            <span class="account-sub" id="accountSub">Not synced</span>
+          </span>
+        </div>
         <button id="topbarConnect" type="button" style="display: none;"><i data-lucide="cloud"></i>Connect Google Drive</button>
         <button id="openAddTask" class="btn-primary"><i data-lucide="plus"></i>Add Task</button>
       </header>
@@ -348,7 +346,17 @@
 
         <h3 class="settings-heading">Appearance</h3>
         <div class="card settings-card">
-          <button id="themeToggle" type="button">Switch to dark mode</button>
+          <!-- THE theme control (YJ 2026-07-15: Settings only — topbar/sidebar variants
+               removed). Sun left, moon right; the knob slides via CSS on [data-theme] —
+               theme.js only wires the click + aria-checked. -->
+          <div class="appearance-row">
+            <span class="appearance-label">Dark mode</span>
+            <button id="themeSwitch" class="theme-switch" type="button" role="switch" aria-checked="false" aria-label="Toggle dark mode">
+              <span class="ts-icon ts-sun"><i data-lucide="sun"></i></span>
+              <span class="ts-icon ts-moon"><i data-lucide="moon"></i></span>
+              <span class="ts-knob"></span>
+            </button>
+          </div>
         </div>
 
         <!-- Handbook (Phase 13): a read-only SUMMARY of the per-semester setup. handbook.js
