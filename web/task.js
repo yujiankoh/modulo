@@ -152,9 +152,10 @@ function renderTaskRow(task) {
   const li = document.createElement("li");
   li.className = "task-row";
   // Module colour as a left accent bar (polish 2026-07-15) — the same visual
-  // language as the timetable's session blocks. CSS default is transparent, so
-  // module-less rows keep their alignment without a stray grey bar.
-  if (task.module) li.style.borderLeftColor = moduleColor(task.module);
+  // language as the timetable's session blocks, softened to ~40% (hex + 66 alpha,
+  // YJ's call — full strength shouted). CSS default is transparent, so module-less
+  // rows keep their alignment without a stray grey bar.
+  if (task.module) li.style.borderLeftColor = moduleColor(task.module) + "66";
 
   // Done is now a checkbox (replaces the old Done/Undo button). Ticking it toggles done.
   const checkbox = document.createElement("input");
@@ -195,7 +196,11 @@ function renderTaskRow(task) {
   const delBtn = document.createElement("button");
   delBtn.className = "task-del";
   delBtn.textContent = "Delete";
-  delBtn.addEventListener("click", () => deleteTask(task.id));
+  // confirm() like every other destructive action (notes, handbooks) — tasks
+  // deleted instantly until 2026-07-16, a gap the consistency pass closed.
+  delBtn.addEventListener("click", () => {
+    if (confirm(`Delete "${task.title}"?`)) deleteTask(task.id);
+  });
 
   li.append(checkbox, main, pill, delBtn);
   return li;
@@ -294,9 +299,15 @@ document.getElementById("taskModule").addEventListener("change", (e) => {
   if (isOther) document.getElementById("taskModuleOther").focus();
 });
 
-function openTaskModal() {
+// Exported since 2026-07-16: the module modal's "Add task" opens it with that
+// module pre-selected (only if the option exists — a junk preset falls back to None).
+export function openTaskModal(presetModule = "") {
   if (!getStorageMode()) { alert("Choose Google Drive or local mode first."); return; }
   populateModuleSelect();                        // refresh the module list each open
+  const sel = document.getElementById("taskModule");
+  if (presetModule && [...sel.options].some((o) => o.value === presetModule)) {
+    sel.value = presetModule;
+  }
   taskModal.style.display = "flex";              // CSS .tcal-popup centres the card
   document.getElementById("taskTitle").focus();  // cursor ready in the first field
 }
@@ -305,8 +316,9 @@ function closeTaskModal() {
   taskModal.style.display = "none";
 }
 
-// Open from the "+ Add Task" button.
-document.getElementById("openAddTask").addEventListener("click", openTaskModal);
+// Open from the "+ Add Task" button. Wrapped: passing openTaskModal directly would
+// hand it the click EVENT as its presetModule parameter.
+document.getElementById("openAddTask").addEventListener("click", () => openTaskModal());
 
 // Close via ✕, Cancel, clicking the dim backdrop, or pressing Esc.
 document.getElementById("taskModalClose").addEventListener("click", closeTaskModal);

@@ -300,6 +300,7 @@
           </div>
           <!-- Hidden entirely while notes are gated (local mode). -->
           <div id="notesControls" class="task-controls">
+            <input id="notesSearch" type="search" placeholder="Search notes…" aria-label="Search notes by file name" />
             <select id="notesSemFilter">
               <option value="current">This semester</option>
               <option value="all">All semesters</option>
@@ -520,7 +521,12 @@
       <!-- Phase 20: this module's notes (active handbook), filled by notesView.js's
            showModuleNotes(). Upload pre-tags the file to this module. -->
       <div id="moduleModalNotes"></div>
-      <button id="moduleModalUpload" class="mm-upload" type="button"><i data-lucide="upload"></i>Upload note</button>
+      <!-- Module actions (2026-07-16): upload pre-tagged to this module; add a task
+           pre-filled with it (dashboard.js wires Add task; notesView.js wires Upload). -->
+      <div class="mm-actions">
+        <button id="moduleModalUpload" class="mm-upload" type="button"><i data-lucide="upload"></i>Upload note</button>
+        <button id="moduleModalAddTask" class="mm-upload" type="button"><i data-lucide="plus"></i>Add task</button>
+      </div>
       <div class="module-modal-label">Tasks</div>
       <ul id="moduleModalTasks" class="dash-list"></ul>
     </div>

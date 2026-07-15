@@ -43,6 +43,7 @@ const controlsEl = document.getElementById("notesControls");
 const semFilterEl = document.getElementById("notesSemFilter");
 const modFilterEl = document.getElementById("notesModFilter");
 const sortEl = document.getElementById("notesSort");
+const searchEl = document.getElementById("notesSearch");
 const refreshBtn = document.getElementById("notesRefreshBtn");
 const uploadBtn = document.getElementById("notesUploadBtn");
 const statusEl = document.getElementById("notesStatus");
@@ -284,11 +285,24 @@ function render() {
   const shown = visibleNotes(cache || [], {
     handbookId: scopeHandbookId(),
     module,
-    sort: sortEl.value, // "name" (A–Z, the default) or "newest"
+    sort: sortEl.value,       // "name" (A–Z, the default) or "newest"
+    search: searchEl.value,   // live filename filter (2026-07-16)
   });
 
   listEl.innerHTML = "";
   listEl.style.display = shown.length ? "" : "none";
+  if (shown.length > 0) {
+    // Column headers (2026-07-16, like the grades editor). "Updated", not
+    // "Uploaded" — modifiedTime moves when a note is renamed.
+    const head = document.createElement("div");
+    head.className = "note-row note-row--head";
+    for (const text of ["", "File name", "Module", "Size", "Updated", ""]) {
+      const cell = document.createElement("span");
+      cell.textContent = text;
+      head.append(cell);
+    }
+    listEl.append(head);
+  }
   for (const note of shown) listEl.append(buildRow(note));
 
   // Empty states: nothing uploaded at all vs nothing matching the filters.
@@ -296,7 +310,7 @@ function render() {
   emptyEl.style.display = cache !== null && shown.length === 0 ? "" : "none";
   emptyTitleEl.textContent = anyAtAll ? "Nothing here" : "No notes yet";
   emptyTextEl.textContent = anyAtAll
-    ? "No notes match these filters — try All semesters or All modules."
+    ? "No notes match — try All semesters / All modules, or clear the search."
     : "Upload a PDF or a photo of your notes to keep it synced with this device.";
 
   // The module modal's notes section shows the same cache — keep it in step
@@ -373,9 +387,20 @@ function fillModuleNotes() {
     const size = document.createElement("span");
     size.className = "note-meta";
     size.textContent = formatSize(note.size);
-    row.append(name, size);
+    // Rename here too (2026-07-16) — same modal + flow as the #notes view; the
+    // cache swap in saveRename re-renders this section via render().
+    const rename = document.createElement("button");
+    rename.className = "note-action";
+    rename.type = "button";
+    rename.innerHTML = `<i data-lucide="pencil"></i>`;
+    rename.title = `Rename ${note.name}`;
+    rename.addEventListener("click", () => openRenameModal(note));
+    row.append(name, size, rename);
     mmNotesEl.append(row);
   }
+  // The pencils are <i data-lucide> placeholders, and this runs on modal open
+  // (outside render()) when the cache is already warm — draw them ourselves.
+  drawIcons();
 
   if (notes.length > MM_NOTES_LIMIT) {
     const more = document.createElement("button");
@@ -536,6 +561,9 @@ refreshBtn.addEventListener("click", refresh);
 semFilterEl.addEventListener("change", render);
 modFilterEl.addEventListener("change", render);
 sortEl.addEventListener("change", render);
+// "input" (per keystroke) is safe here BECAUSE the search box itself is static
+// markup — render() only wipes the list, so typing never loses focus.
+searchEl.addEventListener("input", render);
 
 // Lazy fetch: the first time the route is #notes this session, load the list.
 // (Cheaper than fetching at boot for users who never open the view.)
