@@ -71,10 +71,13 @@
 
       <!-- Top bar (persistent, like the sidebar). Left: live connection status, made a
            link to Settings so a first-time user can reach the connect controls from any
-           view. Right: + Add Task (global — keeps id="openAddTask" so task.js's handler
+           view. Right: a real Connect button while no storage mode is active (polish
+           2026-07-15 — was a "click Connect…" text; main.js wires + shows/hides it),
+           then + Add Task (global — keeps id="openAddTask" so task.js's handler
            still opens the modal). No search bar (per decision). -->
       <header id="topbar">
         <a id="status" class="topbar-status" href="#settings">Not connected</a>
+        <button id="topbarConnect" type="button" style="display: none;"><i data-lucide="cloud"></i>Connect Google Drive</button>
         <button id="openAddTask" class="btn-primary"><i data-lucide="plus"></i>Add Task</button>
       </header>
 

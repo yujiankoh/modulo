@@ -3,7 +3,7 @@
 // mode) and the sign-in buttons, which are the one spot that needs both auth and data.
 
 import { initTokenClient, getToken } from "./auth.js";
-import { loadInitialData, setStorageMode, getSavedMode } from "./data.js";
+import { loadInitialData, setStorageMode, getSavedMode, getStorageMode } from "./data.js";
 import { setStatus } from "./ui.js";
 import "./timetable.js"; // side-effect import: runs timetable's event wiring
 import "./timetableEditor.js"; // side-effect import: runs the manual editor's wiring
@@ -21,6 +21,27 @@ import "./router.js"; // side-effect import: SPA view-switcher + hash routing (P
 import "./theme.js"; // side-effect import: light/dark theme toggle (Phase 12 polish)
 import "./icons.js"; // side-effect import: renders Lucide icons (data-lucide → <svg>)
 
+// The ONE Drive-connect flow (polish 2026-07-15: was inline on #connectBtn only) —
+// opens Google's account chooser + consent popup, then loads data on success.
+// Shared by the Settings button, the topbar Connect button, and the account chip.
+async function connectDrive() {
+  const ok = await getToken();
+  if (ok) {
+    setStorageMode("drive");
+    loadInitialData();
+  }
+}
+
+// The topbar Connect button shows ONLY while no storage mode is active (fresh visit,
+// or drive mode saved but the token not yet renewed). Re-checked on every
+// modulo:datachanged — connecting or picking local mode hides it.
+const topbarConnect = document.getElementById("topbarConnect");
+function updateTopbarConnect() {
+  topbarConnect.style.display = getStorageMode() ? "none" : "";
+}
+window.addEventListener("modulo:datachanged", updateTopbarConnect);
+updateTopbarConnect();
+
 // Runs after the page + Google's library have finished loading.
 window.onload = () => {
   initTokenClient();
@@ -32,17 +53,22 @@ window.onload = () => {
     setStatus("Local mode (this device only).");
     loadInitialData();
   } else if (savedMode === "drive") {
-    setStatus("Click Connect Google Drive to resume sync.");
-    // Need to connect first and get a token.
+    // The topbar Connect button is the call to action now — the status stays short.
+    setStatus("Not connected.");
   }
 };
 
-// Clicking Connect opens Google's account chooser + consent popup.
-document.getElementById("connectBtn").addEventListener("click", async () => {
-  const ok = await getToken();
-  if (ok) {
-    setStorageMode("drive");
-    loadInitialData();
+document.getElementById("connectBtn").addEventListener("click", connectDrive);
+topbarConnect.addEventListener("click", connectDrive);
+
+// The account chip links to Settings — right for a connected/local user. But while
+// NOT connected ("Tap to connect"), a tap should DO the connecting: swallow the
+// navigation and open the sign-in popup directly (the click is a real user gesture,
+// so the popup isn't blocked).
+document.getElementById("accountChip").addEventListener("click", (e) => {
+  if (!getStorageMode()) {
+    e.preventDefault(); // stay on the current view instead of jumping to Settings
+    connectDrive();
   }
 });
 
