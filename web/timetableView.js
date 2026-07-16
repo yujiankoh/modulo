@@ -303,7 +303,9 @@ function addBlock(col, ev, startH) {
 
   const sub = document.createElement("div");
   sub.className = "cal-block-sub";
-  sub.textContent = `${abbrevType(slot.sessionType)} · ${slot.start}`;
+  // Full range (2026-07-16, was start only) — the block's height already encodes
+  // the duration, but the exact end time shouldn't need mental pixel-math.
+  sub.textContent = `${abbrevType(slot.sessionType)} · ${slot.start}–${slot.end}`;
 
   block.append(title, sub);
 
@@ -393,6 +395,21 @@ function renderCalendar() {
     cols[day] = col;
   }
 
+  // Current-time line (2026-07-16): on today's column only, positioned by the SAME
+  // minutes→pixels formula as the blocks, so it always sits exactly where "now"
+  // falls between them. todayIdx is -1 when another week is shown (no line), and
+  // the hour-span check hides it before/after the grid's day.
+  if (todayIdx !== -1) {
+    const now = new Date();
+    const nowMins = now.getHours() * 60 + now.getMinutes();
+    if (nowMins >= startH * 60 && nowMins <= endH * 60) {
+      const line = document.createElement("div");
+      line.className = "cal-now";
+      line.style.top = (nowMins - startH * 60) * PX_PER_MIN + "px";
+      cols[DAYS[todayIdx]].append(line);
+    }
+  }
+
   // --- place the session blocks (none on recess/break or outside-term weeks) ---
   if (wk.status !== "break" && wk.status !== "outside") {
     // dated view: the week's own parity filters odd/even slots; undated: the manual toggle
@@ -424,3 +441,9 @@ document.getElementById("ttEmptyManual").addEventListener("click", openEditor);
 
 window.addEventListener("modulo:datachanged", renderCalendar);
 renderCalendar();
+
+// Keep the current-time line honest: redraw once a minute, but only while the
+// timetable is actually on screen (wipe-and-rebuild is idempotent and cheap).
+setInterval(() => {
+  if (location.hash === "#timetable") renderCalendar();
+}, 60_000);

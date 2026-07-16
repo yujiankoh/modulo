@@ -10,7 +10,7 @@
 import { appState, persist } from "./data.js";
 import { currentWeekInfo, totalTeachingWeeks } from "./timetableView.js";
 import { moduleColor } from "./sidebar.js"; // shared module-colour palette
-import { toggleTask } from "./task.js"; // complete a task from the due-soon checkbox
+import { toggleTask, openTaskModal } from "./task.js"; // due-soon checkboxes + the modal's Add task
 import { showModuleNotes } from "./notesView.js"; // fill the modal's My-notes section (Phase 20)
 
 // --- shared helpers (used by the summary line + the schedule/tasks panels) ---
@@ -181,13 +181,29 @@ function renderSchedule() {
     const li = document.createElement("li");
     li.className = "dash-class";
 
+    // Stacked time gutter (2026-07-16): start bold over end muted — reads as
+    // "starts at / ends at" without a long dash-range fighting the title.
     const time = document.createElement("span");
     time.className = "dash-class-time";
-    time.textContent = `${c.start}–${c.end}`;
+    const start = document.createElement("div");
+    start.className = "dct-start";
+    start.textContent = c.start;
+    const end = document.createElement("div");
+    end.className = "dct-end";
+    end.textContent = c.end;
+    time.append(start, end);
 
     const main = document.createElement("div");
     const title = document.createElement("div");
-    title.textContent = `${c.module} · ${capitalize(c.sessionType)}`;
+    // Grades-row format (YJ 2026-07-16, replacing the accent strip): coloured dot,
+    // then the module name in plain text — the dot carries the colour alone.
+    const dot = document.createElement("span");
+    dot.className = "task-dot";
+    dot.style.background = moduleColor(c.module);
+    const mod = document.createElement("span");
+    mod.className = "task-meta-mod"; // semibold; no inline colour in this format
+    mod.textContent = c.module;
+    title.append(dot, mod, document.createTextNode(` · ${capitalize(c.sessionType)}`));
     const loc = document.createElement("div");
     loc.className = "dash-class-loc";
     loc.textContent = c.location || "";
@@ -202,6 +218,8 @@ function renderSchedule() {
 function buildTaskRow(t) {
   const li = document.createElement("li");
   li.className = "dash-task";
+  // Module accent strip, matching the All-Tasks rows (polish 2026-07-15).
+  if (t.module) li.style.borderLeftColor = moduleColor(t.module) + "66";
 
   // Toggling persists → this panel redraws and the now-done task drops off.
   const check = document.createElement("input");
@@ -217,12 +235,15 @@ function buildTaskRow(t) {
   const meta = document.createElement("div");
   meta.className = "dash-task-meta";
   if (t.module) {
-    const dot = document.createElement("span");
-    dot.className = "task-dot";
-    dot.style.background = moduleColor(t.module);
-    meta.append(dot);
+    // Coloured module name (replaced the dot, 2026-07-15 — same as the tasks view).
+    const mod = document.createElement("span");
+    mod.className = "task-meta-mod";
+    mod.style.color = moduleColor(t.module);
+    mod.textContent = t.module;
+    meta.append(mod, document.createTextNode(` · ${t.type}`));
+  } else {
+    meta.append(document.createTextNode(t.type));
   }
-  meta.append(document.createTextNode(t.module ? `${t.module} · ${t.type}` : t.type));
   main.append(title, meta);
 
   const d = daysUntil(t.due);
@@ -287,6 +308,15 @@ function moduleInfos() {
 }
 
 const moduleModal = document.getElementById("moduleModal");
+let modalLabel = null; // which module the modal is showing — the Add-task preset
+
+// "Add task" in the module modal (2026-07-16): close this modal, open Add-Task
+// with the module pre-selected. Bound ONCE here — binding inside openModuleModal
+// would stack a duplicate listener on every open.
+document.getElementById("moduleModalAddTask").addEventListener("click", () => {
+  closeModuleModal();
+  openTaskModal(modalLabel || "");
+});
 
 // Display title for a module: "CODE · Name", or just the label when the name is empty OR
 // identical to the label (school levels store the subject as both → avoid "1BY2 · 1BY2").
@@ -296,6 +326,10 @@ function moduleTitle(m) {
 
 // Open the module detail modal: this module's notes (Phase 20) + its tasks.
 function openModuleModal(m) {
+  modalLabel = m.label;
+  // The header band carries the module's colour (like the dashboard cards —
+  // background inline, same palette-sample rule as module-card-head).
+  document.getElementById("moduleModalHead").style.background = moduleColor(m.label);
   document.getElementById("moduleModalTitle").textContent = moduleTitle(m);
   showModuleNotes(m.label); // notes are tagged by label — same code||name rule
 

@@ -53,17 +53,8 @@
         <a class="nav-link nav-link--bottom" href="#settings"><i data-lucide="settings"></i>Settings</a>
       </nav>
 
-      <!-- Light/dark toggle (theme.js updates the label). -->
-      <button id="themeToggleSide" class="theme-toggle-side" type="button" aria-label="Toggle dark mode">🌙 Dark mode</button>
-
-      <!-- Account chip (12.4d): shows the storage mode; links to Settings. sidebar.js fills it. -->
-      <a id="accountChip" class="account-chip" href="#settings">
-        <span class="account-avatar">M</span>
-        <span class="account-info">
-          <span class="account-name" id="accountMode">Not connected</span>
-          <span class="account-sub" id="accountSub">Tap to connect</span>
-        </span>
-      </a>
+      <!-- (The light/dark toggle and the account chip both moved to the topbar,
+           polish 2026-07-15.) -->
     </aside>
 
     <!-- ---- Main area: persistent top bar + the swappable views ---- -->
@@ -71,10 +62,25 @@
 
       <!-- Top bar (persistent, like the sidebar). Left: live connection status, made a
            link to Settings so a first-time user can reach the connect controls from any
-           view. Right: + Add Task (global — keeps id="openAddTask" so task.js's handler
+           view. Right: a real Connect button while no storage mode is active (polish
+           2026-07-15 — was a "click Connect…" text; main.js wires + shows/hides it),
+           then + Add Task (global — keeps id="openAddTask" so task.js's handler
            still opens the modal). No search bar (per decision). -->
       <header id="topbar">
-        <a id="status" class="topbar-status" href="#settings">Not connected</a>
+        <!-- Transient/actionable messages ONLY (sign-in errors, "please reconnect") —
+             ui.js hides it while empty. The persistent mode text lives in the chip now. -->
+        <a id="status" class="topbar-status" href="#settings" style="display: none;"></a>
+        <!-- Account chip (12.4d; moved from the sidebar 2026-07-15): a PURE storage-mode
+             indicator — a div, never clickable (YJ's call; the Connect button is the
+             action). sidebar.js still fills it (same ids). -->
+        <div id="accountChip" class="account-chip">
+          <span class="account-avatar">M</span>
+          <span class="account-info">
+            <span class="account-name" id="accountMode">Not connected</span>
+            <span class="account-sub" id="accountSub">Not synced</span>
+          </span>
+        </div>
+        <button id="topbarConnect" type="button" style="display: none;"><i data-lucide="cloud"></i>Connect Google Drive</button>
         <button id="openAddTask" class="btn-primary"><i data-lucide="plus"></i>Add Task</button>
       </header>
 
@@ -294,6 +300,7 @@
           </div>
           <!-- Hidden entirely while notes are gated (local mode). -->
           <div id="notesControls" class="task-controls">
+            <input id="notesSearch" type="search" placeholder="Search notes…" aria-label="Search notes by file name" />
             <select id="notesSemFilter">
               <option value="current">This semester</option>
               <option value="all">All semesters</option>
@@ -331,16 +338,30 @@
            sit at the top of the page; they keep the same ids so main.js/data.js work. -->
       <section id="view-settings" class="view">
         <h2>Settings</h2>
-        <!-- The connection status now shows in the top bar (#status moved there). -->
+        <!-- Sync card (state-aware since 2026-07-16 — main.js shows only what applies):
+             connected → status + Reload + local + Disconnect; local → status + Connect;
+             fresh → Connect + local. Same ids as always. -->
         <div class="card settings-card">
+          <p id="syncStatus" class="sync-status"></p>
           <button id="connectBtn"><i data-lucide="cloud"></i>Connect Google Drive</button>
           <button id="localBtn"><i data-lucide="monitor"></i>Use this device only</button>
           <button id="reloadBtn"><i data-lucide="refresh-cw"></i>Reload from Drive</button>
+          <button id="disconnectBtn" style="display: none;"><i data-lucide="cloud-off"></i>Disconnect</button>
         </div>
 
         <h3 class="settings-heading">Appearance</h3>
         <div class="card settings-card">
-          <button id="themeToggle" type="button">Switch to dark mode</button>
+          <!-- THE theme control (YJ 2026-07-15: Settings only — topbar/sidebar variants
+               removed). Sun left, moon right; the knob slides via CSS on [data-theme] —
+               theme.js only wires the click + aria-checked. -->
+          <div class="appearance-row">
+            <span class="appearance-label">Dark mode</span>
+            <button id="themeSwitch" class="theme-switch" type="button" role="switch" aria-checked="false" aria-label="Toggle dark mode">
+              <span class="ts-icon ts-sun"><i data-lucide="sun"></i></span>
+              <span class="ts-icon ts-moon"><i data-lucide="moon"></i></span>
+              <span class="ts-knob"></span>
+            </button>
+          </div>
         </div>
 
         <!-- Handbook (Phase 13): a read-only SUMMARY of the per-semester setup. handbook.js
@@ -495,12 +516,21 @@
   <div id="moduleModal" class="tcal-popup" style="display: none;">
     <div class="tcal-popup-card">
       <button id="moduleModalClose" class="tcal-popup-close" type="button"><i data-lucide="x"></i></button>
-      <h3 id="moduleModalTitle"></h3>
+      <!-- Coloured header band (polish 2026-07-15, like the dashboard module cards):
+           dashboard.js sets its background to the module's colour on open. -->
+      <div id="moduleModalHead" class="module-modal-head">
+        <h3 id="moduleModalTitle"></h3>
+      </div>
       <div class="module-modal-label">My notes</div>
       <!-- Phase 20: this module's notes (active handbook), filled by notesView.js's
            showModuleNotes(). Upload pre-tags the file to this module. -->
       <div id="moduleModalNotes"></div>
-      <button id="moduleModalUpload" class="mm-upload" type="button"><i data-lucide="upload"></i>Upload note</button>
+      <!-- Module actions (2026-07-16): upload pre-tagged to this module; add a task
+           pre-filled with it (dashboard.js wires Add task; notesView.js wires Upload). -->
+      <div class="mm-actions">
+        <button id="moduleModalUpload" class="mm-upload" type="button"><i data-lucide="upload"></i>Upload note</button>
+        <button id="moduleModalAddTask" class="mm-upload" type="button"><i data-lucide="plus"></i>Add task</button>
+      </div>
       <div class="module-modal-label">Tasks</div>
       <ul id="moduleModalTasks" class="dash-list"></ul>
     </div>
@@ -513,11 +543,19 @@
   <div id="noteUploadModal" class="tcal-popup" style="display: none;">
     <div class="tcal-popup-card">
       <button id="noteUploadClose" class="tcal-popup-close" type="button"><i data-lucide="x"></i></button>
-      <h3>Upload a note</h3>
-      <p class="module-modal-placeholder">A PDF or an image, up to 5&nbsp;MB. Notes are stored
-        as files in your own Google Drive.</p>
+      <h3>Upload notes</h3>
 
-      <input id="noteFile" type="file" />
+      <!-- Drop zone (polish 2026-07-15): the real <input type="file"> is hidden — this
+           button opens it, and also accepts drag & drop (notesView.js assigns the
+           dropped FileList to the input, so the upload path stays ONE code path). -->
+      <button id="noteDrop" class="note-drop" type="button">
+        <i data-lucide="upload"></i>
+        <span class="note-drop-title">Choose files or drag them here</span>
+        <span class="note-drop-sub">PDFs &amp; images · up to 5&nbsp;MB each · stored in your own Google Drive</span>
+      </button>
+      <input id="noteFile" type="file" multiple style="display: none;" />
+      <!-- The picked files, validated LIVE (name + size; invalid ones flagged red). -->
+      <ul id="notePickList" class="note-pick-list"></ul>
 
       <label class="task-field">
         <span>Module/Subject</span>
@@ -599,7 +637,7 @@
 
       <div class="task-modal-actions">
         <button id="cancelAddTask" type="button">Cancel</button>
-        <button id="addBtn" type="button"><i data-lucide="plus"></i>Add Task</button>
+        <button id="addBtn" class="btn-primary" type="button"><i data-lucide="plus"></i>Add Task</button>
       </div>
     </div>
   </div>
@@ -620,12 +658,14 @@
       <button id="ratingClose" class="tcal-popup-close" type="button"><i data-lucide="x"></i></button>
       <h3>How did that session go?</h3>
       <p id="ratingSummary"></p>
+      <!-- Ratings are STORED as 1–5 (schema unchanged); the emojis are display only
+           (polish 2026-07-15). data-rating still carries the real value. -->
       <div id="ratingButtons">
-        <button type="button" data-rating="1">1</button>
-        <button type="button" data-rating="2">2</button>
-        <button type="button" data-rating="3">3</button>
-        <button type="button" data-rating="4">4</button>
-        <button type="button" data-rating="5">5</button>
+        <button type="button" data-rating="1" title="1/5">🗑️</button>
+        <button type="button" data-rating="2" title="2/5">💩</button>
+        <button type="button" data-rating="3" title="3/5">😐</button>
+        <button type="button" data-rating="4" title="4/5">🔥</button>
+        <button type="button" data-rating="5" title="5/5">💡</button>
       </div>
       <button id="ratingSkip" type="button">Skip rating</button>
     </div>

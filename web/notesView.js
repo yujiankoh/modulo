@@ -43,6 +43,7 @@ const controlsEl = document.getElementById("notesControls");
 const semFilterEl = document.getElementById("notesSemFilter");
 const modFilterEl = document.getElementById("notesModFilter");
 const sortEl = document.getElementById("notesSort");
+const searchEl = document.getElementById("notesSearch");
 const refreshBtn = document.getElementById("notesRefreshBtn");
 const uploadBtn = document.getElementById("notesUploadBtn");
 const statusEl = document.getElementById("notesStatus");
@@ -68,6 +69,8 @@ const modalCancel = document.getElementById("noteUploadCancel");
 const modalGo = document.getElementById("noteUploadGo");
 const modalError = document.getElementById("noteUploadError");
 const fileInput = document.getElementById("noteFile");
+const dropZone = document.getElementById("noteDrop");
+const pickListEl = document.getElementById("notePickList");
 const moduleSelect = document.getElementById("noteModule");
 const moduleOtherField = document.getElementById("noteModuleOtherField");
 const moduleOtherInput = document.getElementById("noteModuleOther");
@@ -282,11 +285,24 @@ function render() {
   const shown = visibleNotes(cache || [], {
     handbookId: scopeHandbookId(),
     module,
-    sort: sortEl.value, // "name" (A–Z, the default) or "newest"
+    sort: sortEl.value,       // "name" (A–Z, the default) or "newest"
+    search: searchEl.value,   // live filename filter (2026-07-16)
   });
 
   listEl.innerHTML = "";
   listEl.style.display = shown.length ? "" : "none";
+  if (shown.length > 0) {
+    // Column headers (2026-07-16, like the grades editor). "Updated", not
+    // "Uploaded" — modifiedTime moves when a note is renamed.
+    const head = document.createElement("div");
+    head.className = "note-row note-row--head";
+    for (const text of ["", "File name", "Module", "Size", "Updated", ""]) {
+      const cell = document.createElement("span");
+      cell.textContent = text;
+      head.append(cell);
+    }
+    listEl.append(head);
+  }
   for (const note of shown) listEl.append(buildRow(note));
 
   // Empty states: nothing uploaded at all vs nothing matching the filters.
@@ -294,7 +310,7 @@ function render() {
   emptyEl.style.display = cache !== null && shown.length === 0 ? "" : "none";
   emptyTitleEl.textContent = anyAtAll ? "Nothing here" : "No notes yet";
   emptyTextEl.textContent = anyAtAll
-    ? "No notes match these filters — try All semesters or All modules."
+    ? "No notes match — try All semesters / All modules, or clear the search."
     : "Upload a PDF or a photo of your notes to keep it synced with this device.";
 
   // The module modal's notes section shows the same cache — keep it in step
@@ -312,6 +328,23 @@ function render() {
 // surface only (open + upload); managing notes stays in the #notes view.
 
 let modalModuleLabel = null; // which module the modal is showing; null = closed/never
+
+// The modal shows at most this many notes (polish 2026-07-15 — a term's worth of
+// lecture PDFs was making the card scroll); past it, a "View all" link hands over
+// to the #notes view with the same scope pre-filtered.
+const MM_NOTES_LIMIT = 5;
+
+// Jump to the #notes view filtered to `module` in the current semester — what
+// "View all N notes" does. Closes the module modal first (dashboard owns it, but
+// ids are the HTML↔JS contract app-wide).
+function openNotesViewFor(module) {
+  document.getElementById("moduleModal").style.display = "none";
+  semFilterEl.value = "current";   // the modal's scope IS the active handbook
+  location.hash = "#notes";        // the router shows the view
+  rebuildModuleFilter();           // build the options for that scope…
+  modFilterEl.value = [...modFilterEl.options].some((o) => o.value === module) ? module : "all";
+  render();                        // …then draw with the filter applied
+}
 
 // Called by dashboard.js every time the module modal opens. Draws immediately
 // from whatever we have (cache, loading note, or the local-mode gate) and kicks
@@ -342,7 +375,7 @@ function fillModuleNotes() {
   const notes = visibleNotes(cache, { handbookId: appState.handbookId, module: modalModuleLabel });
   if (notes.length === 0) { message("No notes for this module yet."); return; }
 
-  for (const note of notes) {
+  for (const note of notes.slice(0, MM_NOTES_LIMIT)) {
     const row = document.createElement("div");
     row.className = "mm-note-row";
     const name = document.createElement("button");
@@ -354,8 +387,28 @@ function fillModuleNotes() {
     const size = document.createElement("span");
     size.className = "note-meta";
     size.textContent = formatSize(note.size);
-    row.append(name, size);
+    // Rename here too (2026-07-16) — same modal + flow as the #notes view; the
+    // cache swap in saveRename re-renders this section via render().
+    const rename = document.createElement("button");
+    rename.className = "note-action";
+    rename.type = "button";
+    rename.innerHTML = `<i data-lucide="pencil"></i>`;
+    rename.title = `Rename ${note.name}`;
+    rename.addEventListener("click", () => openRenameModal(note));
+    row.append(name, size, rename);
     mmNotesEl.append(row);
+  }
+  // The pencils are <i data-lucide> placeholders, and this runs on modal open
+  // (outside render()) when the cache is already warm — draw them ourselves.
+  drawIcons();
+
+  if (notes.length > MM_NOTES_LIMIT) {
+    const more = document.createElement("button");
+    more.type = "button";
+    more.className = "mm-note-more";
+    more.textContent = `View all ${notes.length} notes`;
+    more.addEventListener("click", () => openNotesViewFor(modalModuleLabel));
+    mmNotesEl.append(more);
   }
 }
 
@@ -392,6 +445,7 @@ function openUploadModal(preset = "") {
   moduleOtherField.style.display = "none";
   moduleOtherInput.value = "";
   fileInput.value = ""; // stale pick from a cancelled attempt must not linger
+  renderPickList();     // …and neither must its rows in the pick list
   modalError.textContent = "";
   modal.style.display = "flex";
 }
@@ -400,31 +454,91 @@ function closeUploadModal() {
   modal.style.display = "none";
 }
 
+// The picked-files list under the drop zone, validated LIVE: each row is name +
+// size, and an invalid file goes red with its reason right away — the user fixes
+// the selection BEFORE hitting Upload instead of being told afterwards.
+function renderPickList() {
+  pickListEl.innerHTML = "";
+  for (const file of fileInput.files) {
+    const li = document.createElement("li");
+    const name = document.createElement("span");
+    name.className = "npl-name";
+    name.textContent = file.name;
+    const size = document.createElement("span");
+    size.className = "npl-size";
+    size.textContent = formatSize(file.size);
+    const check = validateNoteFile(file);
+    if (!check.ok) {
+      li.className = "npl-bad";
+      li.title = check.reason;        // hover explains; the row colour flags it
+      size.textContent = check.reason;
+    }
+    li.append(name, size);
+    pickListEl.append(li);
+  }
+}
+
+// Drop-zone wiring: the zone is a button fronting the hidden input. Drag & drop
+// assigns the dropped FileList straight onto the input — so picking and dropping
+// feed the SAME doUpload path, nothing forks. (dragover must preventDefault or
+// the browser refuses the drop and opens the file itself instead.)
+dropZone.addEventListener("click", () => fileInput.click());
+fileInput.addEventListener("change", renderPickList);
+dropZone.addEventListener("dragover", (e) => {
+  e.preventDefault();
+  dropZone.classList.add("note-drop--over");
+});
+dropZone.addEventListener("dragleave", () => dropZone.classList.remove("note-drop--over"));
+dropZone.addEventListener("drop", (e) => {
+  e.preventDefault();
+  dropZone.classList.remove("note-drop--over");
+  if (e.dataTransfer.files.length === 0) return; // e.g. dragged text, not files
+  fileInput.files = e.dataTransfer.files;
+  renderPickList();
+});
+
 moduleSelect.addEventListener("change", () => {
   const isOther = moduleSelect.value === OTHER;
   moduleOtherField.style.display = isOther ? "" : "none";
   if (isOther) moduleOtherInput.focus();
 });
 
+// Multi-file since the 2026-07-15 polish (the input is `multiple`): all picked files
+// are tagged with the SAME module. Everything validates BEFORE anything uploads —
+// one bad pick fails the whole batch with its name, so there are no partial surprises.
 async function doUpload() {
-  const file = fileInput.files[0];
-  if (!file) { modalError.textContent = "Choose a file first."; return; }
-  const check = validateNoteFile(file);
-  if (!check.ok) { modalError.textContent = check.reason; return; }
+  const files = [...fileInput.files]; // FileList → real array (for..of, .length)
+  if (files.length === 0) { modalError.textContent = "Choose a file first."; return; }
+  for (const file of files) {
+    const check = validateNoteFile(file);
+    if (!check.ok) {
+      modalError.textContent = files.length > 1 ? `${file.name}: ${check.reason}` : check.reason;
+      return;
+    }
+  }
   const module = moduleSelect.value === OTHER ? moduleOtherInput.value.trim() : moduleSelect.value;
 
   modalGo.disabled = true;
   modalError.textContent = "";
   const goLabel = modalGo.innerHTML; // keep the icon; restore after
-  modalGo.textContent = "Uploading…";
+  let done = 0; // how many are safely in Drive — the error message needs it
   try {
     if (!(await ensureToken())) throw new Error("Google sign-in expired — please reconnect and try again.");
-    const created = await store.upload(file, module, appState.handbookId);
-    if (cache !== null) cache.push(created); // the response IS the new list entry — no re-fetch
+    // Sequential on purpose: predictable order, a live counter, and a failure
+    // stops cleanly ("3 of 5 made it") instead of a half-settled parallel batch.
+    for (const file of files) {
+      modalGo.textContent = files.length > 1 ? `Uploading ${done + 1}/${files.length}…` : "Uploading…";
+      const created = await store.upload(file, module, appState.handbookId);
+      if (cache !== null) cache.push(created); // the response IS the new list entry — no re-fetch
+      done += 1;
+    }
     closeUploadModal();
     render();
   } catch (e) {
-    modalError.textContent = e.message;
+    modalError.textContent = done > 0
+      ? `Uploaded ${done} of ${files.length}, then failed: ${e.message}`
+      : e.message;
+    render(); // the ones that made it should appear in the list behind the modal
   } finally {
     modalGo.disabled = false;
     modalGo.innerHTML = goLabel;
@@ -447,6 +561,9 @@ refreshBtn.addEventListener("click", refresh);
 semFilterEl.addEventListener("change", render);
 modFilterEl.addEventListener("change", render);
 sortEl.addEventListener("change", render);
+// "input" (per keystroke) is safe here BECAUSE the search box itself is static
+// markup — render() only wipes the list, so typing never loses focus.
+searchEl.addEventListener("input", render);
 
 // Lazy fetch: the first time the route is #notes this session, load the list.
 // (Cheaper than fetching at boot for users who never open the view.)

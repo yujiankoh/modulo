@@ -9,24 +9,18 @@ function currentTheme() {
   return document.documentElement.dataset.theme === "dark" ? "dark" : "light";
 }
 
-// Keep both toggles' labels matching the active theme. The icon shows what you'll switch
-// TO: a sun while in dark mode, a moon while in light mode. We set innerHTML with a fresh
-// <i data-lucide> placeholder; icons.js (re)draws it on the modulo:datachanged that
-// applyTheme fires (and once at startup).
-function updateLabels(theme) {
-  const dark = theme === "dark";
-  const icon = dark ? "sun" : "moon";
-  const side = document.getElementById("themeToggleSide");
-  const settings = document.getElementById("themeToggle");
-  if (side) side.innerHTML = `<i data-lucide="${icon}"></i>${dark ? "Light mode" : "Dark mode"}`;
-  if (settings) settings.innerHTML = `<i data-lucide="${icon}"></i>${dark ? "Switch to light mode" : "Switch to dark mode"}`;
+// The ONE theme control is the Settings switch (2026-07-15; the old labelled buttons
+// are gone). Its knob position and icons are pure CSS off [data-theme] — the only
+// JS-owned state is aria-checked (it's role="switch", announced on/off).
+function updateSwitch(theme) {
+  document.getElementById("themeSwitch")?.setAttribute("aria-checked", String(theme === "dark"));
 }
 
-// Set the theme on <html> (CSS [data-theme="dark"] reacts), remember it, refresh labels.
+// Set the theme on <html> (CSS [data-theme="dark"] reacts) and remember it.
 function applyTheme(theme) {
   document.documentElement.dataset.theme = theme;
   localStorage.setItem(KEY, theme);
-  updateLabels(theme);
+  updateSwitch(theme);
   // Module colours are applied inline at render time (per theme), so redraw the views that
   // use them (dots/cards/timeline) to pick up the right palette immediately.
   window.dispatchEvent(new Event("modulo:datachanged"));
@@ -36,6 +30,5 @@ function toggleTheme() {
   applyTheme(currentTheme() === "dark" ? "light" : "dark");
 }
 
-document.getElementById("themeToggleSide")?.addEventListener("click", toggleTheme);
-document.getElementById("themeToggle")?.addEventListener("click", toggleTheme);
-updateLabels(currentTheme());
+document.getElementById("themeSwitch")?.addEventListener("click", toggleTheme);
+updateSwitch(currentTheme());

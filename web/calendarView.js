@@ -4,9 +4,11 @@
 // highlighted. Redraws on the modulo:datachanged event.
 //
 // Phase 10: each day cell also shows the rounded AVERAGE rating of that day's study
-// sessions (as stars) — read from appState.studySessions, display-only.
+// sessions (as its RATING_EMOJI since 2026-07-15; was stars) — display-only.
 
 import { appState } from "./data.js";
+import { moduleColor } from "./sidebar.js"; // pill tints match the module's colour everywhere else
+import { RATING_EMOJI } from "./studyTimer.js"; // the day's average rating shows as its emoji
 
 // Monday-first weekday labels + full month names for the title.
 const WEEKDAYS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
@@ -137,7 +139,21 @@ function buildHeader() {
   next.className = "tcal-arrow";
   next.textContent = "›";
   next.addEventListener("click", () => shiftMonth(1));
-  nav.append(prev, next);
+
+  // "Today" (2026-07-16): jump back to the real current month — fresh Date(), not
+  // the module-load `today`, so a tab left open across midnight/month-end is right.
+  const todayBtn = document.createElement("button");
+  todayBtn.type = "button";
+  todayBtn.className = "tcal-today";
+  todayBtn.textContent = "Today";
+  todayBtn.addEventListener("click", () => {
+    const now = new Date();
+    viewYear = now.getFullYear();
+    viewMonth = now.getMonth();
+    renderCalendar();
+  });
+
+  nav.append(prev, todayBtn, next);
 
   headerEl.append(left, nav);
 }
@@ -260,6 +276,11 @@ function renderGrid() {
       pill.className = "tcal-pill" + (t.done ? " tcal-pill--done" : "");
       pill.textContent = t.title;
       pill.title = t.title; // hover tooltip, in case the title is truncated
+      // Module identity as a translucent tint (polish 2026-07-15; outline tried +
+      // reverted — read as awkward). Same "hex + 22 alpha" wash as the timetable's
+      // session blocks. NOT on done pills: inline style beats the class, and the
+      // tint would override the done-grey that says "finished" at a glance.
+      if (t.module && !t.done) pill.style.background = moduleColor(t.module) + "22";
       cell.append(pill);
     }
     if (dayTasks.length > MAX_PILLS) {
@@ -276,12 +297,13 @@ function renderGrid() {
       cell.addEventListener("click", () => openDayPopup(viewYear, viewMonth, day, dayTasks));
     }
 
-    // study-session rating for this day (rounded average) → stars, e.g. ★★★★ for 4
+    // study-session rating for this day (rounded average) → its emoji (was stars;
+    // polish 2026-07-15). The tooltip keeps the number for anyone unsure of the scale.
     const avgRating = ratings[dayKey];
     if (avgRating) {
       const rating = document.createElement("div");
       rating.className = "tcal-rating";
-      rating.textContent = "★".repeat(avgRating);
+      rating.textContent = RATING_EMOJI[avgRating] || "";
       rating.title = `Avg study rating: ${avgRating}/5`;
       cell.append(rating);
     }

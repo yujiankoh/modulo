@@ -113,6 +113,19 @@ test("visibleNotes trust boundary: junk input and missing appProperties never th
   assert.deepEqual(visibleNotes([stray]).map((n) => n.id), ["s"]);
 });
 
+test("visibleNotes search: case-insensitive filename substring, trimmed, stacks with filters", () => {
+  const notes = [
+    { ...note("a", "CS2030S", "hb1", ""), name: "Lec 01 Intro.pdf" },
+    { ...note("b", "CS2030S", "hb1", ""), name: "tutorial-3.pdf" },
+    { ...note("c", "MA1521", "hb2", ""), name: "lecture notes.pdf" },
+  ];
+  assert.deepEqual(visibleNotes(notes, { search: "LEC" }).map((n) => n.id), ["a", "c"]);
+  assert.deepEqual(visibleNotes(notes, { search: "  lec  " }).map((n) => n.id), ["a", "c"]); // trimmed
+  assert.deepEqual(visibleNotes(notes, { search: "lec", handbookId: "hb1" }).map((n) => n.id), ["a"]);
+  assert.deepEqual(visibleNotes(notes, { search: "" }).length, 3);        // empty = no search
+  assert.deepEqual(visibleNotes(notes, { search: "zzz" }), []);
+});
+
 // ---------- noteModules ----------
 
 test("noteModules: distinct tags, sorted, empties and junk skipped", () => {

@@ -40,13 +40,19 @@ function render() {
 }
 
 // --- Controls -----------------------------------------------------------------
-// One play/pause toggle button: show "pause" while running, "play" while stopped/paused.
+// One play/pause toggle button + the Stop & Save button, both derived from state
+// (2026-07-16): idle (nothing on the clock) → "Start", Stop hidden (nothing to
+// save); running → "Pause"; paused with time banked → "Resume". Every transition
+// (start/pause/reset) funnels through here, so the buttons can't go stale.
 // (We swap innerHTML, then redraw the Lucide icon since the <i> placeholder is new.)
 const toggleBtn = document.getElementById("timerToggle");
+const stopBtn = document.getElementById("timerStop");
 function updateToggleButton() {
+  const idle = !running && elapsedMs() === 0;
   toggleBtn.innerHTML = running
     ? `<i data-lucide="pause"></i>Pause`
-    : `<i data-lucide="play"></i>Start`;
+    : `<i data-lucide="play"></i>${idle ? "Start" : "Resume"}`;
+  stopBtn.style.display = idle ? "none" : "";
   drawIcons();
 }
 
@@ -95,6 +101,11 @@ function reset() {
 // When the user stops, we freeze the session details here while the rating modal is
 // open. Picking a rating (or Skip) finalizes the save; cancelling discards this.
 let pendingSession = null;
+
+// How a 1–5 rating SHOWS (polish 2026-07-15; the stored value stays the number —
+// the schema anticipated this: "shown as emoji later"). One map, used by the modal
+// buttons (index.html mirrors it), the sessions list, and the calendar's day average.
+export const RATING_EMOJI = { 1: "🗑️", 2: "💩", 3: "😐", 4: "🔥", 5: "💡" };
 
 const ratingModal = document.getElementById("ratingModal");
 
@@ -220,7 +231,7 @@ function renderSessionRow(s) {
     weekday: "short", day: "2-digit", month: "short", // "Wed 25 Jun"
   });
   const timeStr = when.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
-  const rating = s.rating ? `★${s.rating}` : "no rating";
+  const rating = s.rating ? RATING_EMOJI[s.rating] || `${s.rating}/5` : "no rating";
   li.textContent = `${dateStr}, ${timeStr} · ${formatSessionDuration(s)} · ${rating}`;
   return li;
 }

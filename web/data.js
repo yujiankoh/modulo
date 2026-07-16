@@ -40,6 +40,14 @@ export function setStorageMode(mode) {
   localStorage.setItem(MODE_KEY, mode);
 }
 
+// Disconnect (2026-07-16): forget the mode choice on THIS device. The caller
+// reloads the page right after — with no mode, persist() would silently save
+// nowhere, so the app must not keep running on in-memory data.
+export function clearStorageMode() {
+  storageMode = null;
+  localStorage.removeItem(MODE_KEY);
+}
+
 // What mode (if any) the user picked last time. main.js uses this on boot.
 export function getSavedMode() {
   return localStorage.getItem(MODE_KEY);

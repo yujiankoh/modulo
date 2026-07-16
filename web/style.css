@@ -1,6 +1,7 @@
 /* === Design tokens (Phase 12.4): the blue scheme. Change a value here and the whole
    app follows. Used via var(--name) throughout the stylesheet. === */
 :root {
+  color-scheme: light;    /* native controls (checkboxes, scrollbars, pickers) render light */
   --bg: #eceffb;          /* app background (soft periwinkle) */
   --surface: #ffffff;     /* cards + sidebar */
   --primary: #2f6bf6;     /* buttons, active states, the filled stat card */
@@ -33,6 +34,10 @@
 
 /* === Dark theme: same tokens, dark values. Toggled via data-theme="dark" on <html>. === */
 [data-theme="dark"] {
+  /* Native controls go dark too (2026-07-16): unchecked checkboxes were staying
+     UA-white — color-scheme:dark is the browser's own dark variant (dark box,
+     grey border), and it themes scrollbars + date-picker chrome for free. */
+  color-scheme: dark;
   --bg: #0e1524;
   --surface: #161e30;
   --primary: #3b82f6;
@@ -79,19 +84,56 @@ button {
   border-radius: 8px;
 }
 button:hover { border-color: var(--border-strong); }
+/* Keyboard focus (2026-07-16): :focus-visible fires for Tab navigation only — mouse
+   clicks show nothing. One global ring in the primary colour, offset so it never
+   melts into an element's own border. */
+:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 /* Form controls default to the OS font, not the page's — make them inherit Inter. */
 button, input, select { font-family: inherit; }
 /* Lucide icon inside any button: small + non-shrinking (stroke = currentColor). */
 button svg { width: 16px; height: 16px; flex: none; }
-/* Selects (filters, type pickers): match the button look. */
+/* Selects (filters, type pickers): match the button look. The chevron is our own
+   (polish 2026-07-15): appearance:none suppresses the native arrow (browsers pin it
+   to the edge — it can't be spaced), and an inline-SVG background draws it 12px in.
+   The stroke is a literal (data URIs can't read var()) — both themes' --text-muted
+   are the same mid-grey, so ONE colour serves. Extra right padding clears the text. */
 select {
-  padding: 6px 10px;
+  appearance: none;
+  padding: 6px 30px 6px 10px;
   font-size: 13px;
   color: var(--text);
-  background: var(--surface);
+  background: var(--surface)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%238890a4' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
+    no-repeat right 12px center;
   border: 1px solid var(--border);
   border-radius: 8px;
   cursor: pointer;
+}
+
+/* Checkboxes drawn with OUR tokens (2026-07-16): the native box follows the OS
+   palette, not the app's — grey-on-grey in dark mode. appearance:none takes over
+   rendering; the tick is an inline SVG (white works on --primary in both themes).
+   (The accent-color rules elsewhere remain as a fallback for old browsers.) */
+input[type="checkbox"] {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  flex: none;
+  margin: 0;
+  display: inline-grid;
+  place-content: center;
+  background: var(--surface);
+  border: 1.5px solid var(--border-strong);
+  border-radius: 5px;
+  cursor: pointer;
+}
+input[type="checkbox"]:hover { border-color: var(--primary); }
+input[type="checkbox"]:checked { background: var(--primary); border-color: var(--primary); }
+input[type="checkbox"]:checked::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 8'%3E%3Cpath d='M1 4l2.8 2.8L9 1.4' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
 }
 
 /* Generic surface card (Study Session + Settings views). */
@@ -130,8 +172,19 @@ select {
 
 /* Settings view */
 .settings-card { display: flex; gap: 10px; flex-wrap: wrap; max-width: 520px; }
+.sync-status { width: 100%; margin: 0 0 2px; font-size: 13px; color: var(--text-muted); }
+#disconnectBtn:hover { color: var(--danger); border-color: var(--danger); }
 .settings-heading { margin: 22px 0 8px; font-size: 15px; font-weight: 600; color: var(--text); }
 .settings-break-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+/* Same skin as .task-field inputs (they're nested a level deeper, so the > misses them). */
+.settings-break-row input {
+  padding: 8px 10px;
+  font-size: 14px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
 .settings-break-to { color: var(--text-muted); font-size: 13px; }
 .card .task-field:last-child { margin-bottom: 0; }   /* trim the last field's gap inside the card */
 
@@ -143,20 +196,20 @@ select {
 .module-dot { width: 9px; height: 9px; border-radius: 50%; flex: none; } /* colour set inline per module */
 
 /* Sidebar account chip (12.4d): pinned at the bottom of the sidebar card. */
+/* Account chip — moved to the TOPBAR as a pure status indicator (2026-07-15):
+   compact, no hover, default cursor — it deliberately does not look clickable. */
 .account-chip {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-top: 12px;
-  padding: 10px;
-  border-radius: 12px;
+  gap: 8px;
+  flex: none;
+  padding: 4px 10px 4px 4px;
+  border-radius: 999px;
   background: var(--hover);
-  text-decoration: none;
 }
-.account-chip:hover { background: var(--pill-bg); }
 .account-avatar {
-  width: 32px;
-  height: 32px;
+  width: 26px;
+  height: 26px;
   flex: none;
   border-radius: 50%;
   background: var(--primary);
@@ -164,26 +217,63 @@ select {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 600;
 }
 .account-info { display: flex; flex-direction: column; line-height: 1.25; }
 .account-name { font-size: 13px; font-weight: 600; color: var(--text); }
 .account-sub { font-size: 11px; color: var(--text-muted); }
 
-/* Sidebar light/dark toggle (12 polish: night mode) */
-.theme-toggle-side {
-  align-self: flex-start;
-  margin: 4px 0;
-  padding: 8px 12px;
-  border: none;
-  background: transparent;
-  color: var(--text-muted);
-  font-size: 13px;
-  border-radius: 8px;
+/* Theme switch (Settings → Appearance; 2026-07-15 — briefly in the topbar the same
+   day, then YJ settled it in Settings as the ONE theme control).
+   A pill track with sun (left) / moon (right); the knob slides onto the ACTIVE side,
+   so the icon left showing is the mode a click switches TO (the old buttons' rule).
+   Position is pure CSS off [data-theme] — nothing for JS to sync, and the flip
+   animates for free when the attribute changes. */
+.theme-switch {
+  position: relative;
+  flex: none;
+  width: 56px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--pill-bg);
   cursor: pointer;
 }
-.theme-toggle-side:hover { background: var(--hover); }
+.theme-switch:hover { border-color: var(--border-strong); }
+.ts-icon {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  color: var(--text-muted);
+}
+.ts-icon svg { width: 14px; height: 14px; }
+.ts-sun { left: 7px; }
+.ts-moon { right: 7px; }
+.ts-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  transition: transform 0.2s ease;
+}
+[data-theme="dark"] .ts-knob { transform: translateX(28px); }
+/* The Settings Appearance row: label left, switch right, across the whole card
+   (.settings-card is a flex row — width:100% makes this row its own line). */
+.appearance-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+.appearance-label { font-size: 14px; color: var(--text); }
 
 /* --- Phase 6: timetable calendar grid --- */
 #timetableCalendar {
@@ -435,12 +525,14 @@ select {
 .tcal-cell--today { box-shadow: inset 0 0 0 2px var(--primary); }
 .tcal-cell--today .tcal-date { font-weight: 700; }
 .tcal-date { font-size: 13px; color: var(--text); }
+.tcal-today { font-size: 13px; padding: 5px 12px; border-radius: 8px; } /* between the ‹ › arrows */
+
 .tcal-pill {
   margin-top: 4px;
   padding: 2px 6px;
   font-size: 11px;
   color: var(--text);
-  background: var(--pill-bg);          /* neutral; per-module colours come with the module field */
+  background: var(--pill-bg);   /* neutral fallback; calendarView.js tints per module (hex+22) */
   border-radius: 4px;
   white-space: nowrap;          /* keep each pill on one line... */
   overflow: hidden;            /* ...and clip overflow... */
@@ -448,8 +540,11 @@ select {
 }
 .tcal-pill--done { text-decoration: line-through; color: var(--text-muted); background: var(--hover); }
 .tcal-more { margin-top: 4px; font-size: 11px; font-weight: 600; color: var(--text-muted); }
-/* Phase 10: per-day rounded average study rating, shown as gold stars. */
-.tcal-rating { margin-top: 4px; font-size: 12px; line-height: 1; color: #d4a017; letter-spacing: 1px; }
+/* Phase 10: per-day rounded average study rating — its emoji since 2026-07-15 (was stars). */
+.tcal-rating { margin-top: 4px; font-size: 14px; line-height: 1; }
+/* Rating modal: emoji buttons (values still 1–5 via data-rating). */
+#ratingButtons { display: flex; gap: 8px; margin: 6px 0 12px; }
+#ratingButtons button { font-size: 21px; padding: 6px 10px; line-height: 1; }
 .tcal-cell--has-tasks { cursor: pointer; }       /* signals the day is clickable */
 .tcal-cell--has-tasks:hover { background: var(--hover); }
 
@@ -490,8 +585,20 @@ select {
 /* Modal form rows (Add Task + handbook): label stacked above its input. */
 .task-field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
 .task-field > span { font-size: 12px; color: var(--text-muted); }
-.task-field > input,
-.task-field > select { padding: 6px 8px; font-size: 14px; }
+/* Modal inputs skinned like the app's other fields (2026-07-16 — they were browser
+   defaults; the selects beside them were already tokenised). Shared by the Add-Task,
+   handbook, and rename modals via .task-field. */
+.task-field > input {
+  padding: 8px 10px;
+  font-size: 14px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.task-field > input::placeholder { color: var(--text-muted); }
+.task-field > input:hover { border-color: var(--border-strong); }
+.task-field > select { padding: 8px 30px 8px 10px; font-size: 14px; border-radius: 10px; } /* right padding clears the chevron */
 .task-modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
 
 /* Handbook onboarding (Phase 13): live academic-year preview + validation error line. */
@@ -560,17 +667,30 @@ select {
 .view-eyebrow { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); margin: 0 0 4px; }
 .view-title { font-size: 30px; font-weight: 700; color: var(--text); margin: 0; }
 .tasks-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
-.task-controls select { border-radius: 999px; padding: 6px 14px; }  /* pill-style filters */
+/* Pill filters: width follows the SELECTED option's text (field-sizing, Chromium 123+ —
+   the appearance:none intrinsic width under-counts our padding and clipped labels;
+   polish 2026-07-15), capped so a long module name can't blow up the toolbar.
+   Unsupported browsers just keep the old intrinsic sizing. */
+.task-controls select {
+  border-radius: 999px;
+  padding: 6px 30px 6px 14px;   /* right padding clears the chevron */
+  field-sizing: content;
+  max-width: 220px;
+}
 
 #taskList { margin: 0; padding: 0; }            /* plain container; cards are per-bucket */
 .task-card {
   list-style: none;
   margin: 0 0 16px;            /* gap between bucket cards */
-  padding: 4px 18px;
+  /* No vertical padding (2026-07-15): the first/last rows' accent bars must reach
+     the card's very top/bottom so overflow:hidden curves them through the rounded
+     corners — card padding left a bare notch there. Rows carry the spacing instead. */
+  padding: 0 18px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 14px;
   box-shadow: var(--shadow);
+  overflow: hidden;              /* clips the flush accent bars into the rounded corners */
 }
 .task-card .task-row:first-child { border-top: none; }  /* no divider at the card's top */
 .task-group {
@@ -584,13 +704,20 @@ select {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 8px 0;
+  /* Module accent bar (polish 2026-07-15, made FLUSH with the card edge on YJ's
+     review): the negative margin cancels the card's 18px padding so the bar sits
+     on the card's left edge; padding restores the content inset. Transparent by
+     default, coloured inline per row. */
+  border-left: 18px solid transparent;  /* settled width (YJ 2026-07-15, via 3px→4→8→12) */
+  margin-left: -18px;
+  padding: 10px 0 10px 12px;            /* border+padding = 28px — content doesn't shift */
   border-top: 1px solid var(--border);
 }
 .task-check { width: 16px; height: 16px; flex: none; accent-color: var(--primary); cursor: pointer; }
 .task-main { flex: 1; }                                  /* title block takes the slack */
 .task-title { font-size: 14px; font-weight: 600; color: var(--text); }
 .task-meta { font-size: 12px; color: var(--text-muted); margin-top: 2px; }  /* "module · type" line */
+.task-meta-mod { font-weight: 600; }  /* the module name; its colour is set inline per module */
 /* Delete stays hidden until you hover the row (keeps rows clean, like the mockup). */
 .task-del { opacity: 0; border: none; background: transparent; color: var(--text-muted); font-size: 12px; padding: 2px 6px; transition: opacity 0.12s; }
 .task-row:hover .task-del { opacity: 1; }
@@ -717,15 +844,36 @@ body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
 .dash-list { list-style: none; padding: 0; margin: 0; }
 .dash-empty { color: var(--text-muted); font-size: 13px; padding: 6px 0; }
 
-/* schedule rows: time gutter + details */
-.dash-class { display: flex; gap: 12px; padding: 8px 0; border-top: 1px solid var(--border); font-size: 14px; }
-.dash-class:first-child { border-top: none; }
-.dash-class-time { color: var(--text-muted); font-size: 13px; white-space: nowrap; }
+/* schedule rows: time gutter + details. Module colour = a dot before the name
+   (grades format, YJ 2026-07-16 — the accent strip tried and replaced here). */
+.dash-class {
+  display: flex; gap: 12px; font-size: 14px;
+  align-items: center;           /* the time gutter centres against the two-line details */
+  border-top: 1px solid var(--border);
+  padding: 8px 0;
+}
+/* The first row KEEPS its top divider (2026-07-15 — it bookends the accent strips
+   under the panel head; they floated awkwardly without a line to start from). */
+/* Stacked time gutter (2026-07-16): start over end, fixed width so rows align. */
+.dash-class-time { min-width: 46px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.dct-start { font-size: 13px; font-weight: 600; color: var(--text); }
+.dct-end { font-size: 11.5px; color: var(--text-muted); margin-top: 1px; }
 .dash-class-loc { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
 
 /* task rows: title/meta on the left, due pill on the right */
-.dash-task { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid var(--border); }
+.dash-task {
+  display: flex; align-items: center; gap: 10px;
+  border-top: 1px solid var(--border);
+  border-left: 16px solid transparent;   /* module accent strip (the tasks panel keeps it) */
+  margin-left: -18px;
+  padding: 8px 0 8px 12px;               /* 12px breathing room between strip and checkbox */
+}
 .dash-task:first-child { border-top: none; }
+/* Closing hairline under each panel's LAST row — the strips end at a line instead
+   of floating above the rounded corner (2026-07-15). Scoped to the dashboard panels:
+   the module modal reuses .dash-task and must not gain a stray bottom border. */
+#dashSchedule .dash-class:last-child,
+#dashTasks .dash-task:last-child { border-bottom: 1px solid var(--border); }
 .dash-task > div { flex: 1; font-size: 14px; color: var(--text); }
 .dash-task-meta { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
 .dash-task-pill {
@@ -766,9 +914,9 @@ body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
 /* Fixed band height + 2-line clamp so every card's coloured header is the SAME height,
    whether the name is one line ("Probability") or two ("Data Structures and Algorithms"). */
 .module-card-head {
-  padding: 14px 16px; color: #fff;          /* background colour set inline */
+  padding: 10px 16px; color: #fff;          /* background colour set inline */
   box-sizing: border-box;                   /* min-height includes the padding */
-  min-height: 88px;
+  min-height: 56px;                         /* slimmed from 88px (polish 2026-07-15) */
 }
 .module-card-code { font-size: 11px; letter-spacing: 0.06em; opacity: 0.9; }
 .module-card-name {
@@ -820,6 +968,29 @@ body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
   background: var(--surface);
   color: var(--text);
 }
+/* Current-time line (2026-07-16): a thin red rule + dot across today's column,
+   positioned by JS with the same minutes→pixels math as the session blocks.
+   pointer-events:none — it's an annotation, never a click target. */
+.cal-now {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 0;
+  border-top: 2px solid var(--danger);
+  z-index: 3;
+  pointer-events: none;
+}
+.cal-now::before {
+  content: "";
+  position: absolute;
+  left: -3px;
+  top: -5px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--danger);
+}
+
 /* "Delete module": quiet text button, red only on hover (destructive but not shouty). */
 .mod-del { border: none; background: transparent; font-size: 12px; color: var(--text-muted); padding: 4px 6px; }
 .mod-del:hover { color: var(--danger); border-color: transparent; }
@@ -841,9 +1012,12 @@ body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
   font-size: 13px;
   border: 1px solid var(--border);
   border-radius: 8px;
-  background: var(--surface);
+  /* background-COLOR, not the shorthand — the shorthand would erase the global
+     select chevron image (polish 2026-07-15). */
+  background-color: var(--surface);
   color: var(--text);
 }
+.slot-row select { padding-right: 24px; } /* the shared 8px would run text under the chevron */
 /* "✕" delete-slot button: icon-quiet, red on hover. */
 .slot-del { border: none; background: transparent; font-size: 13px; color: var(--text-muted); padding: 2px; }
 .slot-del:hover { color: var(--danger); border-color: transparent; }
@@ -885,12 +1059,23 @@ body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
 .city-scheme-cycle {
   display: inline-flex; align-items: center; gap: 8px;
   padding: 9px 14px; border-radius: 8px;
-  background: #10152b; border: 1px solid #323d5e;
+  /* Light mode (2026-07-15): theme pill with a DARK border — the hairline --border
+     blended into the page (YJ). Dark mode below restores the original fixed HUD. */
+  background: var(--pill-bg); border: 1px solid var(--text-muted);
   font-family: "Press Start 2P", monospace;
   font-size: 10px; letter-spacing: 0.5px;
-  color: #8b93ad;                 /* the "1/6" counter */
+  color: var(--text-muted);       /* the "1/6" counter */
 }
-.city-scheme-cycle:hover { border-color: #4a578a; }
+.city-scheme-cycle:hover { border-color: var(--text); }
+/* Dark mode: the ORIGINAL fixed game-chrome HUD, verbatim (YJ 2026-07-15: "keep to
+   what we had previously") — deliberately hardcoded, the one sanctioned exception. */
+[data-theme="dark"] .city-scheme-cycle { background: #10152b; border-color: #323d5e; color: #8b93ad; }
+[data-theme="dark"] .city-scheme-cycle:hover { border-color: #4a578a; }
+/* Light theme: the scheme accents were tuned to glow on a dark pill — darken the
+   rendered glyphs a notch so pale accents (Dreamland, Sunset) stay readable.
+   (Light = the ABSENCE of data-theme="dark", hence the :not selector.) */
+:root:not([data-theme="dark"]) .city-scheme-cycle .csc-arrow,
+:root:not([data-theme="dark"]) #cscName { filter: brightness(0.72) saturate(1.3); }
 .city-scheme-cycle .csc-arrow { font-size: 9px; }
 /* Pop-in for just-built towers: grow up from the plot with a slight overshoot.
    transform-box makes the SVG group scale about its own bottom edge (its base). */
@@ -963,7 +1148,20 @@ body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
 
 /* "+ Add module" mini-form under the editor card. */
 .grade-add { display: flex; gap: 8px; margin-top: 10px; }
-.grade-add input { flex: 1; max-width: 320px; }
+/* Skinned like the app's other inputs (.slot-row) — it was browser-default before
+   (polish 2026-07-15): surface box, token border, rounded like the buttons beside it. */
+.grade-add input {
+  flex: 1;
+  max-width: 320px;
+  padding: 8px 12px;
+  font-size: 13px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+}
+.grade-add input::placeholder { color: var(--text-muted); }
+.grade-add input:hover { border-color: var(--border-strong); }
 
 /* Semester history (Step 4): one read-only row per handbook. */
 .grades-history-title { margin: 26px 0 10px; font-size: 15px; color: var(--text); }
@@ -994,6 +1192,25 @@ body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
 /* List card + rows: same grid-with-columns pattern as .grade-row so it reads as
    a table — dot | filename | module | size | date | ×. */
 .notes-card { padding: 4px 18px; }
+/* Search box: pill-shaped like the filter selects beside it (2026-07-16). */
+.task-controls input[type="search"] {
+  width: 170px;
+  padding: 6px 14px;
+  font-size: 13px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+}
+.task-controls input[type="search"]::placeholder { color: var(--text-muted); }
+/* Column headers + row hover (2026-07-16, like the grades editor). */
+.note-row--head {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.notes-card .note-row:not(.note-row--head):hover { background: var(--hover); }
 .notes-status { margin: 0 0 12px; font-size: 13px; color: var(--text-muted); }
 .note-row {
   display: grid;
@@ -1043,6 +1260,63 @@ body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
 .note-action svg { width: 14px; height: 14px; }
 .note-name-cell .note-action { flex: none; } /* the pencil never shrinks away */
 
+/* Module detail modal: coloured header band (polish 2026-07-15 — the dashboard
+   module-card look). Negative margins cancel the card's 20px/22px padding so the
+   band bleeds to the edges; top corners match the card's 14px radius. Text is #fff
+   like .module-card-head — the background is an inline palette colour in both themes. */
+.module-modal-head {
+  margin: -20px -22px 16px;
+  padding: 16px 22px 14px;
+  border-radius: 14px 14px 0 0;
+}
+.module-modal-head h3 { margin: 0 24px 0 0; color: #fff; }
+/* The ✕ sits on the band (absolute, card top-right) — muted grey would vanish. */
+#moduleModal .tcal-popup-close { color: rgba(255, 255, 255, 0.85); }
+#moduleModal .tcal-popup-close:hover { color: #fff; }
+
+/* Upload-notes modal (polish 2026-07-15): the drop zone + live picked-files list.
+   The zone is a <button> fronting the hidden file input, so it overrides the global
+   button look (dashed outline, stacked layout) and gets keyboard focus for free. */
+.note-drop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  width: 100%;
+  margin: 2px 0 12px;
+  padding: 20px 12px;
+  border: 1.5px dashed var(--border-strong);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--text-muted);
+  text-align: center;
+  cursor: pointer;
+}
+.note-drop:hover,
+.note-drop--over { border-color: var(--primary); background: var(--hover); }
+.note-drop svg { width: 22px; height: 22px; margin-bottom: 2px; }
+.note-drop-title { font-size: 14px; font-weight: 500; color: var(--text); }
+.note-drop-sub { font-size: 11.5px; }
+.note-pick-list {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+  max-height: 132px;      /* ~6 rows, then scroll — an 18-file pick stays contained */
+  overflow-y: auto;
+}
+.note-pick-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  padding: 3px 2px;
+  font-size: 13px;
+  color: var(--text);
+}
+.npl-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.npl-size { flex: none; font-size: 12px; color: var(--text-muted); }
+.npl-bad, .npl-bad .npl-size { color: var(--danger); }
+
 /* Module modal "My notes" (step 5): read-only mini list + a preset upload button. */
 .mm-note-row {
   display: flex;
@@ -1054,5 +1328,16 @@ body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
 }
 .mm-note-row:last-child { border-bottom: none; }
 .mm-note-empty { margin: 4px 0; font-size: 13px; color: var(--text-muted); }
-.mm-upload { margin: 8px 0 14px; font-size: 13px; padding: 6px 12px; }
+/* "View all N notes" (capped modal list) — quiet text link into #notes, pre-filtered. */
+.mm-note-more {
+  border: none;
+  background: transparent;
+  padding: 7px 0 0;
+  color: var(--primary);
+  font-size: 13px;
+  cursor: pointer;
+}
+.mm-note-more:hover { text-decoration: underline; }
+.mm-actions { display: flex; gap: 8px; margin: 8px 0 14px; } /* Upload note + Add task */
+.mm-upload { font-size: 13px; padding: 6px 12px; }
 .note-remove:hover { color: var(--danger); }
