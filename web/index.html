@@ -338,11 +338,15 @@
            sit at the top of the page; they keep the same ids so main.js/data.js work. -->
       <section id="view-settings" class="view">
         <h2>Settings</h2>
-        <!-- The connection status now shows in the top bar (#status moved there). -->
+        <!-- Sync card (state-aware since 2026-07-16 — main.js shows only what applies):
+             connected → status + Reload + local + Disconnect; local → status + Connect;
+             fresh → Connect + local. Same ids as always. -->
         <div class="card settings-card">
+          <p id="syncStatus" class="sync-status"></p>
           <button id="connectBtn"><i data-lucide="cloud"></i>Connect Google Drive</button>
           <button id="localBtn"><i data-lucide="monitor"></i>Use this device only</button>
           <button id="reloadBtn"><i data-lucide="refresh-cw"></i>Reload from Drive</button>
+          <button id="disconnectBtn" style="display: none;"><i data-lucide="cloud-off"></i>Disconnect</button>
         </div>
 
         <h3 class="settings-heading">Appearance</h3>

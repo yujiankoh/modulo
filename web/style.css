@@ -141,6 +141,8 @@ select {
 
 /* Settings view */
 .settings-card { display: flex; gap: 10px; flex-wrap: wrap; max-width: 520px; }
+.sync-status { width: 100%; margin: 0 0 2px; font-size: 13px; color: var(--text-muted); }
+#disconnectBtn:hover { color: var(--danger); border-color: var(--danger); }
 .settings-heading { margin: 22px 0 8px; font-size: 15px; font-weight: 600; color: var(--text); }
 .settings-break-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .settings-break-to { color: var(--text-muted); font-size: 13px; }
@@ -917,6 +919,29 @@ body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
   background: var(--surface);
   color: var(--text);
 }
+/* Current-time line (2026-07-16): a thin red rule + dot across today's column,
+   positioned by JS with the same minutes→pixels math as the session blocks.
+   pointer-events:none — it's an annotation, never a click target. */
+.cal-now {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 0;
+  border-top: 2px solid var(--danger);
+  z-index: 3;
+  pointer-events: none;
+}
+.cal-now::before {
+  content: "";
+  position: absolute;
+  left: -3px;
+  top: -5px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--danger);
+}
+
 /* "Delete module": quiet text button, red only on hover (destructive but not shouty). */
 .mod-del { border: none; background: transparent; font-size: 12px; color: var(--text-muted); padding: 4px 6px; }
 .mod-del:hover { color: var(--danger); border-color: transparent; }

@@ -3,7 +3,7 @@
 // mode) and the sign-in buttons, which are the one spot that needs both auth and data.
 
 import { initTokenClient, getToken } from "./auth.js";
-import { loadInitialData, setStorageMode, getSavedMode, getStorageMode } from "./data.js";
+import { loadInitialData, setStorageMode, getSavedMode, getStorageMode, clearStorageMode } from "./data.js";
 import "./timetable.js"; // side-effect import: runs timetable's event wiring
 import "./timetableEditor.js"; // side-effect import: runs the manual editor's wiring
 import "./timetableView.js"; // side-effect import: renders the calendar grid
@@ -40,6 +40,38 @@ function updateTopbarConnect() {
 }
 window.addEventListener("modulo:datachanged", updateTopbarConnect);
 updateTopbarConnect();
+
+// Settings sync card (2026-07-16): show only the controls that apply to the
+// current mode, with a one-line status — the card used to offer every button
+// in every state ("Reload from Drive" in local mode just errored).
+function renderSyncCard() {
+  const mode = getStorageMode();
+  document.getElementById("syncStatus").textContent =
+    mode === "drive" ? "Connected to Google Drive — your data syncs across devices."
+    : mode === "local" ? "Local mode — your data stays on this device only."
+    : "Not connected — choose where MODULO keeps your data.";
+  document.getElementById("connectBtn").style.display = mode === "drive" ? "none" : "";
+  document.getElementById("localBtn").style.display = mode === "local" ? "none" : "";
+  document.getElementById("reloadBtn").style.display = mode === "drive" ? "" : "none";
+  document.getElementById("disconnectBtn").style.display = mode === "drive" ? "" : "none";
+}
+window.addEventListener("modulo:datachanged", renderSyncCard);
+renderSyncCard();
+
+// Disconnect = forget the mode on THIS device, then a clean reboot. Data is NOT
+// deleted — the file stays in the user's Drive (and the Google authorisation
+// stays until revoked in their Google settings). Reloading matters: without a
+// mode, persist() saves nowhere, so the app must not keep running on memory.
+document.getElementById("disconnectBtn").addEventListener("click", () => {
+  const ok = confirm(
+    "Disconnect Google Drive on this device?\n\n" +
+    "This device stops syncing. Your data stays safe in your Google Drive — " +
+    "connect again anytime to pick up where you left off."
+  );
+  if (!ok) return;
+  clearStorageMode();
+  location.reload();
+});
 
 // Runs after the page + Google's library have finished loading.
 window.onload = () => {
