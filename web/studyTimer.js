@@ -40,13 +40,19 @@ function render() {
 }
 
 // --- Controls -----------------------------------------------------------------
-// One play/pause toggle button: show "pause" while running, "play" while stopped/paused.
+// One play/pause toggle button + the Stop & Save button, both derived from state
+// (2026-07-16): idle (nothing on the clock) → "Start", Stop hidden (nothing to
+// save); running → "Pause"; paused with time banked → "Resume". Every transition
+// (start/pause/reset) funnels through here, so the buttons can't go stale.
 // (We swap innerHTML, then redraw the Lucide icon since the <i> placeholder is new.)
 const toggleBtn = document.getElementById("timerToggle");
+const stopBtn = document.getElementById("timerStop");
 function updateToggleButton() {
+  const idle = !running && elapsedMs() === 0;
   toggleBtn.innerHTML = running
     ? `<i data-lucide="pause"></i>Pause`
-    : `<i data-lucide="play"></i>Start`;
+    : `<i data-lucide="play"></i>${idle ? "Start" : "Resume"}`;
+  stopBtn.style.display = idle ? "none" : "";
   drawIcons();
 }
 

@@ -1,6 +1,7 @@
 /* === Design tokens (Phase 12.4): the blue scheme. Change a value here and the whole
    app follows. Used via var(--name) throughout the stylesheet. === */
 :root {
+  color-scheme: light;    /* native controls (checkboxes, scrollbars, pickers) render light */
   --bg: #eceffb;          /* app background (soft periwinkle) */
   --surface: #ffffff;     /* cards + sidebar */
   --primary: #2f6bf6;     /* buttons, active states, the filled stat card */
@@ -33,6 +34,10 @@
 
 /* === Dark theme: same tokens, dark values. Toggled via data-theme="dark" on <html>. === */
 [data-theme="dark"] {
+  /* Native controls go dark too (2026-07-16): unchecked checkboxes were staying
+     UA-white — color-scheme:dark is the browser's own dark variant (dark box,
+     grey border), and it themes scrollbars + date-picker chrome for free. */
+  color-scheme: dark;
   --bg: #0e1524;
   --surface: #161e30;
   --primary: #3b82f6;
@@ -105,6 +110,32 @@ select {
   cursor: pointer;
 }
 
+/* Checkboxes drawn with OUR tokens (2026-07-16): the native box follows the OS
+   palette, not the app's — grey-on-grey in dark mode. appearance:none takes over
+   rendering; the tick is an inline SVG (white works on --primary in both themes).
+   (The accent-color rules elsewhere remain as a fallback for old browsers.) */
+input[type="checkbox"] {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  flex: none;
+  margin: 0;
+  display: inline-grid;
+  place-content: center;
+  background: var(--surface);
+  border: 1.5px solid var(--border-strong);
+  border-radius: 5px;
+  cursor: pointer;
+}
+input[type="checkbox"]:hover { border-color: var(--primary); }
+input[type="checkbox"]:checked { background: var(--primary); border-color: var(--primary); }
+input[type="checkbox"]:checked::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 8'%3E%3Cpath d='M1 4l2.8 2.8L9 1.4' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
 /* Generic surface card (Study Session + Settings views). */
 .card {
   background: var(--surface);
@@ -145,6 +176,15 @@ select {
 #disconnectBtn:hover { color: var(--danger); border-color: var(--danger); }
 .settings-heading { margin: 22px 0 8px; font-size: 15px; font-weight: 600; color: var(--text); }
 .settings-break-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+/* Same skin as .task-field inputs (they're nested a level deeper, so the > misses them). */
+.settings-break-row input {
+  padding: 8px 10px;
+  font-size: 14px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
 .settings-break-to { color: var(--text-muted); font-size: 13px; }
 .card .task-field:last-child { margin-bottom: 0; }   /* trim the last field's gap inside the card */
 
@@ -545,8 +585,20 @@ select {
 /* Modal form rows (Add Task + handbook): label stacked above its input. */
 .task-field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
 .task-field > span { font-size: 12px; color: var(--text-muted); }
-.task-field > input { padding: 6px 8px; font-size: 14px; }
-.task-field > select { padding: 6px 30px 6px 8px; font-size: 14px; } /* right padding clears the chevron */
+/* Modal inputs skinned like the app's other fields (2026-07-16 — they were browser
+   defaults; the selects beside them were already tokenised). Shared by the Add-Task,
+   handbook, and rename modals via .task-field. */
+.task-field > input {
+  padding: 8px 10px;
+  font-size: 14px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.task-field > input::placeholder { color: var(--text-muted); }
+.task-field > input:hover { border-color: var(--border-strong); }
+.task-field > select { padding: 8px 30px 8px 10px; font-size: 14px; border-radius: 10px; } /* right padding clears the chevron */
 .task-modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
 
 /* Handbook onboarding (Phase 13): live academic-year preview + validation error line. */
@@ -792,16 +844,13 @@ body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
 .dash-list { list-style: none; padding: 0; margin: 0; }
 .dash-empty { color: var(--text-muted); font-size: 13px; padding: 6px 0; }
 
-/* schedule rows: time gutter + details. The module accent strip works like the
-   All-Tasks one (2026-07-15): bleed over the panel's 18px padding, 16px transparent
-   border coloured inline, 2px padding puts content back where it was. */
+/* schedule rows: time gutter + details. Module colour = a dot before the name
+   (grades format, YJ 2026-07-16 — the accent strip tried and replaced here). */
 .dash-class {
   display: flex; gap: 12px; font-size: 14px;
   align-items: center;           /* the time gutter centres against the two-line details */
   border-top: 1px solid var(--border);
-  border-left: 16px solid transparent;
-  margin-left: -18px;
-  padding: 8px 0 8px 2px;
+  padding: 8px 0;
 }
 /* The first row KEEPS its top divider (2026-07-15 — it bookends the accent strips
    under the panel head; they floated awkwardly without a line to start from). */
@@ -815,9 +864,9 @@ body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
 .dash-task {
   display: flex; align-items: center; gap: 10px;
   border-top: 1px solid var(--border);
-  border-left: 16px solid transparent;   /* module accent strip, as .dash-class */
+  border-left: 16px solid transparent;   /* module accent strip (the tasks panel keeps it) */
   margin-left: -18px;
-  padding: 8px 0 8px 2px;
+  padding: 8px 0 8px 12px;               /* 12px breathing room between strip and checkbox */
 }
 .dash-task:first-child { border-top: none; }
 /* Closing hairline under each panel's LAST row — the strips end at a line instead

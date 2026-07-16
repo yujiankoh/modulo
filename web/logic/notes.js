@@ -78,12 +78,16 @@ export function formatSize(bytes) {
 //   sort       — "name" (default, added 2026-07-15 — YJ's call) or "newest".
 // A note with missing/garbled appProperties simply fails every specific filter
 // (it still shows under "All semesters" — nothing is ever unreachable).
-export function visibleNotes(notes, { handbookId = null, module = null, sort = "name" } = {}) {
+export function visibleNotes(notes, { handbookId = null, module = null, sort = "name", search = "" } = {}) {
   if (!Array.isArray(notes)) return [];
+  // Search (2026-07-16): case-insensitive substring on the FILENAME. Trimmed so
+  // a stray space can't silently filter everything out; "" = no search.
+  const needle = typeof search === "string" ? search.trim().toLowerCase() : "";
   const shown = notes.filter((note) => {
     const props = note?.appProperties || {};
     if (handbookId !== null && props.handbook !== handbookId) return false;
     if (module !== null && props.module !== module) return false;
+    if (needle && !String(note?.name || "").toLowerCase().includes(needle)) return false;
     return true;
   });
   if (sort === "newest") {

@@ -180,8 +180,6 @@ function renderSchedule() {
   for (const c of classes) {
     const li = document.createElement("li");
     li.className = "dash-class";
-    // Module accent strip, matching the All-Tasks rows (polish 2026-07-15).
-    if (c.module) li.style.borderLeftColor = moduleColor(c.module) + "66";
 
     // Stacked time gutter (2026-07-16): start bold over end muted — reads as
     // "starts at / ends at" without a long dash-range fighting the title.
@@ -197,11 +195,15 @@ function renderSchedule() {
 
     const main = document.createElement("div");
     const title = document.createElement("div");
+    // Grades-row format (YJ 2026-07-16, replacing the accent strip): coloured dot,
+    // then the module name in plain text — the dot carries the colour alone.
+    const dot = document.createElement("span");
+    dot.className = "task-dot";
+    dot.style.background = moduleColor(c.module);
     const mod = document.createElement("span");
-    mod.className = "task-meta-mod"; // shared: semibold, colour inline
-    mod.style.color = moduleColor(c.module);
+    mod.className = "task-meta-mod"; // semibold; no inline colour in this format
     mod.textContent = c.module;
-    title.append(mod, document.createTextNode(` · ${capitalize(c.sessionType)}`));
+    title.append(dot, mod, document.createTextNode(` · ${capitalize(c.sessionType)}`));
     const loc = document.createElement("div");
     loc.className = "dash-class-loc";
     loc.textContent = c.location || "";

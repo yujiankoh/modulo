@@ -139,7 +139,21 @@ function buildHeader() {
   next.className = "tcal-arrow";
   next.textContent = "›";
   next.addEventListener("click", () => shiftMonth(1));
-  nav.append(prev, next);
+
+  // "Today" (2026-07-16): jump back to the real current month — fresh Date(), not
+  // the module-load `today`, so a tab left open across midnight/month-end is right.
+  const todayBtn = document.createElement("button");
+  todayBtn.type = "button";
+  todayBtn.className = "tcal-today";
+  todayBtn.textContent = "Today";
+  todayBtn.addEventListener("click", () => {
+    const now = new Date();
+    viewYear = now.getFullYear();
+    viewMonth = now.getMonth();
+    renderCalendar();
+  });
+
+  nav.append(prev, todayBtn, next);
 
   headerEl.append(left, nav);
 }
