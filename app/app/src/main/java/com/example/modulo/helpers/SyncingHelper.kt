@@ -6,6 +6,7 @@ import android.util.Log
 import com.example.modulo.AppData
 import com.example.modulo.syncJsonParser
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential
+import com.google.api.client.googleapis.json.GoogleJsonResponseException
 import com.google.api.client.http.ByteArrayContent
 import com.google.api.client.http.javanet.NetHttpTransport
 import com.google.api.client.json.gson.GsonFactory
@@ -20,6 +21,12 @@ import kotlin.apply
 
 private const val TAG = "DriveSync"
 private const val FILENAME = "modulo-data.json"
+
+private const val NOTE_KIND = "note"
+private const val NOTE_QUERY = "appProperties has { key='moduloKind' and value='$NOTE_KIND' }"
+private const val NOTE_FIELDS = "id, name, size, mimeType, appProperties, modifiedTime"
+
+class DriveNoteException(message: String) : Exception(message)
 
 class SyncingHelper(private val driveService: Drive) {
     companion object {
@@ -108,6 +115,110 @@ class SyncingHelper(private val driveService: Drive) {
         } catch (e: Exception) {
             Log.e(TAG, "Failed to read from Google Drive", e)
             return@withContext null
+        }
+    }
+    
+    private fun File.toNote(): NotesHelper.Note {
+        val props = appProperties ?: emptyMap()
+        return NotesHelper.Note(
+            id = id,
+            name = name ?: "",
+            size = getSize(),
+            mimeType = mimeType ?: "",
+            module = props["module"] ?: "",
+            handbook = props["handbook"] ?: "",
+            modifiedTime = modifiedTime?.toStringRfc3339() ?: ""
+        )
+    }
+
+    private fun driveError(e: Exception): DriveNoteException {
+        if (e is GoogleJsonResponseException) {
+            val reason = e.details?.errors?.firstOrNull()?.reason ?: ""
+            if (e.statusCode == 401) return DriveNoteException("Google sign-in expired — please reconnect and try again.")
+            if (reason == "storageQuotaExceeded") return DriveNoteException("Your Google Drive is full — free up space or delete some notes.")
+            return DriveNoteException("Google Drive request failed (${e.statusCode}). Please try again.")
+        }
+        return DriveNoteException(e.message ?: "Google Drive request failed. Please try again.")
+    }
+
+    suspend fun uploadNote(
+        bytes: ByteArray,
+        fileName: String,
+        mimeType: String,
+        module: String,
+        handbookId: String
+    ): NotesHelper.Note = withContext(Dispatchers.IO) {
+        try {
+            val metadata = File().apply {
+                name = fileName
+                parents = listOf("appDataFolder")
+                appProperties = mapOf(
+                    "moduloKind" to NOTE_KIND,
+                    "module" to module,
+                    "handbook" to handbookId
+                )
+            }
+            val content = ByteArrayContent(mimeType, bytes)
+            return@withContext driveService.files().create(metadata, content)
+                .setFields(NOTE_FIELDS)
+                .execute()
+                .toNote()
+        } catch (e: Exception) {
+            throw driveError(e)
+        }
+    }
+
+    suspend fun listNotes(): List<NotesHelper.Note> = withContext(Dispatchers.IO) {
+        try {
+            val notes = mutableListOf<NotesHelper.Note>()
+            var pageToken: String? = null
+            do {
+                val result = driveService.files().list()
+                    .setSpaces("appDataFolder")
+                    .setQ(NOTE_QUERY)
+                    .setFields("nextPageToken, files($NOTE_FIELDS)")
+                    .setPageSize(100)
+                    .setPageToken(pageToken)
+                    .execute()
+                result.files?.forEach { notes.add(it.toNote()) }
+                pageToken = result.nextPageToken
+            } while (!pageToken.isNullOrEmpty())
+            return@withContext notes
+        } catch (e: Exception) {
+            throw driveError(e)
+        }
+    }
+
+    suspend fun downloadNote(id: String): ByteArray = withContext(Dispatchers.IO) {
+        try {
+            val outputStream = ByteArrayOutputStream()
+            driveService.files().get(id).executeMediaAndDownloadTo(outputStream)
+            return@withContext outputStream.toByteArray()
+        } catch (e: Exception) {
+            throw driveError(e)
+        }
+    }
+
+    suspend fun renameNote(id: String, newName: String): NotesHelper.Note = withContext(Dispatchers.IO) {
+        try {
+            val metadata = File().apply { name = newName }
+            return@withContext driveService.files().update(id, metadata, null)
+                .setFields(NOTE_FIELDS)
+                .execute()
+                .toNote()
+        } catch (e: Exception) {
+            throw driveError(e)
+        }
+    }
+
+    // A 404 is success: already deleted elsewhere reaches the same goal state.
+    suspend fun deleteNote(id: String) = withContext(Dispatchers.IO) {
+        try {
+            driveService.files().delete(id).execute()
+        } catch (e: GoogleJsonResponseException) {
+            if (e.statusCode != 404) throw driveError(e)
+        } catch (e: Exception) {
+            throw driveError(e)
         }
     }
 }
