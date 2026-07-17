@@ -2,6 +2,8 @@ package com.example.modulo
 
 import android.app.Application
 import android.content.Context
+import android.net.Uri
+import android.provider.OpenableColumns
 import android.util.Base64
 import android.util.Log
 import androidx.compose.runtime.getValue
@@ -22,6 +24,7 @@ import com.example.modulo.helpers.CityLogicHelper
 import com.example.modulo.helpers.LocalSaveHelper
 import com.example.modulo.helpers.NetworkHelper
 import com.example.modulo.helpers.NetworkResult
+import com.example.modulo.helpers.NotesHelper
 import com.example.modulo.helpers.ParsingHelper
 import com.example.modulo.helpers.SyncingHelper
 import kotlinx.coroutines.Job
@@ -44,7 +47,6 @@ val IS_DRIVE_SYNC_ENABLED = booleanPreferencesKey("is_drive_sync_enabled")
 class AppViewModel @JvmOverloads constructor(
     application: Application,
     private val savedStateHandle: SavedStateHandle,
-    // Injectable so tests can supply a fake; the framework uses the two-arg constructor.
     private val parsingHelper: ParsingHelper = ParsingHelper()
 ) : AndroidViewModel(application) {
     // Helpers
@@ -67,6 +69,9 @@ class AppViewModel @JvmOverloads constructor(
 
     private val _timetableState = MutableStateFlow<TimetableState>(TimetableState.Idle)
     val timetableState = _timetableState.asStateFlow()
+    
+    private val _notesData = MutableStateFlow(NotesData())
+    val notesData = _notesData.asStateFlow()
 
     private val _hasInternet = MutableStateFlow(false)
 
@@ -567,5 +572,125 @@ class AppViewModel @JvmOverloads constructor(
                 breaks = handbook.breaks,
             )
         }
+    }
+    
+    fun notesGated(): Boolean = !_isDriveSyncEnabled.value
+
+    private fun setNotesError(message: String?) {
+        _notesData.value = _notesData.value.copy(loading = false, error = message)
+    }
+
+    fun clearNotesError() = setNotesError(null)
+
+    fun loadNotes() {
+        val current = _notesData.value
+        if (current.notes != null || current.loading || notesGated()) return
+        val helper = syncingHelper ?: run {
+            setNotesError("Google sign-in expired — please reconnect and try again.")
+            return
+        }
+        _notesData.value = current.copy(loading = true, error = null)
+        viewModelScope.launch {
+            try {
+                _notesData.value = NotesData(notes = helper.listNotes())
+            } catch (e: Exception) {
+                setNotesError(e.message)
+            }
+        }
+    }
+
+    fun refreshNotes() {
+        _notesData.value = NotesData()
+        loadNotes()
+    }
+
+    fun uploadNote(uri: Uri, module: String, onResult: (String?) -> Unit = {}) {
+        val helper = syncingHelper ?: run {
+            onResult("Google sign-in expired — please reconnect and try again.")
+            return
+        }
+        val resolver = getApplication<Application>().contentResolver
+        val mimeType = resolver.getType(uri) ?: ""
+        val (name, size) = queryNameSize(uri)
+
+        val check = NotesHelper.validateNoteFile(NotesHelper.NoteFile(name, size, mimeType))
+        if (check is NotesHelper.Validation.Invalid) {
+            onResult(check.reason)
+            return
+        }
+
+        viewModelScope.launch {
+            try {
+                val bytes = resolver.openInputStream(uri)?.use { it.readBytes() }
+                    ?: throw Exception("That file couldn't be read.")
+                val created = helper.uploadNote(bytes, name, mimeType, module, _appData.value.handbookId)
+                _notesData.value = _notesData.value.let {
+                    if (it.notes != null) it.copy(notes = it.notes + created) else it
+                }
+                onResult(null)
+            } catch (e: Exception) {
+                onResult(e.message)
+            }
+        }
+    }
+
+    fun renameNote(id: String, newName: String, onResult: (String?) -> Unit = {}) {
+        val helper = syncingHelper ?: run {
+            onResult("Google sign-in expired — please reconnect and try again.")
+            return
+        }
+        viewModelScope.launch {
+            try {
+                val updated = helper.renameNote(id, newName)
+                _notesData.value = _notesData.value.let {
+                    it.copy(notes = it.notes?.map { note -> if (note.id == id) updated else note })
+                }
+                onResult(null)
+            } catch (e: Exception) {
+                onResult(e.message)
+            }
+        }
+    }
+
+    fun deleteNote(id: String) {
+        val helper = syncingHelper ?: run {
+            setNotesError("Google sign-in expired — please reconnect and try again.")
+            return
+        }
+        viewModelScope.launch {
+            try {
+                helper.deleteNote(id)
+                _notesData.value = _notesData.value.let {
+                    it.copy(notes = it.notes?.filter { note -> note.id != id }, error = null)
+                }
+            } catch (e: Exception) {
+                setNotesError(e.message)
+            }
+        }
+    }
+
+    suspend fun downloadNote(id: String): ByteArray? {
+        val helper = syncingHelper ?: return null
+        return try {
+            helper.downloadNote(id)
+        } catch (e: Exception) {
+            setNotesError(e.message)
+            null
+        }
+    }
+
+    private fun queryNameSize(uri: Uri): Pair<String, Long?> {
+        var name = ""
+        var size: Long? = null
+        getApplication<Application>().contentResolver
+            .query(uri, null, null, null, null)?.use { cursor ->
+                if (cursor.moveToFirst()) {
+                    val nameIdx = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                    val sizeIdx = cursor.getColumnIndex(OpenableColumns.SIZE)
+                    if (nameIdx >= 0) name = cursor.getString(nameIdx) ?: ""
+                    if (sizeIdx >= 0 && !cursor.isNull(sizeIdx)) size = cursor.getLong(sizeIdx)
+                }
+            }
+        return name to size
     }
 }
