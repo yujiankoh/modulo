@@ -544,7 +544,6 @@ fun Modules(
     
     val hidden = appData.hiddenModules.toSet()
     val visibleModules = modulesList.filter { it.code.ifBlank { it.name } !in hidden }
-    val hiddenCount = modulesList.size - visibleModules.size
 
     SectionTitle("Modules", subtext = "Manage", onSubtext = { manageOpen = true })
 
@@ -659,8 +658,7 @@ fun ManageModulesDialog(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(12.dp))
-                                .clickable { onToggle(label, shown) }
-                                .padding(vertical = 4.dp),
+                                .clickable { onToggle(label, shown) },
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Checkbox(
