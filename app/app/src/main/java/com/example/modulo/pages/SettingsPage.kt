@@ -42,6 +42,7 @@ fun SettingsPage(
     onNavigateToHandbookCreate: () -> Unit,
     onNavigateToHandbook: () -> Unit,
     onNavigateToGPA: () -> Unit,
+    onNavigateToNotes: () -> Unit,
 ) {
     val userEmail = viewModel.getUserEmail()
     val isSignedIn = userEmail.isNotBlank()
@@ -101,6 +102,13 @@ fun SettingsPage(
                     onClick = onNavigateToGPA
                 )
             }
+
+            SettingsRow(
+                icon = R.drawable.file_text,
+                title = "Notes",
+                isClickable = true,
+                onClick = onNavigateToNotes
+            )
 
             SettingsRow(
                 icon = R.drawable.notebook_pen,

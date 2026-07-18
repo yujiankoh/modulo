@@ -3,6 +3,7 @@ package com.example.modulo
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import com.example.modulo.helpers.NotesHelper
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.util.UUID
@@ -181,6 +182,12 @@ sealed interface TimetableState {
     data class ReviewData(val timetable: Timetable) : TimetableState
     data class Error(val message: String) : TimetableState
 }
+
+data class NotesData(
+    val notes: List<NotesHelper.Note>? = null,
+    val loading: Boolean = false,
+    val error: String? = null
+)
 
 data class ModuleColor(val container: Color, val onContainer: Color)
 
