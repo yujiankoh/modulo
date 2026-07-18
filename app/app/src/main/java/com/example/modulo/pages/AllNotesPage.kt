@@ -76,7 +76,7 @@ import java.util.Locale
 import kotlin.text.isNotBlank
 
 private const val OTHER = "__other__"
-private val dateFormat = DateTimeFormatter.ofPattern("d MMM yyyy", Locale.getDefault())
+private var dateFormat = DateTimeFormatter.ofPattern("d MMM yyyy", Locale.getDefault())
 
 @Composable
 fun AllNotesPage(
