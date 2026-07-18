@@ -36,6 +36,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -120,11 +121,11 @@ fun StudySessionPage(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(2.dp)
             ) {
-                StatCard(title = "Today", mins = todayMins, modifier = Modifier.weight(1f))
-                StatCard(title = "This Week", mins = weekMins, modifier = Modifier.weight(1f))
-                StatCard(title = "Overall", mins = totalMins, modifier = Modifier.weight(1f))
+                StatCard(title = "Today", mins = todayMins, shape = groupedRowShape(0, 3), modifier = Modifier.weight(1f))
+                StatCard(title = "This Week", mins = weekMins, shape = groupedRowShape(1, 3), modifier = Modifier.weight(1f))
+                StatCard(title = "Overall", mins = totalMins, shape = groupedRowShape(2, 3), modifier = Modifier.weight(1f))
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -275,12 +276,25 @@ fun StudySessionPage(
     }
 }
 
+fun groupedRowShape(index: Int, size: Int): Shape {
+    val large = 20.dp
+    val small = 8.dp
+    val start = if (index == 0) large else small
+    val end = if (index == size - 1) large else small
+    return RoundedCornerShape(topStart = start, bottomStart = start, topEnd = end, bottomEnd = end)
+}
+
 @Composable
-fun StatCard(title: String, mins: Int, modifier: Modifier = Modifier) {
+fun StatCard(
+    title: String,
+    mins: Int,
+    modifier: Modifier = Modifier,
+    shape: Shape = RoundedCornerShape(20.dp)
+) {
     Card(
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        shape = RoundedCornerShape(20.dp),
+        shape = shape,
         modifier = modifier
     ) {
         Column(
