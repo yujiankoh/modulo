@@ -83,6 +83,11 @@ class AppViewModel @JvmOverloads constructor(
     private val _isDarkMode = MutableStateFlow<Boolean?>(null)
     val isDarkMode = _isDarkMode.asStateFlow()
 
+    // Set only when the user opts into Drive sync and BOTH local + Drive hold data
+    private val _syncConflict = MutableStateFlow<SyncConflict?>(null)
+    val syncConflict = _syncConflict.asStateFlow()
+    private var pendingCloudData: AppData? = null
+
     private val _hasInternet = MutableStateFlow(false)
 
     // Keep track of time in study session
@@ -156,9 +161,79 @@ class AppViewModel @JvmOverloads constructor(
 
         viewModelScope.launch {
             _syncState.value = SyncState.SYNCING
-            resolveConflict(syncingHelper!!)
+            val cloudData = syncingHelper!!.downloadAppData()
+            val localData = _appData.value
+
+            // Opting into sync from local mode while Drive ALSO holds data, ask the user which to keep. 
+            // Any other case (one side empty), normal last-write-wins reconcile.
+            if (cloudData != null && hasMeaningfulData(localData) && hasMeaningfulData(cloudData)) {
+                pendingCloudData = cloudData
+                _syncConflict.value = SyncConflict(
+                    local = summarize(localData),
+                    cloud = summarize(cloudData)
+                )
+            } else {
+                resolveConflict(cloudData)
+                checkHandbookState()
+            }
+        }
+    }
+
+    // Has the user actually done anything worth preserving (vs a fresh/empty profile)?
+    private fun hasMeaningfulData(data: AppData): Boolean =
+        data.timetable != null ||
+            data.tasks.isNotEmpty() || data.grades.isNotEmpty() ||
+            data.studySessions.isNotEmpty() || data.otherHandbooks.isNotEmpty()
+
+    private fun summarize(data: AppData): SyncSummary {
+        val activeHandbook = if (data.educationLevel != null) 1 else 0
+        val label = buildString {
+            append(data.educationLevel?.replaceFirstChar { it.uppercase() } ?: "No handbook")
+            data.academicYear?.let { append(" · $it") }
+            data.semester?.let { append(" · S$it") }
+        }
+        return SyncSummary(
+            handbooks = activeHandbook + data.otherHandbooks.size,
+            studyMinutes = data.studySessions.sumOf { it.durationMins },
+            currentHandbook = label,
+            tasks = data.tasks.size,
+            modules = data.timetable?.modules?.size ?: 0
+        )
+    }
+
+    // User chose to keep the Drive copy: adopt it locally and finish signing in.
+    fun keepDriveData() {
+        val cloud = pendingCloudData ?: return
+        _appData.value = cloud
+        localSaveHelper.saveData(cloud)
+        clearSyncConflict()
+        _syncState.value = SyncState.SYNCED
+        reconcileCity()
+        checkHandbookState()
+    }
+
+    // User chose to keep this device's copy: overwrite Drive with it and finish signing in.
+    fun keepLocalData() {
+        val helper = syncingHelper ?: return
+        viewModelScope.launch {
+            helper.uploadAppData(_appData.value)
+            clearSyncConflict()
+            _syncState.value = SyncState.SYNCED
             checkHandbookState()
         }
+    }
+
+    // User cancelled: abort the opt-in and stay on local-only.
+    fun cancelSyncConflict() {
+        clearSyncConflict()
+        syncingHelper = null
+        setUserEmail("")
+        saveSyncPreference(false) // flips to local-only and re-checks the handbook state
+    }
+
+    private fun clearSyncConflict() {
+        _syncConflict.value = null
+        pendingCloudData = null
     }
 
     private suspend fun attemptSilentSignIn(onComplete: () -> Unit = {}) {
@@ -184,7 +259,10 @@ class AppViewModel @JvmOverloads constructor(
     }
 
     private suspend fun resolveConflict(helper: SyncingHelper) {
-        val cloudData = helper.downloadAppData()
+        resolveConflict(helper.downloadAppData())
+    }
+    
+    private suspend fun resolveConflict(cloudData: AppData?) {
         val localData = _appData.value
 
         if (cloudData != null) {
