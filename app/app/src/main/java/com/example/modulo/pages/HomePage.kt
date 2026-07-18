@@ -49,6 +49,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
@@ -60,6 +61,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.zIndex
+import coil.compose.AsyncImage
 import com.example.modulo.AppData
 import com.example.modulo.AppViewModel
 import com.example.modulo.Module
@@ -266,6 +268,7 @@ fun ProfileBar(
 ) {
     val appData by viewModel.appData.collectAsState()
     val syncState by viewModel.syncState.collectAsState()
+    val userPhotoUrl by viewModel.userPhotoUrl.collectAsState()
 
     Row(
         modifier = Modifier
@@ -304,12 +307,25 @@ fun ProfileBar(
             IconButton(
                 onClick = onSettingsClick
             ) {
-                Icon(
-                    painter = painterResource(R.drawable.circle_user_round),
-                    contentDescription = "Profile and Settings",
-                    modifier = Modifier.size(40.dp),
-                    tint = MaterialTheme.colorScheme.primary
-                )
+                if (userPhotoUrl != null) {
+                    AsyncImage(
+                        model = userPhotoUrl,
+                        contentDescription = "Profile and Settings",
+                        contentScale = ContentScale.Crop,
+                        placeholder = painterResource(R.drawable.circle_user_round),
+                        error = painterResource(R.drawable.circle_user_round),
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                    )
+                } else {
+                    Icon(
+                        painter = painterResource(R.drawable.circle_user_round),
+                        contentDescription = "Profile and Settings",
+                        modifier = Modifier.size(40.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
             }
         }
     }

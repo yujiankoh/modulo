@@ -110,7 +110,8 @@ fun RootNavigation(
                 viewModel.setUserEmail(userEmail)
                 driveAuthorizationLauncher.launch(intentRequest)
             },
-            onSuccess = navigateToHomeAfterSync
+            onSuccess = navigateToHomeAfterSync,
+            onProfile = { url -> viewModel.setUserPhotoUrl(url) }
         )
     }
 

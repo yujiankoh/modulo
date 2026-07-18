@@ -73,6 +73,9 @@ class AppViewModel @JvmOverloads constructor(
     private val _notesData = MutableStateFlow(NotesData())
     val notesData = _notesData.asStateFlow()
 
+    private val _userPhotoUrl = MutableStateFlow<String?>(null)
+    val userPhotoUrl = _userPhotoUrl.asStateFlow()
+
     private val _hasInternet = MutableStateFlow(false)
 
     // Keep track of time in study session
@@ -103,6 +106,10 @@ class AppViewModel @JvmOverloads constructor(
         if (reconciled !== current.city) {
             updateData { it.copy(city = reconciled) }
         }
+    }
+
+    fun setUserPhotoUrl(url: String?) {
+        _userPhotoUrl.value = url
     }
 
     // Stores user email for authentication
@@ -150,7 +157,8 @@ class AppViewModel @JvmOverloads constructor(
             },
             onFailure = {
                 _startupState.value = StartupState.AUTHENTICATE
-            }
+            },
+            onProfile = { url -> _userPhotoUrl.value = url }
         )
     }
 
@@ -282,6 +290,7 @@ class AppViewModel @JvmOverloads constructor(
             setUserEmail("")
             saveSyncPreference(false)
             syncingHelper = null
+            _userPhotoUrl.value = null
         }
     }
 
