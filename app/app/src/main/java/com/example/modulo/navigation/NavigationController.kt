@@ -43,6 +43,7 @@ import com.example.modulo.pages.SettingsPage
 import com.example.modulo.pages.SignInPage
 import com.example.modulo.pages.StudyHistoryPage
 import com.example.modulo.pages.StudySessionPage
+import com.example.modulo.pages.SyncConflictDialog
 import com.example.modulo.pages.TimetablePage
 import com.example.modulo.pages.TimetableStateOverlay
 import com.example.modulo.pages.TutorialPage
@@ -81,6 +82,7 @@ fun RootNavigation(
     val navController = rememberNavController()
     val startupState by viewModel.startupState.collectAsState()
     val timetableState by viewModel.timetableState.collectAsState()
+    val syncConflict by viewModel.syncConflict.collectAsState()
 
     val context = requireNotNull(LocalActivity.current)
     val scope = rememberCoroutineScope()
@@ -181,6 +183,16 @@ fun RootNavigation(
                 .statusBarsPadding()
                 .zIndex(100f)
         )
+
+        // One-time "keep local or Drive?" choice when opting into sync with data on both sides.
+        syncConflict?.let { conflict ->
+            SyncConflictDialog(
+                conflict = conflict,
+                onKeepLocal = { viewModel.keepLocalData() },
+                onKeepDrive = { viewModel.keepDriveData() },
+                onCancel = { viewModel.cancelSyncConflict() }
+            )
+        }
     }
 }
 
