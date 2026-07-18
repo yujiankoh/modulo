@@ -15,6 +15,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.SavedStateHandle
@@ -43,6 +44,7 @@ private const val TAG = "ViewModel"
 val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 val HAS_SEEN_TUTORIAL = booleanPreferencesKey("has_seen_tutorial")
 val IS_DRIVE_SYNC_ENABLED = booleanPreferencesKey("is_drive_sync_enabled")
+val USER_PHOTO_URL = stringPreferencesKey("user_photo_url")
 
 class AppViewModel @JvmOverloads constructor(
     application: Application,
@@ -110,6 +112,11 @@ class AppViewModel @JvmOverloads constructor(
 
     fun setUserPhotoUrl(url: String?) {
         _userPhotoUrl.value = url
+        viewModelScope.launch {
+            getApplication<Application>().dataStore.edit { settings ->
+                if (url == null) settings.remove(USER_PHOTO_URL) else settings[USER_PHOTO_URL] = url
+            }
+        }
     }
 
     // Stores user email for authentication
@@ -196,6 +203,8 @@ class AppViewModel @JvmOverloads constructor(
             val prefs = getApplication<Application>().dataStore.data.first()
             val hasSeenTutorial = prefs[HAS_SEEN_TUTORIAL] ?: false
             val isSyncEnabled = prefs[IS_DRIVE_SYNC_ENABLED]
+            
+            _userPhotoUrl.value = prefs[USER_PHOTO_URL]
 
             // Check for first time users
             if (!hasSeenTutorial) {
@@ -290,7 +299,7 @@ class AppViewModel @JvmOverloads constructor(
             setUserEmail("")
             saveSyncPreference(false)
             syncingHelper = null
-            _userPhotoUrl.value = null
+            setUserPhotoUrl(null)
         }
     }
 
