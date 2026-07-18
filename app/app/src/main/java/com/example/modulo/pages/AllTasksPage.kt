@@ -241,7 +241,8 @@ fun TaskCard(
     onToggle: (Task) -> Unit,
     onDelete: () -> Unit,
     modifier: Modifier = Modifier,
-    dueText: String = formatDate(task.due)
+    dueText: String = formatDate(task.due),
+    showModule: Boolean = true
 ) {
 
     val theme = getModuleColor(task.module.ifBlank { task.title })
@@ -300,7 +301,7 @@ fun TaskCard(
                         Spacer(modifier.padding(4.dp))
 
                         Text(
-                            text = "${task.module.ifBlank { task.title }} • ${task.type.replaceFirstChar { it.uppercase() }}",
+                            text = "${if (showModule) "${task.module.ifBlank { task.title }} •" else ""} ${task.type.replaceFirstChar { it.uppercase() }}",
                             fontSize = 12.sp,
                             color = if (showDelete) MaterialTheme.colorScheme.onError.copy(alpha = 0.7f) else ModuloTheme.colors.subText
                         )

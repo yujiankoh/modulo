@@ -1,6 +1,7 @@
 package com.example.modulo.pages
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -21,9 +22,13 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -36,25 +41,37 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.zIndex
 import com.example.modulo.AppViewModel
+import com.example.modulo.Module
 import com.example.modulo.R
 import com.example.modulo.SyncState
 import com.example.modulo.Task
 import com.example.modulo.TimetableState
+import com.example.modulo.components.WarningCard
 import com.example.modulo.getModuleColor
+import com.example.modulo.helpers.NotesHelper
+import com.example.modulo.helpers.NotesHelper.Note
 import com.example.modulo.ui.theme.ModuloTheme
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.time.LocalTime
@@ -70,6 +87,7 @@ fun HomePage(
     onUploadTimetable: () -> Unit,
     onSettingsClick: () -> Unit,
     onTimetableClick: () -> Unit,
+    onAddTaskForModule: (String) -> Unit = {},
 ) {
     // Collect info from the model
     val appData by viewModel.appData.collectAsState()
@@ -111,7 +129,7 @@ fun HomePage(
             }
 
             item {
-                Modules(viewModel = viewModel)
+                Modules(viewModel = viewModel, onAddTaskForModule = onAddTaskForModule)
             }
         }
     }
@@ -507,9 +525,13 @@ fun Deadlines(
 @Composable
 fun Modules(
     viewModel: AppViewModel,
+    onAddTaskForModule: (String) -> Unit = {},
 ) {
     val appData by viewModel.appData.collectAsState()
     val modulesList = appData.timetable?.modules ?: emptyList()
+
+    var selectedModule by remember { mutableStateOf<Module?>(null) }
+    var manageOpen by remember { mutableStateOf(false) }
 
     if (modulesList.isEmpty()) {
         Box(modifier = Modifier
@@ -519,39 +541,155 @@ fun Modules(
         }
         return
     }
+    
+    val hidden = appData.hiddenModules.toSet()
+    val visibleModules = modulesList.filter { it.code.ifBlank { it.name } !in hidden }
 
-    val chunkedList = modulesList.chunked(3)
+    SectionTitle("Modules", subtext = "Manage", onSubtext = { manageOpen = true })
 
-    Row(
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        SectionTitle("Modules")
+    if (visibleModules.isEmpty()) {
+        Box(modifier = Modifier
+            .fillMaxWidth()
+            .height(100.dp), contentAlignment = Alignment.Center) {
+            Text(
+                "All modules hidden - tap Manage to show some.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = ModuloTheme.colors.subText
+            )
+        }
+    } else {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            visibleModules.chunked(3).forEach { rowModules ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    for (i in 0 until 3) {
+                        if (i < rowModules.size) {
+                            val module = rowModules[i]
+                            val label = module.code.ifBlank { module.name }
+                            val uncompletedCount = appData.tasks.count { !it.done && it.module == label }
+
+                            ModuleCard(
+                                moduleCode = module.code,
+                                moduleName = module.name,
+                                uncompletedTasksCount = uncompletedCount,
+                                educationLevel = appData.educationLevel ?: "",
+                                onClick = { selectedModule = module },
+                                modifier = Modifier.weight(1f)
+                            )
+                        } else {
+                            Spacer(modifier = Modifier.weight(1f))
+                        }
+                    }
+                }
+            }
+        }
     }
 
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        chunkedList.forEach { rowModules ->
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                for (i in 0 until 3) {
-                    if (i < rowModules.size) {
-                        val module = rowModules[i]
-                        val uncompletedCount = appData.tasks.count { !it.done && it.module == module.code }
+    selectedModule?.let { module ->
+        ViewModuleCard(
+            module = module,
+            viewModel = viewModel,
+            onAddTask = { label ->
+                selectedModule = null
+                onAddTaskForModule(label)
+            },
+            onDismiss = { selectedModule = null }
+        )
+    }
 
-                        ModuleCard(
-                            moduleCode = module.code,
-                            moduleName = module.name,
-                            uncompletedTasksCount = uncompletedCount,
-                            educationLevel = appData.educationLevel ?: "",
-                            modifier = Modifier.weight(1f)
-                        )
-                    } else {
-                        Spacer(modifier = Modifier.weight(1f))
+    if (manageOpen) {
+        ManageModulesDialog(
+            modules = modulesList,
+            hidden = hidden,
+            onToggle = { label, hide -> viewModel.setModuleHidden(label, hide) },
+            onDismiss = { manageOpen = false }
+        )
+    }
+}
+
+@Composable
+fun ManageModulesDialog(
+    modules: List<Module>,
+    hidden: Set<String>,
+    onToggle: (String, Boolean) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val windowInfo = LocalWindowInfo.current
+    val density = LocalDensity.current
+    val screenHeight = with(density) { windowInfo.containerSize.height.toDp() }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(max = screenHeight * 0.7f),
+            shape = RoundedCornerShape(28.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background)
+        ) {
+            Column(modifier = Modifier.padding(24.dp)) {
+                Text(
+                    text = "Manage modules",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "Untick a module to hide it from your dashboard.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = ModuloTheme.colors.subText,
+                    modifier = Modifier.padding(top = 4.dp, bottom = 12.dp)
+                )
+
+                LazyColumn(
+                    modifier = Modifier.weight(1f, fill = false),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    items(modules) { module ->
+                        val label = module.code.ifBlank { module.name }
+                        val title = if (module.name.isNotBlank() && module.name != label) "$label · ${module.name}" else label
+                        val shown = label !in hidden
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .clickable { onToggle(label, shown) },
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Checkbox(
+                                checked = shown,
+                                onCheckedChange = { onToggle(label, shown) }
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .size(12.dp)
+                                    .clip(CircleShape)
+                                    .background(getModuleColor(label).container)
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                text = title,
+                                style = MaterialTheme.typography.bodyLarge,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
                     }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Button(
+                    onClick = onDismiss,
+                    modifier = Modifier.align(Alignment.End),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("Done")
                 }
             }
         }
@@ -564,12 +702,14 @@ fun ModuleCard(
     moduleName: String,
     uncompletedTasksCount: Int,
     educationLevel: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit = {}
 ) {
     // Falls back seamlessly to ModuloTheme system or standard palette values
     val theme = getModuleColor(moduleCode)
 
     Card(
+        onClick = onClick,
         modifier = modifier
             .fillMaxWidth()
             .height(100.dp),
@@ -625,5 +765,247 @@ fun ModuleCard(
                 )
             }
         }
+    }
+}
+
+// Module detail dialog
+@Composable
+fun ViewModuleCard(
+    module: Module,
+    viewModel: AppViewModel,
+    onAddTask: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val appData by viewModel.appData.collectAsState()
+    val notesData by viewModel.notesData.collectAsState()
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val gated = viewModel.notesGated()
+
+    // Tasks and notes are tagged by the module's label (code, or name when code is blank).
+    val label = module.code.ifBlank { module.name }
+    val theme = getModuleColor(label)
+    val title = if (module.name.isNotBlank() && module.name != label) "$label\n${module.name}" else label
+
+    var uploadOpen by remember { mutableStateOf(false) }
+    var renameTarget by remember { mutableStateOf<Note?>(null) }
+    var deleteTarget by remember { mutableStateOf<Note?>(null) }
+    var deletedTask by remember { mutableStateOf<Task?>(null) }
+
+    LaunchedEffect(gated) { if (!gated) viewModel.loadNotes() }
+
+    val moduleTasks = appData.tasks
+        .filter { it.module == label }
+        .sortedWith(compareBy({ it.done }, { it.due }))
+
+    val cache = notesData.notes
+    val moduleNotes = NotesHelper.visibleNotes(
+        cache ?: emptyList(),
+        handbookId = appData.handbookId,
+        module = label
+    )
+
+    val windowInfo = LocalWindowInfo.current
+    val density = LocalDensity.current
+    val screenHeight = with(density) { windowInfo.containerSize.height.toDp() }
+
+    fun openNote(note: Note) {
+        scope.launch {
+            val bytes = viewModel.downloadNote(note.id) ?: return@launch
+            withContext(Dispatchers.IO) { openBytes(context, bytes, note.name, note.mimeType) }
+        }
+    }
+
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth(0.9f)
+                .padding(16.dp)
+                .heightIn(max = screenHeight * 0.8f),
+            shape = RoundedCornerShape(36.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background),
+        ) {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                // Coloured header band.
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(theme.container)
+                        .padding(24.dp)
+                ) {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = theme.onContainer
+                    )
+                }
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp)
+                ) {
+                    Text("My notes", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    when {
+                        gated -> ModuleNotesHint()
+
+                        cache == null -> Text(
+                            text = if (notesData.loading) "Loading notes…" else "Couldn't load notes - open the Notes view.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = ModuloTheme.colors.subText
+                        )
+
+                        moduleNotes.isEmpty() -> Text(
+                            text = "No notes for this module yet.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = ModuloTheme.colors.subText
+                        )
+
+                        else -> Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            moduleNotes.take(5).forEach { note ->
+                                NoteRowCard(
+                                    note = note,
+                                    onOpen = { openNote(note) },
+                                    onRename = { renameTarget = note },
+                                    onDelete = { deleteTarget = note }
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(
+                            onClick = { onAddTask(label) },
+                            shape = RoundedCornerShape(12.dp),
+                            contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(painter = painterResource(R.drawable.plus), contentDescription = null)
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Add task")
+                        }
+                        if (!gated) {
+                            Button(
+                                onClick = { uploadOpen = true },
+                                shape = RoundedCornerShape(12.dp),
+                                contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Icon(painter = painterResource(R.drawable.plus), contentDescription = null)
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Add note")
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Text("Tasks", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    if (moduleTasks.isEmpty()) {
+                        Text(
+                            text = "No tasks for this module.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = ModuloTheme.colors.subText
+                        )
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(max = screenHeight * 0.3f),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            items(moduleTasks) { task ->
+                                TaskCard(
+                                    task = task,
+                                    showDelete = deletedTask == task,
+                                    onLongPress = { deletedTask = task },
+                                    onNormalPress = { deletedTask = null },
+                                    onToggle = { clickedTask -> viewModel.completeTask(clickedTask) },
+                                    onDelete = {
+                                        viewModel.deleteTask(task)
+                                        deletedTask = null
+                                    },
+                                    showModule = false
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Button(
+                        onClick = onDismiss,
+                        modifier = Modifier.align(Alignment.End),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text("Close")
+                    }
+                }
+            }
+        }
+    }
+
+    if (uploadOpen) {
+        UploadNoteDialog(
+            timetableLabels = timetableLabels(appData),
+            lockedModule = label,
+            onDismiss = { uploadOpen = false },
+            onUpload = { uri, mod, onResult -> viewModel.uploadNote(uri, mod, onResult) }
+        )
+    }
+
+    renameTarget?.let { note ->
+        RenameNoteDialog(
+            current = note.name,
+            onDismiss = { renameTarget = null },
+            onSave = { newName, onResult -> viewModel.renameNote(note.id, newName, onResult) }
+        )
+    }
+
+    deleteTarget?.let { note ->
+        WarningCard(
+            title = "Delete note",
+            text = "Delete \"${note.name}\"? This removes it from your Google Drive.",
+            confirmText = "Delete",
+            onConfirm = {
+                viewModel.deleteNote(note.id)
+                deleteTarget = null
+            },
+            onDismiss = { deleteTarget = null }
+        )
+    }
+}
+
+@Composable
+private fun ModuleNotesHint() {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            painter = painterResource(R.drawable.cloud_off),
+            contentDescription = null,
+            tint = ModuloTheme.colors.subText,
+            modifier = Modifier.size(20.dp)
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = "Sign in with Google in Settings to keep notes for this module.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = ModuloTheme.colors.subText
+        )
     }
 }

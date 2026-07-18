@@ -59,14 +59,21 @@ import java.time.format.DateTimeFormatter
 fun AddTaskPage(
     viewModel: AppViewModel,
     onUploadTimetable: () -> Unit,
-    onAddTask: () -> Unit
+    onAddTask: () -> Unit,
+    initialModuleCode: String? = null
 ) {
     // Collect info from the model
     val appData by viewModel.appData.collectAsState()
     val timetableState by viewModel.timetableState.collectAsState()
 
-    // Collect the first module
-    val initialModule = appData.timetable?.modules?.first()
+    // Pre-select the module the user opened this from (its dashboard card), else the first one.
+    val modules = appData.timetable?.modules
+    val initialModule = remember(modules, initialModuleCode) {
+        val fromCard = initialModuleCode?.let { code ->
+            modules?.firstOrNull { it.code.ifBlank { it.name } == code }
+        }
+        fromCard ?: modules?.firstOrNull()
+    }
 
     // States from the create-task fields
     val inputTitle = rememberTextFieldState()

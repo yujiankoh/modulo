@@ -327,6 +327,19 @@ class AppViewModel @JvmOverloads constructor(
         }
     }
 
+    // Show/hide a module (by its label) on the dashboard
+    fun setModuleHidden(label: String, hide: Boolean) {
+        updateData { currentData ->
+            val hidden = currentData.hiddenModules
+            val updated = if (hide) {
+                if (label in hidden) hidden else hidden + label
+            } else {
+                hidden.filter { it != label }
+            }
+            currentData.copy(hiddenModules = updated)
+        }
+    }
+
     fun completeTask(toggledTask: Task) {
         updateData { currentData ->
             val updatedTasks = currentData.tasks.map { task ->

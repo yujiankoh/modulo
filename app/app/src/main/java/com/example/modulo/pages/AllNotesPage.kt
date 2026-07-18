@@ -57,6 +57,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
+import com.example.modulo.AppData
 import com.example.modulo.AppViewModel
 import com.example.modulo.R
 import com.example.modulo.components.DropDownMenu
@@ -339,7 +340,7 @@ private fun NoteFilterChip(
 }
 
 @Composable
-private fun NoteRowCard(
+fun NoteRowCard(
     note: Note,
     onOpen: () -> Unit,
     onRename: () -> Unit,
@@ -402,14 +403,15 @@ private fun NoteRowCard(
 }
 
 @Composable
-private fun UploadNoteDialog(
+fun UploadNoteDialog(
     timetableLabels: List<String>,
     onDismiss: () -> Unit,
-    onUpload: (Uri, String, (String?) -> Unit) -> Unit
+    onUpload: (Uri, String, (String?) -> Unit) -> Unit,
+    lockedModule: String? = null
 ) {
     var uri by remember { mutableStateOf<Uri?>(null) }
     var fileName by remember { mutableStateOf("") }
-    var moduleChoice by remember { mutableStateOf("") }
+    var moduleChoice by remember { mutableStateOf(lockedModule ?: "") }
     var otherModule by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
     var uploading by remember { mutableStateOf(false) }
@@ -444,20 +446,31 @@ private fun UploadNoteDialog(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                DropDownMenu(
-                    label = "Module",
-                    selectedItem = moduleChoice,
-                    items = options,
-                    itemToText = {
-                        when (it) {
-                            "" -> "- None -"
-                            OTHER -> "+ Add other…"
-                            else -> it ?: ""
-                        }
-                    },
-                    onItemSelected = { moduleChoice = it },
-                    modifier = Modifier.fillMaxWidth()
-                )
+                if (lockedModule != null) {
+                    // Opened from a module card, the module is fixed to that card.
+                    Text(
+                        text = "Module: $lockedModule",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center
+                    )
+                } else {
+                    DropDownMenu(
+                        label = "Module",
+                        selectedItem = moduleChoice,
+                        items = options,
+                        itemToText = {
+                            when (it) {
+                                "" -> "- None -"
+                                OTHER -> "+ Add other…"
+                                else -> it ?: ""
+                            }
+                        },
+                        onItemSelected = { moduleChoice = it },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
 
                 if (moduleChoice == OTHER) {
                     Spacer(modifier = Modifier.height(8.dp))
@@ -503,7 +516,7 @@ private fun UploadNoteDialog(
 }
 
 @Composable
-private fun RenameNoteDialog(
+fun RenameNoteDialog(
     current: String,
     onDismiss: () -> Unit,
     onSave: (String, (String?) -> Unit) -> Unit
@@ -616,7 +629,7 @@ private fun NotesEmpty(anyAtAll: Boolean) {
     }
 }
 
-private fun timetableLabels(appData: com.example.modulo.AppData): List<String> =
+fun timetableLabels(appData: AppData): List<String> =
     appData.timetable?.modules.orEmpty()
         .map { it.code.ifBlank { it.name } }
         .filter { it.isNotBlank() }
@@ -628,7 +641,7 @@ private fun formatNoteDate(iso: String): String = try {
 }
 
 // Write the bytes to a cache file and hand a viewer app a content
-private fun openBytes(context: Context, bytes: ByteArray, name: String, mimeType: String) {
+fun openBytes(context: Context, bytes: ByteArray, name: String, mimeType: String) {
     val dir = File(context.cacheDir, "notes").apply { mkdirs() }
     val safeName = name.ifBlank { "note" }.replace("/", "_")
     val file = File(dir, safeName).apply { writeBytes(bytes) }
