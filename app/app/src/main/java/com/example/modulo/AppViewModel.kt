@@ -23,6 +23,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.modulo.helpers.AuthenticationHelper
 import com.example.modulo.helpers.CityLogicHelper
 import com.example.modulo.helpers.LocalSaveHelper
+import com.example.modulo.helpers.MergeModulesHelper
 import com.example.modulo.helpers.NetworkHelper
 import com.example.modulo.helpers.NetworkResult
 import com.example.modulo.helpers.NotesHelper
@@ -420,7 +421,12 @@ class AppViewModel @JvmOverloads constructor(
         _timetableState.value = TimetableState.Idle
     }
 
-    fun uploadTimetable(imageBytes: ByteArray, mimeType: String, educationLevel: String) {
+    fun uploadTimetable(
+        imageBytes: ByteArray,
+        mimeType: String,
+        educationLevel: String,
+        append: Boolean = false
+    ) {
         _timetableState.value = TimetableState.Processing
         viewModelScope.launch {
             try {
@@ -434,7 +440,7 @@ class AppViewModel @JvmOverloads constructor(
 
                 when (val result = parsingHelper.parseTimetable(parsingData)) {
                     is NetworkResult.Success -> {
-                        _timetableState.value = TimetableState.ReviewData(result.data)
+                        _timetableState.value = TimetableState.ReviewData(result.data, append)
                     }
                     is NetworkResult.Failure -> {
                         val message = when (result.statusCode) {
@@ -453,9 +459,18 @@ class AppViewModel @JvmOverloads constructor(
         }
     }
 
-    fun saveTimetable(timetable: Timetable) {
+    fun saveTimetable(timetable: Timetable, append: Boolean = false) {
         updateData { currentData ->
-            currentData.copy(educationLevel = timetable.educationLevel, timetable = timetable)
+            val existing = currentData.timetable
+            // "Add another week": merge the parsed modules into the current timetable
+            // (match by code+name, combine odd/even slots, drop duplicates).
+            val modules = if (append && existing != null) {
+                MergeModulesHelper.mergeModules(existing.modules, timetable.modules)
+            } else {
+                timetable.modules
+            }
+            val merged = timetable.copy(modules = modules)
+            currentData.copy(educationLevel = merged.educationLevel, timetable = merged)
         }
         _timetableState.value = TimetableState.Idle
     }

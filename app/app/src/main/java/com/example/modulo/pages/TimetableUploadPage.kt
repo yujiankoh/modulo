@@ -112,11 +112,13 @@ fun UploadTimetablePage(
 
             UploadTimetable(
                 context = context,
-                onUploadTimetable = { imageBytes ->
+                hasExistingTimetable = appData.timetable != null,
+                onUploadTimetable = { imageBytes, append ->
                     viewModel.uploadTimetable(
                         imageBytes = imageBytes,
                         mimeType = "image/jpeg",
-                        educationLevel = selectedEducation.json
+                        educationLevel = selectedEducation.json,
+                        append = append
                     )
 
                     onBack()
@@ -146,7 +148,8 @@ fun UploadTimetablePage(
 @Composable
 fun UploadTimetable(
     context: Context,
-    onUploadTimetable: (ByteArray) -> Unit
+    hasExistingTimetable: Boolean,
+    onUploadTimetable: (ByteArray, Boolean) -> Unit
 ) {
     var imageUri by remember { mutableStateOf<Uri?>(null) }
 
@@ -157,6 +160,17 @@ fun UploadTimetable(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         imageUri = uri
+    }
+
+    // Compress the picked image and hand the bytes up; `append` = merge vs replace.
+    fun submit(append: Boolean) {
+        coroutineScope.launch(Dispatchers.IO) {
+            val finalBitmap = imageUri?.let { getBitmapFromUri(context, it) } ?: return@launch
+            val stream = ByteArrayOutputStream()
+            finalBitmap.compress(Bitmap.CompressFormat.JPEG, 80, stream)
+            val bytes = stream.toByteArray()
+            withContext(Dispatchers.Main) { onUploadTimetable(bytes, append) }
+        }
     }
 
     Column(
@@ -206,28 +220,32 @@ fun UploadTimetable(
         Spacer(modifier = Modifier.height(24.dp))
 
         Button(
-            onClick = {
-                coroutineScope.launch(Dispatchers.IO) {
-                    val finalBitmap = imageUri?.let { getBitmapFromUri(context, it) }
-
-                    if (finalBitmap != null) {
-                        val stream = ByteArrayOutputStream()
-                        finalBitmap.compress(Bitmap.CompressFormat.JPEG, 80, stream)
-                        val bytes = stream.toByteArray()
-
-                        withContext(Dispatchers.Main) {
-                            onUploadTimetable(bytes)
-                        }
-                    }
-                }
-            },
+            onClick = { submit(false) },
             enabled = imageUri != null,
             contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
             shape = RoundedCornerShape(12.dp)
         ) {
             Icon(painter = painterResource(R.drawable.upload), contentDescription = "Upload")
             Spacer(modifier = Modifier.padding(6.dp))
-            Text("Upload Timetable")
+            Text(if (hasExistingTimetable) "Replace Timetable" else "Upload Timetable")
+        }
+        
+        if (hasExistingTimetable) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Button(
+                onClick = { submit(true) },
+                enabled = imageUri != null,
+                contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                )
+            ) {
+                Icon(painter = painterResource(R.drawable.plus), contentDescription = "Add another week")
+                Spacer(modifier = Modifier.padding(6.dp))
+                Text("Add another week")
+            }
         }
     }
 }
@@ -278,10 +296,13 @@ fun TimetableStateOverlay(
         is TimetableState.ReviewData -> {
             AlertDialog(
                 onDismissRequest = { viewModel.clearTimetableState() },
-                title = { Text("Confirm Schedule Data") },
+                title = { Text(if (state.append) "Add to Timetable" else "Confirm Schedule Data") },
                 text = {
                     Column {
-                        Text("We detected the following modules. Please verify before saving:")
+                        Text(
+                            if (state.append) "These modules will be merged into your current timetable:"
+                            else "We detected the following modules. Please verify before saving:"
+                        )
                         Spacer(modifier = Modifier.height(12.dp))
 
                         // Scrollable list if they have many modules
@@ -294,10 +315,10 @@ fun TimetableStateOverlay(
                 },
                 confirmButton = {
                     Button(
-                        onClick = { viewModel.saveTimetable(state.timetable) },
+                        onClick = { viewModel.saveTimetable(state.timetable, state.append) },
                         shape = RoundedCornerShape(12.dp)
                     ) {
-                        Text("Confirm Timetable")
+                        Text(if (state.append) "Merge" else "Confirm Timetable")
                     }
                 },
                 dismissButton = {

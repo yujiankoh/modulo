@@ -179,7 +179,7 @@ val syncJsonParser = Json {
 sealed interface TimetableState {
     object Idle : TimetableState
     object Processing : TimetableState
-    data class ReviewData(val timetable: Timetable) : TimetableState
+    data class ReviewData(val timetable: Timetable, val append: Boolean = false) : TimetableState
     data class Error(val message: String) : TimetableState
 }
 
