@@ -566,6 +566,7 @@ fun Deadlines(
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(max = 240.dp),
+        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 4.dp),
         verticalArrangement = Arrangement.spacedBy(2.dp)
     ) {
         itemsIndexed(dueTasks) { index, task ->
@@ -989,6 +990,7 @@ fun ViewModuleCard(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .heightIn(max = screenHeight * 0.3f),
+                            contentPadding = PaddingValues(horizontal = 4.dp, vertical = 4.dp),
                             verticalArrangement = Arrangement.spacedBy(2.dp)
                         ) {
                             itemsIndexed(moduleTasks) { index, task ->
