@@ -190,7 +190,7 @@ fun AllNotesPage(
                         NoteFilterChip(
                             selected = sort == NotesHelper.NoteSort.NAME,
                             onClick = { sort = NotesHelper.NoteSort.NAME },
-                            label = "A–Z"
+                            label = "A-Z"
                         )
                     }
                     item {
@@ -425,7 +425,7 @@ private fun UploadNoteDialog(
     }
 
     AlertDialog(
-        containerColor = MaterialTheme.colorScheme.surface,
+        containerColor = MaterialTheme.colorScheme.background,
         onDismissRequest = onDismiss,
         title = { Text("Upload note", fontWeight = FontWeight.Bold) },
         text = {
