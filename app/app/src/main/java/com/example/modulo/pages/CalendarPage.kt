@@ -33,7 +33,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.painterResource
@@ -168,7 +170,7 @@ fun CalendarPage(
             // Grid
             Column(
                 modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(1.dp)
+                verticalArrangement = Arrangement.spacedBy(2.dp)
             ) {
                 for (rowIndex in 0 until 6) {
                     val firstDayOfRow = rowIndex * 7 - offset
@@ -178,7 +180,7 @@ fun CalendarPage(
                     } else {
                         Row(
                             modifier = Modifier.weight(1f).fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(1.dp)
+                            horizontalArrangement = Arrangement.spacedBy(2.dp)
                         ) {
                             for (colIndex in 0 until 7) {
                                 val dayIndex = rowIndex * 7 + colIndex - offset
@@ -199,7 +201,8 @@ fun CalendarPage(
                                         tasks = dayTasks,
                                         isToday = (date == today),
                                         modifier = Modifier.weight(1f).clickable { selectedDate = date },
-                                        emoji = ratings[date] ?: ""
+                                        emoji = ratings[date] ?: "",
+                                        shape = calendarCellShape(rowIndex, colIndex, offset, daysInMonth)
                                     )
                                 } else {
                                     // Empty invisible box for days before the 1st or after the end of month
@@ -231,6 +234,28 @@ fun CalendarPage(
     }
 }
 
+private fun calendarCellFilled(row: Int, col: Int, offset: Int, daysInMonth: Int): Boolean {
+    if (col < 0 || col > 6) return false
+    val dayIndex = row * 7 + col - offset
+    return dayIndex in 0 until daysInMonth
+}
+
+private fun calendarCellShape(row: Int, col: Int, offset: Int, daysInMonth: Int): Shape {
+    val large = 20.dp
+    val small = 4.dp
+    fun empty(r: Int, c: Int) = !calendarCellFilled(r, c, offset, daysInMonth)
+    val above = empty(row - 1, col)
+    val below = empty(row + 1, col)
+    val left = empty(row, col - 1)
+    val right = empty(row, col + 1)
+    return RoundedCornerShape(
+        topStart = if (above && left) large else small,
+        topEnd = if (above && right) large else small,
+        bottomStart = if (below && left) large else small,
+        bottomEnd = if (below && right) large else small
+    )
+}
+
 @Composable
 fun DayCell(
     date: LocalDate,
@@ -238,16 +263,19 @@ fun DayCell(
     isToday: Boolean,
     modifier: Modifier = Modifier,
     emoji: String = "",
+    shape: Shape = RoundedCornerShape(8.dp),
 ) {
     val cellModifier = if (isToday) {
         modifier
             .fillMaxSize()
+            .clip(shape)
             .background(color = MaterialTheme.colorScheme.surface)
-            .border(width = 2.dp, color = MaterialTheme.colorScheme.primary)
+            .border(width = 2.dp, color = MaterialTheme.colorScheme.primary, shape = shape)
             .padding(4.dp)
     } else {
         modifier
             .fillMaxSize()
+            .clip(shape)
             .background(color = MaterialTheme.colorScheme.surface)
             .padding(4.dp)
     }
@@ -330,7 +358,7 @@ fun ViewCalendarCell(
             shape = RoundedCornerShape(36.dp),
             elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
             colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface
+                containerColor = MaterialTheme.colorScheme.background
             ),
         ) {
             Column(
