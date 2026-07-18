@@ -223,12 +223,15 @@ class AppViewModel @JvmOverloads constructor(
         }
     }
 
-    // User cancelled: abort the opt-in and stay on local-only.
+    // User cancelled: abort the opt-in and stay on local-only, forgetting the Google account.
     fun cancelSyncConflict() {
         clearSyncConflict()
         syncingHelper = null
         setUserEmail("")
         saveSyncPreference(false) // flips to local-only and re-checks the handbook state
+        viewModelScope.launch {
+            AuthenticationHelper.signOut(getApplication())
+        }
     }
 
     private fun clearSyncConflict() {
