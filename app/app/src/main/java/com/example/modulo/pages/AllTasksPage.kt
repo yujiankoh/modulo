@@ -309,7 +309,7 @@ fun TaskCard(
                     )
 
                     Text(
-                        text = "${if (showModule) "${task.module.ifBlank { task.title }} •" else ""} ${task.type.replaceFirstChar { it.uppercase() }}",
+                        text = "${if (showModule) "${task.module.ifBlank { task.title }} • " else ""}${task.type.replaceFirstChar { it.uppercase() }}",
                         fontSize = 12.sp,
                         color = if (showDelete) MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.7f) else ModuloTheme.colors.subText
                     )
@@ -386,7 +386,7 @@ fun TaskColumn(
 // corner radius for the grouped
 fun groupedCardShape(index: Int, size: Int): Shape {
     val large = 20.dp
-    val small = 8.dp
+    val small = 4.dp
     val top = if (index == 0) large else small
     val bottom = if (index == size - 1) large else small
     return RoundedCornerShape(topStart = top, topEnd = top, bottomStart = bottom, bottomEnd = bottom)

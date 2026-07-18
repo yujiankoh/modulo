@@ -628,7 +628,7 @@ fun Modules(
     val hidden = appData.hiddenModules.toSet()
     val visibleModules = modulesList.filter { it.code.ifBlank { it.name } !in hidden }
 
-    SectionTitle("Modules", subtext = "Manage", onSubtext = { manageOpen = true })
+    SectionTitle("Modules", subtext = "Manage Modules", onSubtext = { manageOpen = true })
 
     if (visibleModules.isEmpty()) {
         Box(modifier = Modifier
@@ -795,7 +795,7 @@ fun ModuleCard(
         onClick = onClick,
         modifier = modifier
             .fillMaxWidth()
-            .height(100.dp),
+            .height(90.dp),
         shape = RoundedCornerShape(20.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)

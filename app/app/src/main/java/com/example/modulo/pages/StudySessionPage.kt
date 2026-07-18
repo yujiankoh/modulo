@@ -278,7 +278,7 @@ fun StudySessionPage(
 
 fun groupedRowShape(index: Int, size: Int): Shape {
     val large = 20.dp
-    val small = 8.dp
+    val small = 4.dp
     val start = if (index == 0) large else small
     val end = if (index == size - 1) large else small
     return RoundedCornerShape(topStart = start, bottomStart = start, topEnd = end, bottomEnd = end)
