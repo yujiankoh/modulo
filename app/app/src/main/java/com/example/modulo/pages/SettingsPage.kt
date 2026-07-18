@@ -311,7 +311,7 @@ fun SyncConflictDialog(
                 .fillMaxWidth(0.92f)
                 .padding(16.dp),
             shape = RoundedCornerShape(28.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background),
             elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
         ) {
             Column(modifier = Modifier.padding(24.dp)) {
@@ -322,15 +322,15 @@ fun SyncConflictDialog(
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "This device and Google Drive both have data. Pick which to keep — the other will be replaced.",
+                    text = "This device and Google Drive both have data. Pick which to keep, the other will be replaced.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = ModuloTheme.colors.subText
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    SyncSummaryColumn("This device", conflict.local, Modifier.weight(1f))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    SyncSummaryColumn("This Device", conflict.local, Modifier.weight(1f))
                     SyncSummaryColumn("Google Drive", conflict.cloud, Modifier.weight(1f))
                 }
 
@@ -348,12 +348,12 @@ fun SyncConflictDialog(
                     onClick = onKeepLocal,
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        contentColor = MaterialTheme.colorScheme.onSurface
                     ),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Keep this device")
+                    Text("Keep Device")
                 }
                 Spacer(modifier = Modifier.height(4.dp))
                 TextButton(
@@ -373,7 +373,7 @@ private fun SyncSummaryColumn(title: String, summary: SyncSummary, modifier: Mod
     Card(
         modifier = modifier,
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Text(
@@ -390,7 +390,7 @@ private fun SyncSummaryColumn(title: String, summary: SyncSummary, modifier: Mod
             Spacer(modifier = Modifier.height(8.dp))
 
             SyncSummaryRow("Handbooks", summary.handbooks.toString())
-            SyncSummaryRow("Study time", StudyStatsHelper.formatHours(summary.studyMinutes))
+            SyncSummaryRow("Study", StudyStatsHelper.formatHours(summary.studyMinutes))
 
             HorizontalDivider(
                 modifier = Modifier.padding(vertical = 8.dp),
@@ -428,7 +428,8 @@ private fun formatSavedTime(iso: String?): String {
 private fun SyncSummaryRow(label: String, value: String) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
     ) {
         Text(label, style = MaterialTheme.typography.bodySmall, color = ModuloTheme.colors.subText)
         Text(value, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)

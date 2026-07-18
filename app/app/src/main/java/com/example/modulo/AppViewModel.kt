@@ -188,10 +188,10 @@ class AppViewModel @JvmOverloads constructor(
 
     private fun summarize(data: AppData): SyncSummary {
         val activeHandbook = if (data.educationLevel != null) 1 else 0
-        val label = buildString {
-            append(data.educationLevel?.replaceFirstChar { it.uppercase() } ?: "No handbook")
-            data.academicYear?.let { append(" · $it") }
-            data.semester?.let { append(" · S$it") }
+        val label = if (data.educationLevel == null) {
+            "No handbook"
+        } else {
+            "${EducationLevel.getDisplay(data.educationLevel)}\n${handbookTitle(data)}"
         }
         return SyncSummary(
             handbooks = activeHandbook + data.otherHandbooks.size,
