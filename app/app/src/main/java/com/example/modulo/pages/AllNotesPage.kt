@@ -3,9 +3,11 @@ package com.example.modulo.pages
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.provider.OpenableColumns
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -450,6 +452,7 @@ fun UploadNoteDialog(
     onUpload: (Uri, String, (String?) -> Unit) -> Unit,
     lockedModule: String? = null
 ) {
+    val context = LocalContext.current
     var uri by remember { mutableStateOf<Uri?>(null) }
     var fileName by remember { mutableStateOf("") }
     var moduleChoice by remember { mutableStateOf(lockedModule ?: "") }
@@ -464,7 +467,7 @@ fun UploadNoteDialog(
         contract = ActivityResultContracts.OpenDocument()
     ) { picked ->
         uri = picked
-        fileName = picked?.lastPathSegment ?: ""
+        fileName = picked?.let { queryDisplayName(context, it) } ?: ""
     }
 
     AlertDialog(
@@ -473,16 +476,32 @@ fun UploadNoteDialog(
         title = { Text("Upload note", fontWeight = FontWeight.Bold) },
         text = {
             Column {
-                Button(
-                    onClick = { picker.launch(NotesHelper.NOTE_MIME_TYPES) },
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                    ),
-                    modifier = Modifier.fillMaxWidth()
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(140.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .clickable { picker.launch(NotesHelper.NOTE_MIME_TYPES) }
+                        .background(MaterialTheme.colorScheme.surface),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Text(if (uri == null) "Choose a PDF or image" else fileName, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    ) {
+                        Icon(
+                            painter = painterResource(if (uri == null) R.drawable.plus else R.drawable.file_text),
+                            contentDescription = "Select a PDF or image",
+                            modifier = Modifier.size(40.dp)
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = if (uri == null) "Tap to select a PDF or image" else fileName,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.Center
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))
@@ -534,8 +553,7 @@ fun UploadNoteDialog(
         confirmButton = {
             Button(
                 onClick = {
-                    val chosen = uri
-                    if (chosen == null) { error = "Choose a file first."; return@Button }
+                    val chosen = uri ?: return@Button
                     val module = if (moduleChoice == OTHER) otherModule.trim() else moduleChoice
                     uploading = true
                     error = null
@@ -544,7 +562,7 @@ fun UploadNoteDialog(
                         if (result == null) onDismiss() else error = result
                     }
                 },
-                enabled = !uploading,
+                enabled = uri != null && !uploading,
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Text(if (uploading) "Uploading…" else "Upload")
@@ -679,6 +697,17 @@ private fun formatNoteDate(iso: String): String = try {
     Instant.parse(iso).atZone(ZoneId.systemDefault()).format(dateFormat)
 } catch (e: Exception) {
     ""
+}
+
+private fun queryDisplayName(context: Context, uri: Uri): String {
+    var name = ""
+    context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+        if (cursor.moveToFirst()) {
+            val idx = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+            if (idx >= 0) name = cursor.getString(idx) ?: ""
+        }
+    }
+    return name
 }
 
 // Write the bytes to a cache file and hand a viewer app a content
