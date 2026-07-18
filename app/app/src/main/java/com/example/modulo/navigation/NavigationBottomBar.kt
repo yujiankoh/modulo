@@ -133,7 +133,7 @@ fun NavigationBottomBar(
                             isAddTaskActive = !isAddTaskActive
 
                             if (isAddTaskActive) {
-                                navController.navigate(AddTask)
+                                navController.navigate(AddTask())
                             } else {
                                 navController.popBackStack()
                             }

@@ -58,7 +58,7 @@ import kotlinx.serialization.Serializable
 @Serializable object Authenticate
 
 @Serializable object Home
-@Serializable object AddTask
+@Serializable data class AddTask(val moduleCode: String? = null)
 @Serializable object Calendar
 @Serializable object AllTasks
 @Serializable object StudySession
@@ -348,15 +348,19 @@ fun NavGraphBuilder.appNavigation(
                         viewModel = viewModel,
                         onUploadTimetable = onNavigateToTimetableUpload,
                         onSettingsClick = onNavigateToSettings,
-                        onTimetableClick = onNavigateToTimetable
+                        onTimetableClick = onNavigateToTimetable,
+                        onAddTaskForModule = { moduleCode -> navController.navigate(AddTask(moduleCode)) }
                     )
                 }
 
-                composable<AddTask> {
+                composable<AddTask> { backStackEntry ->
+                    val args = backStackEntry.toRoute<AddTask>()
+
                     AddTaskPage(
                         viewModel = viewModel,
                         onUploadTimetable = onNavigateToTimetableUpload,
-                        onAddTask = { navController.popBackStack() }
+                        onAddTask = { navController.popBackStack() },
+                        initialModuleCode = args.moduleCode
                     )
                 }
 
