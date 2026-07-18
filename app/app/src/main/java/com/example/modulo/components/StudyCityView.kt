@@ -1,5 +1,9 @@
 package com.example.modulo.components
 
+import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.Easing
+import androidx.compose.animation.core.animate
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -19,6 +23,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -36,6 +46,8 @@ import com.example.modulo.Building
 import com.example.modulo.City
 import com.example.modulo.R
 import com.example.modulo.helpers.CityLogicHelper
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlin.math.max
 import kotlin.math.min
 
@@ -49,6 +61,13 @@ private const val SOIL_DEPTH = 26f
 
 private val MAST_COLOR = Color(0xFF9AA0A6)
 private val BEACON_COLOR = Color(0xFFE5484D)
+
+// Ease curve for animation
+private val PopEasing: Easing = CubicBezierEasing(0.34f, 1.56f, 0.64f, 1f)
+private const val POP_MS = 550
+private const val POP_STAGGER_MS = 120L
+
+private fun plotKey(b: Building) = "${b.x},${b.y}"
 
 @Composable
 fun StudyCityView(
@@ -64,6 +83,35 @@ fun StudyCityView(
     val tier = CityLogicHelper.gridTier(totalMins)
     val r = (tier.size - 1) / 2
     val maxFloors = max(3, city.buildings.filter { it.floors > 0 }.maxOfOrNull { it.floors } ?: 0)
+
+    // Per-plot pop progress (0f..~1.1f). A plot absent from the map is fully built (1f).
+    val popProgress = remember { mutableStateMapOf<String, Float>() }
+    var prevFloors by remember { mutableStateOf<Map<String, Int>>(emptyMap()) }
+    var seededOnce by remember { mutableStateOf(false) }
+
+    // When the city changes, animate the plots that were newly built or grew
+    LaunchedEffect(city.buildings) {
+        val current = city.buildings.filter { it.floors > 0 }.associate { plotKey(it) to it.floors }
+        val changed = city.buildings
+            .filter { it.floors > 0 && prevFloors[plotKey(it)] != it.floors }
+            .sortedBy { it.x + it.y }
+            .map { plotKey(it) }
+        val firstPaint = !seededOnce
+        seededOnce = true
+        prevFloors = current
+        if (firstPaint || changed.isEmpty()) return@LaunchedEffect
+
+        changed.forEach { popProgress[it] = 0f }
+        changed.forEachIndexed { i, key ->
+            launch {
+                delay(i * POP_STAGGER_MS)
+                animate(0f, 1f, animationSpec = tween(POP_MS, easing = PopEasing)) { v, _ ->
+                    popProgress[key] = v
+                }
+                popProgress.remove(key)
+            }
+        }
+    }
 
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Box(Modifier.fillMaxWidth().weight(1f)) {
@@ -82,7 +130,7 @@ fun StudyCityView(
                         translate(fit.offX, fit.offY)
                         scale(fit.scale, fit.scale, pivot = Offset.Zero)
                     }) {
-                        drawCityScene(city, r, palette)
+                        drawCityScene(city, r, palette) { b -> popProgress[plotKey(b)] ?: 1f }
                     }
                 }
             }
@@ -165,7 +213,12 @@ private fun DrawScope.strokeLine(points: List<Offset>, color: Color, width: Floa
     drawPath(path, color, alpha = alpha, style = Stroke(width = width, cap = StrokeCap.Round))
 }
 
-private fun DrawScope.drawCityScene(city: City, r: Int, pal: CityPalette) {
+private fun DrawScope.drawCityScene(
+    city: City,
+    r: Int,
+    pal: CityPalette,
+    progressOf: (Building) -> Float = { 1f }
+) {
     val top = iso(-r, -r); val rightC = iso(r, -r); val bottom = iso(r, r); val leftC = iso(-r, r)
     val sandE = W / 2f + W * 0.35f
 
@@ -235,10 +288,22 @@ private fun DrawScope.drawCityScene(city: City, r: Int, pal: CityPalette) {
     city.buildings
         .filter { it.floors > 0 }
         .sortedBy { it.x + it.y }
-        .forEach { drawTower(it, pal) }
+        .forEach { drawTower(it, pal, progressOf(it)) }
 }
 
-private fun DrawScope.drawTower(b: Building, pal: CityPalette) {
+private fun DrawScope.drawTower(b: Building, pal: CityPalette, progress: Float) {
+    val base = iso(b.x, b.y)
+    // Grow the tower up from its base (pivot at the plot centre) during the pop-in.
+    if (progress < 0.999f) {
+        withTransform({ scale(1f, progress.coerceAtLeast(0f), pivot = base) }) {
+            drawTowerBody(b, pal)
+        }
+    } else {
+        drawTowerBody(b, pal)
+    }
+}
+
+private fun DrawScope.drawTowerBody(b: Building, pal: CityPalette) {
     val base = iso(b.x, b.y)
     val sx = base.x; val sy = base.y
     val ht = b.floors * FLOOR_H
