@@ -1,7 +1,6 @@
 package com.example.modulo.pages
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -50,6 +49,7 @@ import com.example.modulo.components.StudyCityView
 import com.example.modulo.components.cityScheme
 import com.example.modulo.components.nextCityScheme
 import com.example.modulo.emojis
+import com.example.modulo.ui.theme.ModuloTheme
 import java.time.Instant
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
@@ -92,7 +92,7 @@ fun StudySessionPage(
     val timerString = String.format(Locale.getDefault(), "%02d:%02d:%02d", hours, minutes, seconds)
 
     val context = LocalContext.current
-    val dark = isSystemInDarkTheme()
+    val dark = ModuloTheme.isDark
     var schemeKey by remember { mutableStateOf(CitySchemeStore.get(context)) }
     val scheme = cityScheme(schemeKey)
     val seaColor = if (dark) scheme.night.sea else scheme.day.sea

@@ -19,6 +19,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -39,6 +41,7 @@ import coil.compose.AsyncImage
 import com.example.modulo.AppViewModel
 import com.example.modulo.R
 import com.example.modulo.components.WarningCard
+import com.example.modulo.ui.theme.ModuloTheme
 
 @Composable
 fun SettingsPage(
@@ -53,6 +56,7 @@ fun SettingsPage(
     val userEmail = viewModel.getUserEmail()
     val isSignedIn = userEmail.isNotBlank()
     val userPhotoUrl by viewModel.userPhotoUrl.collectAsState()
+    val isDark = ModuloTheme.isDark
     val context = LocalContext.current
 
     var showSignOutWarning by remember { mutableStateOf(false) }
@@ -81,7 +85,7 @@ fun SettingsPage(
                 )
             }
 
-            SettingsSectionTitle("Account & Settings")
+            SettingsSectionTitle("Account")
 
             SettingsRow(
                 icon = R.drawable.circle_user_round,
@@ -91,6 +95,33 @@ fun SettingsPage(
                 isClickable = !isSignedIn,
                 onClick = { viewModel.reAuthenticate() },
                 leadingImageUrl = if (isSignedIn) userPhotoUrl else null
+            )
+
+            SettingsSectionTitle("Settings")
+
+            SettingsRow(
+                icon = R.drawable.sun_moon,
+                title = if (isDark) "Dark Mode" else "Light Mode",
+                isClickable = true,
+                onClick = { viewModel.setDarkMode(!isDark) },
+                trailing = {
+                    Switch(
+                        checked = isDark,
+                        onCheckedChange = { viewModel.setDarkMode(it) },
+                        thumbContent = {
+                            Icon(
+                                painter = painterResource(if (isDark) R.drawable.moon else R.drawable.sun),
+                                contentDescription = null,
+                                modifier = Modifier.size(SwitchDefaults.IconSize)
+                            )
+                        },
+                        colors = SwitchDefaults.colors(
+                            uncheckedThumbColor = MaterialTheme.colorScheme.primary,
+                            uncheckedTrackColor = MaterialTheme.colorScheme.surface,
+                            uncheckedBorderColor = MaterialTheme.colorScheme.surface
+                        )
+                    )
+                }
             )
 
             SettingsSectionTitle("More Tools")
@@ -183,7 +214,8 @@ fun SettingsRow(
     subTitleColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
     isClickable: Boolean,
     onClick: () -> Unit,
-    leadingImageUrl: String? = null
+    leadingImageUrl: String? = null,
+    trailing: (@Composable () -> Unit)? = null
 ) {
     Row(
         modifier = Modifier
@@ -193,7 +225,10 @@ fun SettingsRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            modifier = Modifier.weight(1f),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             if (leadingImageUrl != null) {
                 AsyncImage(
                     model = leadingImageUrl,
@@ -231,6 +266,11 @@ fun SettingsRow(
                     )
                 }
             }
+        }
+
+        if (trailing != null) {
+            Spacer(modifier = Modifier.width(12.dp))
+            trailing()
         }
     }
 

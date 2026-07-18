@@ -45,6 +45,7 @@ val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "se
 val HAS_SEEN_TUTORIAL = booleanPreferencesKey("has_seen_tutorial")
 val IS_DRIVE_SYNC_ENABLED = booleanPreferencesKey("is_drive_sync_enabled")
 val USER_PHOTO_URL = stringPreferencesKey("user_photo_url")
+val IS_DARK_MODE = booleanPreferencesKey("is_dark_mode")
 
 class AppViewModel @JvmOverloads constructor(
     application: Application,
@@ -77,6 +78,9 @@ class AppViewModel @JvmOverloads constructor(
 
     private val _userPhotoUrl = MutableStateFlow<String?>(null)
     val userPhotoUrl = _userPhotoUrl.asStateFlow()
+    
+    private val _isDarkMode = MutableStateFlow<Boolean?>(null)
+    val isDarkMode = _isDarkMode.asStateFlow()
 
     private val _hasInternet = MutableStateFlow(false)
 
@@ -115,6 +119,15 @@ class AppViewModel @JvmOverloads constructor(
         viewModelScope.launch {
             getApplication<Application>().dataStore.edit { settings ->
                 if (url == null) settings.remove(USER_PHOTO_URL) else settings[USER_PHOTO_URL] = url
+            }
+        }
+    }
+
+    fun setDarkMode(enabled: Boolean) {
+        _isDarkMode.value = enabled
+        viewModelScope.launch {
+            getApplication<Application>().dataStore.edit { settings ->
+                settings[IS_DARK_MODE] = enabled
             }
         }
     }
@@ -205,6 +218,7 @@ class AppViewModel @JvmOverloads constructor(
             val isSyncEnabled = prefs[IS_DRIVE_SYNC_ENABLED]
             
             _userPhotoUrl.value = prefs[USER_PHOTO_URL]
+            _isDarkMode.value = prefs[IS_DARK_MODE]
 
             // Check for first time users
             if (!hasSeenTutorial) {

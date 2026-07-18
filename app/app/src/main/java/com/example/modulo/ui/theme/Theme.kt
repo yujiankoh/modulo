@@ -57,11 +57,16 @@ private val DarkCustomColors = CustomColors(
 )
 
 private val LocalCustomColors = staticCompositionLocalOf { LightCustomColors }
+private val LocalDarkTheme = staticCompositionLocalOf { false }
 
 object ModuloTheme {
     val colors: CustomColors
         @Composable
         get() = LocalCustomColors.current
+
+    val isDark: Boolean
+        @Composable
+        get() = LocalDarkTheme.current
 }
 
 @Composable
@@ -82,7 +87,10 @@ fun ModuloTheme(
 
     val customColors = if (darkTheme) DarkCustomColors else LightCustomColors
 
-    CompositionLocalProvider(LocalCustomColors provides customColors) {
+    CompositionLocalProvider(
+        LocalCustomColors provides customColors,
+        LocalDarkTheme provides darkTheme
+    ) {
         MaterialTheme(
             colorScheme = colorScheme,
             typography = Typography,

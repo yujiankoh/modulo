@@ -6,7 +6,6 @@ import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -46,6 +45,7 @@ import com.example.modulo.Building
 import com.example.modulo.City
 import com.example.modulo.R
 import com.example.modulo.helpers.CityLogicHelper
+import com.example.modulo.ui.theme.ModuloTheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.max
@@ -77,7 +77,7 @@ fun StudyCityView(
     onCycleScheme: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val dark = isSystemInDarkTheme()
+    val dark = ModuloTheme.isDark
     val palette = if (dark) scheme.night else scheme.day
 
     val tier = CityLogicHelper.gridTier(totalMins)
