@@ -873,6 +873,7 @@ fun ViewModuleCard(
     var uploadOpen by remember { mutableStateOf(false) }
     var renameTarget by remember { mutableStateOf<Note?>(null) }
     var deleteTarget by remember { mutableStateOf<Note?>(null) }
+    var pendingDeleteNote by remember { mutableStateOf<Note?>(null) }
     var deletedTask by remember { mutableStateOf<Task?>(null) }
 
     LaunchedEffect(gated) { if (!gated) viewModel.loadNotes() }
@@ -907,7 +908,13 @@ fun ViewModuleCard(
             modifier = Modifier
                 .fillMaxWidth(0.9f)
                 .padding(16.dp)
-                .heightIn(max = screenHeight * 0.8f),
+                .heightIn(max = screenHeight * 0.8f)
+                .pointerInput(Unit) {
+                    detectTapGestures(onTap = {
+                        pendingDeleteNote = null
+                        deletedTask = null
+                    })
+                },
             shape = RoundedCornerShape(36.dp),
             elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background),
@@ -933,38 +940,6 @@ fun ViewModuleCard(
                         .fillMaxWidth()
                         .padding(24.dp)
                 ) {
-                    Text("My notes", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    when {
-                        gated -> ModuleNotesHint()
-
-                        cache == null -> Text(
-                            text = if (notesData.loading) "Loading notes…" else "Couldn't load notes - open the Notes view.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = ModuloTheme.colors.subText
-                        )
-
-                        moduleNotes.isEmpty() -> Text(
-                            text = "No notes for this module yet.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = ModuloTheme.colors.subText
-                        )
-
-                        else -> Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            moduleNotes.take(5).forEach { note ->
-                                NoteRowCard(
-                                    note = note,
-                                    onOpen = { openNote(note) },
-                                    onRename = { renameTarget = note },
-                                    onDelete = { deleteTarget = note }
-                                )
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Button(
                             onClick = { onAddTask(label) },
@@ -986,6 +961,46 @@ fun ViewModuleCard(
                                 Icon(painter = painterResource(R.drawable.plus), contentDescription = null)
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text("Add note")
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Text("My notes", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    when {
+                        gated -> ModuleNotesHint()
+
+                        cache == null -> Text(
+                            text = if (notesData.loading) "Loading notes…" else "Couldn't load notes - open the Notes view.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = ModuloTheme.colors.subText
+                        )
+
+                        moduleNotes.isEmpty() -> Text(
+                            text = "No notes for this module yet.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = ModuloTheme.colors.subText
+                        )
+
+                        else -> Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            val visibleNotes = moduleNotes.take(5)
+                            visibleNotes.forEachIndexed { index, note ->
+                                NoteRowCard(
+                                    note = note,
+                                    showDelete = pendingDeleteNote == note,
+                                    onOpen = { openNote(note) },
+                                    onLongPress = { pendingDeleteNote = note },
+                                    onNormalPress = { pendingDeleteNote = null },
+                                    onRename = { renameTarget = note },
+                                    onDelete = {
+                                        deleteTarget = note
+                                        pendingDeleteNote = null
+                                    },
+                                    shape = groupedCardShape(index, visibleNotes.size)
+                                )
                             }
                         }
                     }

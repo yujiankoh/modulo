@@ -6,6 +6,8 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -52,7 +54,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -100,6 +104,8 @@ fun AllNotesPage(
     var uploadOpen by remember { mutableStateOf(false) }
     var renameTarget by remember { mutableStateOf<Note?>(null) }
     var deleteTarget by remember { mutableStateOf<Note?>(null) }
+    
+    var pendingDelete by remember { mutableStateOf<Note?>(null) }
 
     LaunchedEffect(gated) { if (!gated) viewModel.loadNotes() }
 
@@ -123,6 +129,9 @@ fun AllNotesPage(
     }
 
     Scaffold(
+        modifier = Modifier.pointerInput(Unit) {
+            detectTapGestures(onTap = { pendingDelete = null })
+        },
         floatingActionButton = {
             if (!gated) {
                 FloatingActionButton(
@@ -282,9 +291,15 @@ fun AllNotesPage(
                     shown.forEachIndexed { index, note ->
                         NoteRowCard(
                             note = note,
+                            showDelete = pendingDelete == note,
                             onOpen = { openNote(note) },
+                            onLongPress = { pendingDelete = note },
+                            onNormalPress = { pendingDelete = null },
                             onRename = { renameTarget = note },
-                            onDelete = { deleteTarget = note },
+                            onDelete = {
+                                deleteTarget = note
+                                pendingDelete = null
+                            },
                             shape = groupedCardShape(index, shown.size)
                         )
                     }
@@ -346,7 +361,10 @@ private fun NoteFilterChip(
 @Composable
 fun NoteRowCard(
     note: Note,
+    showDelete: Boolean,
     onOpen: () -> Unit,
+    onLongPress: () -> Unit,
+    onNormalPress: () -> Unit,
     onRename: () -> Unit,
     onDelete: () -> Unit,
     shape: Shape = RoundedCornerShape(20.dp)
@@ -354,10 +372,18 @@ fun NoteRowCard(
     val barColor = if (note.module.isNotBlank()) getModuleColor(note.module).container
     else MaterialTheme.colorScheme.outlineVariant
 
+    val cardColour = if (showDelete) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.surface
+    val titleColour = if (showDelete) MaterialTheme.colorScheme.onErrorContainer else Color.Unspecified
+    val metaColour = if (showDelete) MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.7f) else ModuloTheme.colors.subText
+
     Card(
-        onClick = onOpen,
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        modifier = Modifier
+            .fillMaxWidth()
+            .combinedClickable(
+                onClick = { if (showDelete) onNormalPress() else onOpen() },
+                onLongClick = onLongPress
+            ),
+        colors = CardDefaults.cardColors(containerColor = cardColour),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         shape = shape
     ) {
@@ -380,8 +406,10 @@ fun NoteRowCard(
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.SemiBold,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
+                    color = titleColour
                 )
+                Spacer(modifier = Modifier.padding(4.dp))
                 Text(
                     text = listOfNotNull(
                         note.module.ifBlank { null },
@@ -389,21 +417,24 @@ fun NoteRowCard(
                         formatNoteDate(note.modifiedTime).ifBlank { null }
                     ).joinToString(" · "),
                     style = MaterialTheme.typography.bodySmall,
-                    color = ModuloTheme.colors.subText
+                    color = metaColour
                 )
             }
-            IconButton(onClick = onRename, modifier = Modifier.size(36.dp)) {
-                Icon(
-                    painter = painterResource(R.drawable.pencil),
-                    contentDescription = "Rename ${note.name}"
-                )
-            }
-            IconButton(onClick = onDelete, modifier = Modifier.size(36.dp)) {
-                Icon(
-                    painter = painterResource(R.drawable.trash_2),
-                    contentDescription = "Delete ${note.name}",
-                    tint = MaterialTheme.colorScheme.error
-                )
+            if (showDelete) {
+                IconButton(onClick = onDelete, modifier = Modifier.size(36.dp)) {
+                    Icon(
+                        painter = painterResource(R.drawable.trash_2),
+                        contentDescription = "Delete",
+                        tint = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                }
+            } else {
+                IconButton(onClick = onRename, modifier = Modifier.size(36.dp)) {
+                    Icon(
+                        painter = painterResource(R.drawable.pencil),
+                        contentDescription = "Rename"
+                    )
+                }
             }
         }
     }
