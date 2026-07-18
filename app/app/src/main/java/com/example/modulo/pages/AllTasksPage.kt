@@ -254,7 +254,7 @@ fun TaskCard(
     val theme = getModuleColor(task.module.ifBlank { task.title })
 
     val cardColour = if (showDelete) {
-        MaterialTheme.colorScheme.error
+        MaterialTheme.colorScheme.errorContainer
     } else {
         MaterialTheme.colorScheme.surface
     }
@@ -311,12 +311,12 @@ fun TaskCard(
                     Text(
                         text = "${if (showModule) "${task.module.ifBlank { task.title }} •" else ""} ${task.type.replaceFirstChar { it.uppercase() }}",
                         fontSize = 12.sp,
-                        color = if (showDelete) MaterialTheme.colorScheme.onError.copy(alpha = 0.7f) else ModuloTheme.colors.subText
+                        color = if (showDelete) MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.7f) else ModuloTheme.colors.subText
                     )
                 }
             }
             if (dueText.isNotEmpty()) {
-                Badge(containerColor = if (showDelete) MaterialTheme.colorScheme.onError.copy(alpha = 0.2f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)) {
+                Badge(containerColor = if (showDelete) MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.2f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)) {
                     Text(
                         text = dueText,
                         fontSize = 12.sp,

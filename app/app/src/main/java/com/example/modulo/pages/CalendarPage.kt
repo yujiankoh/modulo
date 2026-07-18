@@ -367,8 +367,6 @@ fun ViewCalendarCell(
                                     deletedTask = null
                                 },
                                 dueText = "",
-                                shape = groupedCardShape(index, tasks.size),
-                                elevation = 1.dp
                             )
                         }
                     }

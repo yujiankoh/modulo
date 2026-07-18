@@ -519,7 +519,6 @@ fun Deadlines(
                 },
                 dueText = formatRelativeDate(task.due),
                 shape = groupedCardShape(index, dueTasks.size),
-                elevation = 1.dp
             )
         }
     }
@@ -941,7 +940,6 @@ fun ViewModuleCard(
                                     },
                                     showModule = false,
                                     shape = groupedCardShape(index, moduleTasks.size),
-                                    elevation = 1.dp
                                 )
                             }
                         }
