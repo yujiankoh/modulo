@@ -189,6 +189,22 @@ data class NotesData(
     val error: String? = null
 )
 
+/**
+ * This data class encapsulates all the summary of app data when deconflicting
+ */
+data class SyncSummary(
+    val handbooks: Int,
+    val studyMinutes: Int,
+    val currentHandbook: String,
+    val tasks: Int,
+    val modules: Int
+)
+
+data class SyncConflict(
+    val local: SyncSummary,
+    val cloud: SyncSummary
+)
+
 data class ModuleColor(val container: Color, val onContainer: Color)
 
 val lightColors = listOf(
