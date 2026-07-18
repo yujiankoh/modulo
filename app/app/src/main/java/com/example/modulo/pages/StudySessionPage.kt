@@ -49,11 +49,8 @@ import com.example.modulo.components.StudyCityView
 import com.example.modulo.components.cityScheme
 import com.example.modulo.components.nextCityScheme
 import com.example.modulo.emojis
+import com.example.modulo.helpers.StudyStatsHelper
 import com.example.modulo.ui.theme.ModuloTheme
-import java.time.Instant
-import java.time.ZoneId
-import java.time.temporal.ChronoUnit
-import java.util.Locale
 
 @Composable
 fun StudySessionPage(
@@ -64,32 +61,12 @@ fun StudySessionPage(
 
     var showConfirmDialog by remember { mutableStateOf(false) }
 
-    val (todayMins, weekMins, totalMins) = remember(appData.studySessions) {
-        val sessions = appData.studySessions
-        val now = Instant.now().atZone(ZoneId.systemDefault())
-        val startOfDay = now.truncatedTo(ChronoUnit.DAYS).toInstant()
-        val startOfWeek = now.with(java.time.DayOfWeek.MONDAY).truncatedTo(ChronoUnit.DAYS).toInstant()
+    val sessions = appData.studySessions
+    val todayMins = remember(sessions) { StudyStatsHelper.minutesToday(sessions) }
+    val weekMins = remember(sessions) { StudyStatsHelper.minutesThisWeek(sessions) }
+    val totalMins = remember(sessions) { StudyStatsHelper.totalMinutes(sessions) }
 
-        var tMins = 0
-        var wMins = 0
-        var allMins = 0
-
-        sessions.forEach { session ->
-            allMins += session.durationMins
-            try {
-                val sessionStart = Instant.parse(session.start)
-                if (!sessionStart.isBefore(startOfDay)) tMins += session.durationMins
-                if (!sessionStart.isBefore(startOfWeek)) wMins += session.durationMins
-            } catch (e: Exception) { /* Ignore invalid dates */ }
-        }
-        Triple(tMins, wMins, allMins)
-    }
-
-    val elapsedSeconds = viewModel.elapsedSeconds
-    val hours = elapsedSeconds / 3600
-    val minutes = (elapsedSeconds % 3600) / 60
-    val seconds = elapsedSeconds % 60
-    val timerString = String.format(Locale.getDefault(), "%02d:%02d:%02d", hours, minutes, seconds)
+    val timerString = StudyStatsHelper.formatTimer(viewModel.elapsedSeconds)
 
     val context = LocalContext.current
     val dark = ModuloTheme.isDark
