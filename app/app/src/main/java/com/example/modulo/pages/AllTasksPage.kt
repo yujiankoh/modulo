@@ -1,6 +1,5 @@
 package com.example.modulo.pages
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -14,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Badge
 import androidx.compose.material3.Card
@@ -39,11 +39,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.modulo.AppViewModel
@@ -245,7 +247,8 @@ fun TaskCard(
     onDelete: () -> Unit,
     modifier: Modifier = Modifier,
     dueText: String = formatDate(task.due),
-    showModule: Boolean = true
+    showModule: Boolean = true,
+    shape: Shape = RoundedCornerShape(20.dp),
 ) {
 
     val theme = getModuleColor(task.module.ifBlank { task.title })
@@ -263,8 +266,8 @@ fun TaskCard(
                 onClick = {onNormalPress()},
                 onLongClick = {onLongPress()}
             ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        shape = RoundedCornerShape(20.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        shape = shape,
         colors = CardDefaults.cardColors(containerColor = cardColour),
     ) {
         Row(
@@ -350,7 +353,7 @@ fun TaskColumn(
         modifier = modifier
             .fillMaxWidth()
             .padding(top = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(2.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         if (tasks.isEmpty()) {
@@ -361,7 +364,7 @@ fun TaskColumn(
                 )
             }
         } else {
-            items(tasks) { task ->
+            itemsIndexed(tasks) { index, task ->
                 TaskCard(
                     task = task,
                     showDelete = deletedTask == task,
@@ -373,9 +376,19 @@ fun TaskColumn(
                     onDelete = {
                         viewModel.deleteTask(task)
                         onSelectDeletedTask(null)
-                    }
+                    },
+                    shape = groupedCardShape(index, tasks.size),
                 )
             }
         }
     }
+}
+
+// corner radius for the grouped
+fun groupedCardShape(index: Int, size: Int): Shape {
+    val large = 20.dp
+    val small = 8.dp
+    val top = if (index == 0) large else small
+    val bottom = if (index == size - 1) large else small
+    return RoundedCornerShape(topStart = top, topEnd = top, bottomStart = bottom, bottomEnd = bottom)
 }

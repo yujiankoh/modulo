@@ -14,7 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -351,9 +351,9 @@ fun ViewCalendarCell(
                 } else {
                     LazyColumn(
                         modifier = Modifier.weight(1f, fill = false),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        verticalArrangement = Arrangement.spacedBy(2.dp)
                     ) {
-                        items(tasks) { task ->
+                        itemsIndexed(tasks) { index, task ->
                             TaskCard(
                                 task = task,
                                 showDelete = deletedTask == task,
@@ -366,7 +366,9 @@ fun ViewCalendarCell(
                                     viewModel.deleteTask(task)
                                     deletedTask = null
                                 },
-                                dueText = ""
+                                dueText = "",
+                                shape = groupedCardShape(index, tasks.size),
+                                elevation = 1.dp
                             )
                         }
                     }

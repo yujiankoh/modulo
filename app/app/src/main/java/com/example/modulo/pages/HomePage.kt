@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -501,9 +502,9 @@ fun Deadlines(
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(max = 240.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(2.dp)
     ) {
-        items(dueTasks) { task ->
+        itemsIndexed(dueTasks) { index, task ->
             TaskCard(
                 task = task,
                 showDelete = deletedTask == task,
@@ -516,7 +517,9 @@ fun Deadlines(
                     viewModel.deleteTask(task)
                     onSelectDeletedTask(null)
                 },
-                dueText = formatRelativeDate(task.due)
+                dueText = formatRelativeDate(task.due),
+                shape = groupedCardShape(index, dueTasks.size),
+                elevation = 1.dp
             )
         }
     }
@@ -923,9 +926,9 @@ fun ViewModuleCard(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .heightIn(max = screenHeight * 0.3f),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                            verticalArrangement = Arrangement.spacedBy(2.dp)
                         ) {
-                            items(moduleTasks) { task ->
+                            itemsIndexed(moduleTasks) { index, task ->
                                 TaskCard(
                                     task = task,
                                     showDelete = deletedTask == task,
@@ -936,7 +939,9 @@ fun ViewModuleCard(
                                         viewModel.deleteTask(task)
                                         deletedTask = null
                                     },
-                                    showModule = false
+                                    showModule = false,
+                                    shape = groupedCardShape(index, moduleTasks.size),
+                                    elevation = 1.dp
                                 )
                             }
                         }
