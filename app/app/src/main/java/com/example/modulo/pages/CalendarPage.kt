@@ -235,7 +235,7 @@ fun CalendarPage(
 }
 
 private fun calendarCellFilled(row: Int, col: Int, offset: Int, daysInMonth: Int): Boolean {
-    if (col < 0 || col > 6) return false
+    if (col !in 0..6) return false
     val dayIndex = row * 7 + col - offset
     return dayIndex in 0 until daysInMonth
 }
@@ -282,7 +282,9 @@ fun DayCell(
 
     Column(modifier = cellModifier) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 4.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.Top
         ) {

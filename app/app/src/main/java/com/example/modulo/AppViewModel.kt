@@ -611,13 +611,11 @@ class AppViewModel @JvmOverloads constructor(
         _notesData.value = _notesData.value.copy(loading = false, error = message)
     }
 
-    fun clearNotesError() = setNotesError(null)
-
     fun loadNotes() {
         val current = _notesData.value
         if (current.notes != null || current.loading || notesGated()) return
         val helper = syncingHelper ?: run {
-            setNotesError("Google sign-in expired — please reconnect and try again.")
+            setNotesError("Google sign-in expired. Please reconnect and try again.")
             return
         }
         _notesData.value = current.copy(loading = true, error = null)
@@ -637,7 +635,7 @@ class AppViewModel @JvmOverloads constructor(
 
     fun uploadNote(uri: Uri, module: String, onResult: (String?) -> Unit = {}) {
         val helper = syncingHelper ?: run {
-            onResult("Google sign-in expired — please reconnect and try again.")
+            onResult("Google sign-in expired. Please reconnect and try again.")
             return
         }
         val resolver = getApplication<Application>().contentResolver
@@ -667,7 +665,7 @@ class AppViewModel @JvmOverloads constructor(
 
     fun renameNote(id: String, newName: String, onResult: (String?) -> Unit = {}) {
         val helper = syncingHelper ?: run {
-            onResult("Google sign-in expired — please reconnect and try again.")
+            onResult("Google sign-in expired. Please reconnect and try again.")
             return
         }
         viewModelScope.launch {
@@ -685,7 +683,7 @@ class AppViewModel @JvmOverloads constructor(
 
     fun deleteNote(id: String) {
         val helper = syncingHelper ?: run {
-            setNotesError("Google sign-in expired — please reconnect and try again.")
+            setNotesError("Google sign-in expired. Please reconnect and try again.")
             return
         }
         viewModelScope.launch {
