@@ -10,14 +10,20 @@ import androidx.datastore.preferences.core.preferencesOf
 import androidx.lifecycle.SavedStateHandle
 import com.example.modulo.helpers.AuthenticationHelper
 import com.example.modulo.helpers.ParsingHelper
+import com.example.modulo.helpers.SyncingHelper
+import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkConstructor
+import io.mockk.mockkObject
 import io.mockk.mockkStatic
 import io.mockk.unmockkConstructor
 import io.mockk.unmockkObject
 import io.mockk.unmockkStatic
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.advanceUntilIdle
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -36,6 +42,7 @@ AppViewModelTestBase {
     protected lateinit var viewModel: AppViewModel
 
     protected val parsingHelper: ParsingHelper = mockk(relaxed = true)
+    protected val syncingHelper: SyncingHelper = mockk(relaxed = true)
 
     /** Preferences the fake DataStore emits. Override [buildPrefs] to change onboarding state. */
     protected open fun buildPrefs(): Preferences =
@@ -89,9 +96,19 @@ AppViewModelTestBase {
         viewModel.pauseTimer()
         unmockkStatic("com.example.modulo.AppViewModelKt")
         unmockkObject(AuthenticationHelper)
+        unmockkObject(SyncingHelper.Companion)
         unmockkConstructor(ParsingHelper::class)
         unmockkConstructor(NetworkRequest.Builder::class)
         onTearDown()
+    }
+    
+    @OptIn(ExperimentalCoroutinesApi::class)
+    protected fun TestScope.signInWithMockedDrive(email: String = "notes@test.com") {
+        mockkObject(SyncingHelper.Companion)
+        every { SyncingHelper.getSyncService(any(), any()) } returns syncingHelper
+        coEvery { syncingHelper.downloadAppData() } returns null
+        viewModel.onAuthenticationSuccess(mockApplication, email)
+        advanceUntilIdle()
     }
 
     protected fun sampleTask(

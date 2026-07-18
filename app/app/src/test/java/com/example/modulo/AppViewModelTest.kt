@@ -19,7 +19,6 @@ import org.junit.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class AppViewModelTest : AppViewModelTestBase() {
     private val task = sampleTask()
-    private val syncingHelper = io.mockk.mockk<SyncingHelper>(relaxed = true)
 
     override fun buildPrefs() =
         androidx.datastore.preferences.core.preferencesOf(
