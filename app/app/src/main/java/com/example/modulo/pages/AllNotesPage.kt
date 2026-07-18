@@ -50,6 +50,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -274,14 +277,15 @@ fun AllNotesPage(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
-                    for (note in shown) {
+                    shown.forEachIndexed { index, note ->
                         NoteRowCard(
                             note = note,
                             onOpen = { openNote(note) },
                             onRename = { renameTarget = note },
-                            onDelete = { deleteTarget = note }
+                            onDelete = { deleteTarget = note },
+                            shape = groupedCardShape(index, shown.size)
                         )
                     }
                 }
@@ -344,30 +348,33 @@ fun NoteRowCard(
     note: Note,
     onOpen: () -> Unit,
     onRename: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    shape: Shape = RoundedCornerShape(20.dp)
 ) {
+    val barColor = if (note.module.isNotBlank()) getModuleColor(note.module).container
+    else MaterialTheme.colorScheme.outlineVariant
+
     Card(
         onClick = onOpen,
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        shape = RoundedCornerShape(16.dp)
+        shape = shape
     ) {
         Row(
-            modifier = Modifier.padding(12.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .drawBehind {
+                    drawRect(color = barColor, size = Size(20.dp.toPx(), size.height))
+                }
+                .padding(start = 24.dp, top = 12.dp, end = 12.dp, bottom = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(
+            Column(
                 modifier = Modifier
-                    .size(10.dp)
-                    .clip(CircleShape)
-                    .background(
-                        if (note.module.isNotBlank()) getModuleColor(note.module).container
-                        else MaterialTheme.colorScheme.outlineVariant
-                    )
-            )
-            Spacer(modifier = Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f)) {
+                    .weight(1f)
+                    .padding(start = 8.dp)
+            ) {
                 Text(
                     text = note.name,
                     style = MaterialTheme.typography.bodyLarge,
