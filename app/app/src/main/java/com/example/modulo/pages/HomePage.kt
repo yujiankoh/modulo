@@ -1,6 +1,7 @@
 package com.example.modulo.pages
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -21,11 +22,13 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -42,6 +45,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
@@ -527,6 +531,7 @@ fun Modules(
     val modulesList = appData.timetable?.modules ?: emptyList()
 
     var selectedModule by remember { mutableStateOf<Module?>(null) }
+    var manageOpen by remember { mutableStateOf(false) }
 
     if (modulesList.isEmpty()) {
         Box(modifier = Modifier
@@ -536,41 +541,50 @@ fun Modules(
         }
         return
     }
+    
+    val hidden = appData.hiddenModules.toSet()
+    val visibleModules = modulesList.filter { it.code.ifBlank { it.name } !in hidden }
+    val hiddenCount = modulesList.size - visibleModules.size
 
-    val chunkedList = modulesList.chunked(3)
+    SectionTitle("Modules", subtext = "Manage", onSubtext = { manageOpen = true })
 
-    Row(
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        SectionTitle("Modules")
-    }
+    if (visibleModules.isEmpty()) {
+        Box(modifier = Modifier
+            .fillMaxWidth()
+            .height(100.dp), contentAlignment = Alignment.Center) {
+            Text(
+                "All modules hidden - tap Manage to show some.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = ModuloTheme.colors.subText
+            )
+        }
+    } else {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            visibleModules.chunked(3).forEach { rowModules ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    for (i in 0 until 3) {
+                        if (i < rowModules.size) {
+                            val module = rowModules[i]
+                            val label = module.code.ifBlank { module.name }
+                            val uncompletedCount = appData.tasks.count { !it.done && it.module == label }
 
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        chunkedList.forEach { rowModules ->
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                for (i in 0 until 3) {
-                    if (i < rowModules.size) {
-                        val module = rowModules[i]
-                        // Tasks/notes are tagged by the module's label (code, or name when code is blank).
-                        val label = module.code.ifBlank { module.name }
-                        val uncompletedCount = appData.tasks.count { !it.done && it.module == label }
-
-                        ModuleCard(
-                            moduleCode = module.code,
-                            moduleName = module.name,
-                            uncompletedTasksCount = uncompletedCount,
-                            educationLevel = appData.educationLevel ?: "",
-                            onClick = { selectedModule = module },
-                            modifier = Modifier.weight(1f)
-                        )
-                    } else {
-                        Spacer(modifier = Modifier.weight(1f))
+                            ModuleCard(
+                                moduleCode = module.code,
+                                moduleName = module.name,
+                                uncompletedTasksCount = uncompletedCount,
+                                educationLevel = appData.educationLevel ?: "",
+                                onClick = { selectedModule = module },
+                                modifier = Modifier.weight(1f)
+                            )
+                        } else {
+                            Spacer(modifier = Modifier.weight(1f))
+                        }
                     }
                 }
             }
@@ -587,6 +601,100 @@ fun Modules(
             },
             onDismiss = { selectedModule = null }
         )
+    }
+
+    if (manageOpen) {
+        ManageModulesDialog(
+            modules = modulesList,
+            hidden = hidden,
+            onToggle = { label, hide -> viewModel.setModuleHidden(label, hide) },
+            onDismiss = { manageOpen = false }
+        )
+    }
+}
+
+@Composable
+fun ManageModulesDialog(
+    modules: List<Module>,
+    hidden: Set<String>,
+    onToggle: (String, Boolean) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val windowInfo = LocalWindowInfo.current
+    val density = LocalDensity.current
+    val screenHeight = with(density) { windowInfo.containerSize.height.toDp() }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(max = screenHeight * 0.7f),
+            shape = RoundedCornerShape(28.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background)
+        ) {
+            Column(modifier = Modifier.padding(24.dp)) {
+                Text(
+                    text = "Manage modules",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "Untick a module to hide it from your dashboard.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = ModuloTheme.colors.subText,
+                    modifier = Modifier.padding(top = 4.dp, bottom = 12.dp)
+                )
+
+                LazyColumn(
+                    modifier = Modifier.weight(1f, fill = false),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    items(modules) { module ->
+                        val label = module.code.ifBlank { module.name }
+                        val title = if (module.name.isNotBlank() && module.name != label) "$label · ${module.name}" else label
+                        val shown = label !in hidden
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .clickable { onToggle(label, shown) }
+                                .padding(vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Checkbox(
+                                checked = shown,
+                                onCheckedChange = { onToggle(label, shown) }
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .size(12.dp)
+                                    .clip(CircleShape)
+                                    .background(getModuleColor(label).container)
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                text = title,
+                                style = MaterialTheme.typography.bodyLarge,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Button(
+                    onClick = onDismiss,
+                    modifier = Modifier.align(Alignment.End),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("Done")
+                }
+            }
+        }
     }
 }
 
