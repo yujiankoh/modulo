@@ -29,6 +29,7 @@ import com.example.modulo.helpers.NetworkResult
 import com.example.modulo.helpers.NotesHelper
 import com.example.modulo.helpers.ParsingHelper
 import com.example.modulo.helpers.SyncingHelper
+import com.example.modulo.pages.handbookTitle
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -197,7 +198,8 @@ class AppViewModel @JvmOverloads constructor(
             studyMinutes = data.studySessions.sumOf { it.durationMins },
             currentHandbook = label,
             tasks = data.tasks.size,
-            modules = data.timetable?.modules?.size ?: 0
+            modules = data.timetable?.modules?.size ?: 0,
+            lastSaved = data.updatedAt
         )
     }
 

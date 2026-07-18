@@ -55,6 +55,10 @@ import com.example.modulo.SyncSummary
 import com.example.modulo.components.WarningCard
 import com.example.modulo.helpers.StudyStatsHelper
 import com.example.modulo.ui.theme.ModuloTheme
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 @Composable
 fun SettingsPage(
@@ -378,6 +382,11 @@ private fun SyncSummaryColumn(title: String, summary: SyncSummary, modifier: Mod
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary
             )
+            Text(
+                text = formatSavedTime(summary.lastSaved),
+                style = MaterialTheme.typography.labelSmall,
+                color = ModuloTheme.colors.subText
+            )
             Spacer(modifier = Modifier.height(8.dp))
 
             SyncSummaryRow("Handbooks", summary.handbooks.toString())
@@ -400,6 +409,18 @@ private fun SyncSummaryColumn(title: String, summary: SyncSummary, modifier: Mod
             SyncSummaryRow("Tasks", summary.tasks.toString())
             SyncSummaryRow("Modules", summary.modules.toString())
         }
+    }
+}
+
+// "19 Jul 2026, 14:30" in the device's local time, or "unknown" if never saved / unparseable.
+private fun formatSavedTime(iso: String?): String {
+    if (iso.isNullOrBlank()) return "unknown"
+    return try {
+        Instant.parse(iso)
+            .atZone(ZoneId.systemDefault())
+            .format(DateTimeFormatter.ofPattern("d MMM yyyy, HH:mm", Locale.getDefault()))
+    } catch (e: Exception) {
+        "unknown"
     }
 }
 

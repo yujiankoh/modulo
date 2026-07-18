@@ -197,7 +197,8 @@ data class SyncSummary(
     val studyMinutes: Int,
     val currentHandbook: String,
     val tasks: Int,
-    val modules: Int
+    val modules: Int,
+    val lastSaved: String? = null
 )
 
 data class SyncConflict(
