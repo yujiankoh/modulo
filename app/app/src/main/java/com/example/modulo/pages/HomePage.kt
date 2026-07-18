@@ -56,9 +56,11 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.zIndex
+import com.example.modulo.AppData
 import com.example.modulo.AppViewModel
 import com.example.modulo.Module
 import com.example.modulo.R
@@ -139,11 +141,65 @@ fun HomePage(
 fun getGreeting(): String {
     val currentHour = LocalTime.now().hour
     return when (currentHour) {
-        in 0..11 -> "Good Morning,"
-        in 12..17 -> "Good Afternoon,"
-        else -> "Good Evening,"
+        in 0..11 -> "Good morning."
+        in 12..17 -> "Good afternoon."
+        else -> "Good evening."
     }
 }
+
+private fun dashboardEyebrow(appData: AppData): String {
+    val today = LocalDate.now()
+    val date = today.format(DateTimeFormatter.ofPattern("EEE d MMMM", Locale.getDefault())).uppercase()
+
+    val parse = { iso: String? -> iso?.let { runCatching { LocalDate.parse(it) }.getOrNull() } }
+    val termStart = parse(appData.termStart)
+    val termEnd = parse(appData.termEnd)
+
+    val inBreak = appData.breaks.any { br ->
+        val s = parse(br.start); val e = parse(br.end)
+        s != null && e != null && !today.isBefore(s) && !today.isAfter(e)
+    }
+    if (inBreak) return "$date · RECESS WEEK"
+
+    if (termStart != null && !today.isBefore(termStart)) {
+        val week = ChronoUnit.WEEKS.between(termStart, today).toInt() + 1
+        val total = termEnd?.let { ChronoUnit.WEEKS.between(termStart, it).toInt() + 1 }
+        return if (total != null && total > 0) "$date · WEEK $week OF $total" else "$date · WEEK $week"
+    }
+    return date
+}
+
+private fun dashboardSummary(appData: AppData): String {
+    val classes = classesTodayCount(appData)
+    val tasks = tasksDueThisWeekCount(appData)
+    val cls = "$classes ${if (classes == 1) "class" else "classes"}"
+    val tsk = "$tasks ${if (tasks == 1) "task" else "tasks"}"
+    return "$cls today, $tsk this week."
+}
+
+private fun classesTodayCount(appData: AppData): Int {
+    val timetable = appData.timetable ?: return 0
+    val today = LocalDate.now()
+    val termStart = appData.termStart?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
+    val weekNum = if (termStart != null && !today.isBefore(termStart)) {
+        ChronoUnit.WEEKS.between(termStart, today).toInt() + 1
+    } else 1
+    val activeWeekType = if (weekNum % 2 == 0) "even" else "odd"
+    val dayName = today.dayOfWeek.name.take(3).uppercase()
+    return timetable.modules.sumOf { module ->
+        module.slots.count { slot ->
+            slot.day.uppercase() == dayName &&
+                (slot.week.lowercase() == "all" || slot.week.lowercase() == activeWeekType)
+        }
+    }
+}
+
+private fun tasksDueThisWeekCount(appData: AppData): Int =
+    appData.tasks.count { task ->
+        if (task.done || task.due.isBlank()) return@count false
+        val due = runCatching { LocalDate.parse(task.due) }.getOrNull() ?: return@count false
+        ChronoUnit.DAYS.between(LocalDate.now(), due) in 0..7
+    }
 
 @Composable
 fun SyncIcon(state: SyncState, modifier: Modifier = Modifier) {
@@ -208,6 +264,7 @@ fun ProfileBar(
     viewModel: AppViewModel,
     onSettingsClick: () -> Unit
 ) {
+    val appData by viewModel.appData.collectAsState()
     val syncState by viewModel.syncState.collectAsState()
 
     Row(
@@ -216,17 +273,24 @@ fun ProfileBar(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Greeting
-        Column {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = dashboardEyebrow(appData),
+                style = MaterialTheme.typography.labelMedium,
+                letterSpacing = 1.sp,
+                color = ModuloTheme.colors.subText
+            )
+            Spacer(modifier = Modifier.height(2.dp))
             Text(
                 text = getGreeting(),
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(
-                text = "User", // You can replace this with viewModel.userName if you save it!
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = dashboardSummary(appData),
+                style = MaterialTheme.typography.bodyMedium,
+                color = ModuloTheme.colors.subText
             )
         }
 
