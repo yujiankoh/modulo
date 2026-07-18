@@ -451,7 +451,9 @@ fun UploadNoteDialog(
                     Text(
                         text = "Module: $lockedModule",
                         style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.SemiBold
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center
                     )
                 } else {
                     DropDownMenu(

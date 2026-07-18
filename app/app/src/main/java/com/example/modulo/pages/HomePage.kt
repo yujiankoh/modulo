@@ -679,7 +679,7 @@ fun ViewModuleCard(
     // Tasks and notes are tagged by the module's label (code, or name when code is blank).
     val label = module.code.ifBlank { module.name }
     val theme = getModuleColor(label)
-    val title = if (module.name.isNotBlank() && module.name != label) "$label · ${module.name}" else label
+    val title = if (module.name.isNotBlank() && module.name != label) "$label\n${module.name}" else label
 
     var uploadOpen by remember { mutableStateOf(false) }
     var renameTarget by remember { mutableStateOf<Note?>(null) }
@@ -721,10 +721,10 @@ fun ViewModuleCard(
                 .heightIn(max = screenHeight * 0.8f),
             shape = RoundedCornerShape(36.dp),
             elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background),
         ) {
             Column(modifier = Modifier.fillMaxWidth()) {
-                // Coloured header band, like the dashboard module cards.
+                // Coloured header band.
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -751,7 +751,7 @@ fun ViewModuleCard(
                         gated -> ModuleNotesHint()
 
                         cache == null -> Text(
-                            text = if (notesData.loading) "Loading notes…" else "Couldn't load notes — open the Notes view.",
+                            text = if (notesData.loading) "Loading notes…" else "Couldn't load notes - open the Notes view.",
                             style = MaterialTheme.typography.bodyMedium,
                             color = ModuloTheme.colors.subText
                         )
@@ -792,15 +792,11 @@ fun ViewModuleCard(
                                 onClick = { uploadOpen = true },
                                 shape = RoundedCornerShape(12.dp),
                                 contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                                ),
                                 modifier = Modifier.weight(1f)
                             ) {
-                                Icon(painter = painterResource(R.drawable.upload), contentDescription = null)
+                                Icon(painter = painterResource(R.drawable.plus), contentDescription = null)
                                 Spacer(modifier = Modifier.width(6.dp))
-                                Text("Upload note")
+                                Text("Add note")
                             }
                         }
                     }
@@ -833,7 +829,8 @@ fun ViewModuleCard(
                                     onDelete = {
                                         viewModel.deleteTask(task)
                                         deletedTask = null
-                                    }
+                                    },
+                                    showModule = false
                                 )
                             }
                         }
