@@ -361,13 +361,14 @@ private fun NoteFilterChip(
 @Composable
 fun NoteRowCard(
     note: Note,
-    showDelete: Boolean,
     onOpen: () -> Unit,
-    onLongPress: () -> Unit,
-    onNormalPress: () -> Unit,
-    onRename: () -> Unit,
-    onDelete: () -> Unit,
-    shape: Shape = RoundedCornerShape(20.dp)
+    showDelete: Boolean = false,
+    onLongPress: () -> Unit = {},
+    onNormalPress: () -> Unit = {},
+    onRename: () -> Unit = {},
+    onDelete: () -> Unit = {},
+    shape: Shape = RoundedCornerShape(20.dp),
+    editable: Boolean = true
 ) {
     val barColor = if (note.module.isNotBlank()) getModuleColor(note.module).container
     else MaterialTheme.colorScheme.outlineVariant
@@ -381,7 +382,7 @@ fun NoteRowCard(
             .fillMaxWidth()
             .combinedClickable(
                 onClick = { if (showDelete) onNormalPress() else onOpen() },
-                onLongClick = onLongPress
+                onLongClick = if (editable) onLongPress else null
             ),
         colors = CardDefaults.cardColors(containerColor = cardColour),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
@@ -420,20 +421,22 @@ fun NoteRowCard(
                     color = metaColour
                 )
             }
-            if (showDelete) {
-                IconButton(onClick = onDelete, modifier = Modifier.size(36.dp)) {
-                    Icon(
-                        painter = painterResource(R.drawable.trash_2),
-                        contentDescription = "Delete",
-                        tint = MaterialTheme.colorScheme.onErrorContainer
-                    )
-                }
-            } else {
-                IconButton(onClick = onRename, modifier = Modifier.size(36.dp)) {
-                    Icon(
-                        painter = painterResource(R.drawable.pencil),
-                        contentDescription = "Rename"
-                    )
+            if (editable) {
+                if (showDelete) {
+                    IconButton(onClick = onDelete, modifier = Modifier.size(36.dp)) {
+                        Icon(
+                            painter = painterResource(R.drawable.trash_2),
+                            contentDescription = "Delete",
+                            tint = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                    }
+                } else {
+                    IconButton(onClick = onRename, modifier = Modifier.size(36.dp)) {
+                        Icon(
+                            painter = painterResource(R.drawable.pencil),
+                            contentDescription = "Rename"
+                        )
+                    }
                 }
             }
         }

@@ -93,6 +93,7 @@ fun HomePage(
     onSettingsClick: () -> Unit,
     onTimetableClick: () -> Unit,
     onAddTaskForModule: (String) -> Unit = {},
+    onNotesClick: () -> Unit = {},
 ) {
     // Collect info from the model
     val appData by viewModel.appData.collectAsState()
@@ -136,6 +137,56 @@ fun HomePage(
             item {
                 Modules(viewModel = viewModel, onAddTaskForModule = onAddTaskForModule)
             }
+
+            item {
+                RecentNotes(viewModel = viewModel, onNotesClick = onNotesClick)
+            }
+        }
+    }
+}
+
+@Composable
+fun RecentNotes(
+    viewModel: AppViewModel,
+    onNotesClick: () -> Unit
+) {
+    val driveEnabled by viewModel.isDriveSyncEnabled.collectAsState()
+    val notesData by viewModel.notesData.collectAsState()
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+
+    // No notes for local users
+    if (!driveEnabled) return
+
+    LaunchedEffect(Unit) { viewModel.loadNotes() }
+
+    val cache = notesData.notes
+    val recent = remember(cache) {
+        NotesHelper.visibleNotes(cache ?: emptyList(), sort = NotesHelper.NoteSort.NEWEST).take(3)
+    }
+
+    if (recent.isEmpty()) return
+
+    fun openNote(note: Note) {
+        scope.launch {
+            val bytes = viewModel.downloadNote(note.id) ?: return@launch
+            withContext(Dispatchers.IO) { openBytes(context, bytes, note.name, note.mimeType) }
+        }
+    }
+
+    SectionTitle("Notes", subtext = "View all Notes", onSubtext = onNotesClick)
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(2.dp)
+    ) {
+        recent.forEachIndexed { index, note ->
+            NoteRowCard(
+                note = note,
+                onOpen = { openNote(note) },
+                shape = groupedCardShape(index, recent.size),
+                editable = false
+            )
         }
     }
 }
