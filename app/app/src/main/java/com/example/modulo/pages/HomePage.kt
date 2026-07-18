@@ -73,6 +73,7 @@ import com.example.modulo.components.WarningCard
 import com.example.modulo.getModuleColor
 import com.example.modulo.helpers.NotesHelper
 import com.example.modulo.helpers.NotesHelper.Note
+import com.example.modulo.helpers.StudyStatsHelper
 import com.example.modulo.ui.theme.ModuloTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -124,6 +125,10 @@ fun HomePage(
 
             item {
                 ProfileBar(viewModel = viewModel, onSettingsClick = onSettingsClick)
+            }
+
+            item {
+                StudyStats(viewModel = viewModel)
             }
 
             item {
@@ -188,6 +193,36 @@ fun RecentNotes(
                 editable = false
             )
         }
+    }
+}
+
+@Composable
+fun StudyStats(viewModel: AppViewModel) {
+    val appData by viewModel.appData.collectAsState()
+    val sessions = appData.studySessions
+
+    val streak = remember(sessions) { StudyStatsHelper.currentStreak(sessions) }
+    val weekMins = remember(sessions) { StudyStatsHelper.minutesThisWeek(sessions) }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(2.dp)
+    ) {
+        StatCard(
+            title = "Streak",
+            value = "$streak ${if (streak == 1) "day" else "days"}",
+            shape = groupedRowShape(0, 2),
+            modifier = Modifier.weight(1f)
+        )
+        StatCard(
+            title = "This week",
+            value = StudyStatsHelper.formatHours(weekMins),
+            shape = groupedRowShape(1, 2),
+            accent = true,
+            modifier = Modifier.weight(1f)
+        )
     }
 }
 

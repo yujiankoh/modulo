@@ -100,9 +100,9 @@ fun StudySessionPage(
                     .padding(horizontal = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(2.dp)
             ) {
-                StatCard(title = "Today", mins = todayMins, shape = groupedRowShape(0, 3), modifier = Modifier.weight(1f))
-                StatCard(title = "This Week", mins = weekMins, shape = groupedRowShape(1, 3), modifier = Modifier.weight(1f))
-                StatCard(title = "Overall", mins = totalMins, shape = groupedRowShape(2, 3), modifier = Modifier.weight(1f))
+                StatCard(title = "Today", value = "$todayMins min", shape = groupedRowShape(0, 3), modifier = Modifier.weight(1f))
+                StatCard(title = "This Week", value = "$weekMins min", shape = groupedRowShape(1, 3), modifier = Modifier.weight(1f))
+                StatCard(title = "Overall", value = "$totalMins min", shape = groupedRowShape(2, 3), modifier = Modifier.weight(1f))
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -264,13 +264,18 @@ fun groupedRowShape(index: Int, size: Int): Shape {
 @Composable
 fun StatCard(
     title: String,
-    mins: Int,
+    value: String,
     modifier: Modifier = Modifier,
-    shape: Shape = RoundedCornerShape(20.dp)
+    shape: Shape = RoundedCornerShape(20.dp),
+    accent: Boolean = false
 ) {
+    val container = if (accent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface
+    val labelColor = if (accent) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f) else Color.Unspecified
+    val valueColor = if (accent) MaterialTheme.colorScheme.onPrimary else Color.Unspecified
+
     Card(
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        colors = CardDefaults.cardColors(containerColor = container),
         shape = shape,
         modifier = modifier
     ) {
@@ -278,8 +283,8 @@ fun StatCard(
             modifier = Modifier.fillMaxWidth().padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(title, style = MaterialTheme.typography.labelMedium)
-            Text("$mins min", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            Text(title, style = MaterialTheme.typography.labelMedium, color = labelColor)
+            Text(value, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = valueColor)
         }
     }
 }
