@@ -204,6 +204,7 @@ fun StudySessionPage(
                     dismissOnClickOutside = false,
                     dismissOnBackPress = false
                 ),
+                containerColor = MaterialTheme.colorScheme.background,
                 title = { Text("Session Ended") },
                 text = {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
