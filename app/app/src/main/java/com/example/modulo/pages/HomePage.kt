@@ -426,8 +426,24 @@ fun TodaySchedule(
     val timetable = appData.timetable
     val today = LocalDate.now()
 
+    SectionTitle(text = "Today's schedule", subtext = "View Timetable", onSubtext = onTimetableClick)
+
     if (timetable == null) {
-        Text("No timetable added yet!")
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 24.dp, top = 24.dp),
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Text("No timetable added yet!")
+            }
+        }
         return
     }
 
@@ -484,7 +500,7 @@ fun TodaySchedule(
         }
     }
 
-    SectionTitle(text = "Today's schedule", subtext = "View Timetable", onSubtext = onTimetableClick)
+
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -721,7 +737,7 @@ fun Modules(
             .fillMaxWidth()
             .height(100.dp), contentAlignment = Alignment.Center) {
             Text(
-                "All modules hidden - tap Manage to show some.",
+                "All modules hidden. Tap Manage to show some.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = ModuloTheme.colors.subText
             )

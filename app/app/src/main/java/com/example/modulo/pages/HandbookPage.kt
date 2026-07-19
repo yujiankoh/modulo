@@ -139,7 +139,7 @@ fun HandbookPage(
             selectedHandbook?.let { handbook ->
                 WarningCard(
                     title = "Swap Handbook",
-                    text = "Are you sure you want to swap your handbook to ${handbook.id}?",
+                    text = "Are you sure you want to swap your handbook to ${handbookTitle(handbook)}?",
                     confirmText = "Swap",
                     isDanger = false,
                     onConfirm = {

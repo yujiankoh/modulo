@@ -190,9 +190,9 @@ private fun SupportedContent(
         if (semester.skippedCount > 0) {
             Text(
                 text = if (semester.skippedCount == 1)
-                    "1 graded module isn't counted - check its credits."
+                    "1 graded module isn't counted. Check its credits."
                 else
-                    "${semester.skippedCount} graded modules aren't counted — check their credits.",
+                    "${semester.skippedCount} graded modules aren't counted. Check their credits.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.error,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
@@ -234,17 +234,17 @@ private fun GpaStatCard(
     Card(
         modifier = modifier,
         colors = CardDefaults.cardColors(
-            containerColor = if (accent) MaterialTheme.colorScheme.primaryContainer
+            containerColor = if (accent) MaterialTheme.colorScheme.primary
             else MaterialTheme.colorScheme.surface
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         shape = RoundedCornerShape(20.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
                 text = label,
                 style = MaterialTheme.typography.labelMedium,
-                color = if (accent) MaterialTheme.colorScheme.onPrimaryContainer
+                color = if (accent) MaterialTheme.colorScheme.onPrimary
                 else ModuloTheme.colors.subText
             )
             Spacer(modifier = Modifier.height(4.dp))
@@ -252,7 +252,7 @@ private fun GpaStatCard(
                 text = value,
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
-                color = if (accent) MaterialTheme.colorScheme.onPrimaryContainer
+                color = if (accent) MaterialTheme.colorScheme.onPrimary
                 else MaterialTheme.colorScheme.onSurface
             )
         }
@@ -464,7 +464,7 @@ private fun SemesterHistoryRow(entry: HistoryEntry, mixed: Boolean) {
                 Spacer(modifier = Modifier.width(8.dp))
                 Surface(
                     color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                    shape = RoundedCornerShape(6.dp)
+                    shape = RoundedCornerShape(12.dp)
                 ) {
                     Text(
                         text = "current",

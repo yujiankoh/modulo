@@ -212,7 +212,7 @@ class SyncingHelper(private val driveService: Drive) {
     }
 
     // A 404 is success: already deleted elsewhere reaches the same goal state.
-    suspend fun deleteNote(id: String) = withContext(Dispatchers.IO) {
+    suspend fun deleteNote(id: String): Any? = withContext(Dispatchers.IO) {
         try {
             driveService.files().delete(id).execute()
         } catch (e: GoogleJsonResponseException) {
