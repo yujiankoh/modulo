@@ -38,7 +38,8 @@ object AuthenticationHelper {
         scope: CoroutineScope,
         credentialManager: CredentialManager,
         onLaunchIntent: (IntentSenderRequest, String) -> Unit,
-        onSuccess: (String) -> Unit
+        onSuccess: (String) -> Unit,
+        onProfile: (String?) -> Unit = {}
     ) {
         scope.launch {
             try {
@@ -51,6 +52,7 @@ object AuthenticationHelper {
 
                 val userEmail = googleUser.id
                 Log.d(TAG, "Signed in: $userEmail")
+                onProfile(googleUser.profilePictureUri?.toString())
                 requestDriveAuthorization(activity, userEmail, onLaunchIntent, onSuccess)
 
             } catch (e: GoogleIdTokenParsingException) {
@@ -211,11 +213,13 @@ object AuthenticationHelper {
         context: Context,
         credentialManager: CredentialManager,
         onSuccess: (String) -> Unit,
-        onFailure: () -> Unit
+        onFailure: () -> Unit,
+        onProfile: (String?) -> Unit = {}
     ) {
         try {
             // Select accounts that have already logged in
             val googleUser = signIn(context, credentialManager, true)
+            onProfile(googleUser.profilePictureUri?.toString())
             onSuccess(googleUser.id)
 
         } catch (e: GetCredentialException) {

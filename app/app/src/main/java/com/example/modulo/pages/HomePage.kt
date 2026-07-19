@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -48,6 +49,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
@@ -55,9 +57,12 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.zIndex
+import coil.compose.AsyncImage
+import com.example.modulo.AppData
 import com.example.modulo.AppViewModel
 import com.example.modulo.Module
 import com.example.modulo.R
@@ -68,6 +73,7 @@ import com.example.modulo.components.WarningCard
 import com.example.modulo.getModuleColor
 import com.example.modulo.helpers.NotesHelper
 import com.example.modulo.helpers.NotesHelper.Note
+import com.example.modulo.helpers.StudyStatsHelper
 import com.example.modulo.ui.theme.ModuloTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -88,6 +94,7 @@ fun HomePage(
     onSettingsClick: () -> Unit,
     onTimetableClick: () -> Unit,
     onAddTaskForModule: (String) -> Unit = {},
+    onNotesClick: () -> Unit = {},
 ) {
     // Collect info from the model
     val appData by viewModel.appData.collectAsState()
@@ -121,6 +128,10 @@ fun HomePage(
             }
 
             item {
+                StudyStats(viewModel = viewModel)
+            }
+
+            item {
                 TodaySchedule(viewModel = viewModel, onTimetableClick = onTimetableClick)
             }
 
@@ -131,18 +142,152 @@ fun HomePage(
             item {
                 Modules(viewModel = viewModel, onAddTaskForModule = onAddTaskForModule)
             }
+
+            item {
+                RecentNotes(viewModel = viewModel, onNotesClick = onNotesClick)
+            }
         }
+    }
+}
+
+@Composable
+fun RecentNotes(
+    viewModel: AppViewModel,
+    onNotesClick: () -> Unit
+) {
+    val driveEnabled by viewModel.isDriveSyncEnabled.collectAsState()
+    val notesData by viewModel.notesData.collectAsState()
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+
+    // No notes for local users
+    if (!driveEnabled) return
+
+    LaunchedEffect(Unit) { viewModel.loadNotes() }
+
+    val cache = notesData.notes
+    val recent = remember(cache) {
+        NotesHelper.visibleNotes(cache ?: emptyList(), sort = NotesHelper.NoteSort.NEWEST).take(3)
+    }
+
+    if (recent.isEmpty()) return
+
+    fun openNote(note: Note) {
+        scope.launch {
+            val bytes = viewModel.downloadNote(note.id) ?: return@launch
+            withContext(Dispatchers.IO) { openBytes(context, bytes, note.name, note.mimeType) }
+        }
+    }
+
+    SectionTitle("Notes", subtext = "View all Notes", onSubtext = onNotesClick)
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(2.dp)
+    ) {
+        recent.forEachIndexed { index, note ->
+            NoteRowCard(
+                note = note,
+                onOpen = { openNote(note) },
+                shape = groupedCardShape(index, recent.size),
+                editable = false
+            )
+        }
+    }
+}
+
+@Composable
+fun StudyStats(viewModel: AppViewModel) {
+    val appData by viewModel.appData.collectAsState()
+    val sessions = appData.studySessions
+
+    val streak = remember(sessions) { StudyStatsHelper.currentStreak(sessions) }
+    val weekMins = remember(sessions) { StudyStatsHelper.minutesThisWeek(sessions) }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(2.dp)
+    ) {
+        StatCard(
+            title = "Streak",
+            value = "$streak ${if (streak == 1) "day" else "days"}",
+            shape = groupedRowShape(0, 2),
+            modifier = Modifier.weight(1f)
+        )
+        StatCard(
+            title = "This week",
+            value = StudyStatsHelper.formatHours(weekMins),
+            shape = groupedRowShape(1, 2),
+            accent = true,
+            modifier = Modifier.weight(1f)
+        )
     }
 }
 
 fun getGreeting(): String {
     val currentHour = LocalTime.now().hour
     return when (currentHour) {
-        in 0..11 -> "Good Morning,"
-        in 12..17 -> "Good Afternoon,"
-        else -> "Good Evening,"
+        in 0..11 -> "Good morning."
+        in 12..17 -> "Good afternoon."
+        else -> "Good evening."
     }
 }
+
+private fun dashboardEyebrow(appData: AppData): String {
+    val today = LocalDate.now()
+    val date = today.format(DateTimeFormatter.ofPattern("EEE d MMMM", Locale.getDefault())).uppercase()
+
+    val parse = { iso: String? -> iso?.let { runCatching { LocalDate.parse(it) }.getOrNull() } }
+    val termStart = parse(appData.termStart)
+    val termEnd = parse(appData.termEnd)
+
+    val inBreak = appData.breaks.any { br ->
+        val s = parse(br.start); val e = parse(br.end)
+        s != null && e != null && !today.isBefore(s) && !today.isAfter(e)
+    }
+    if (inBreak) return "$date · RECESS WEEK"
+
+    if (termStart != null && !today.isBefore(termStart)) {
+        val week = ChronoUnit.WEEKS.between(termStart, today).toInt() + 1
+        val total = termEnd?.let { ChronoUnit.WEEKS.between(termStart, it).toInt() + 1 }
+        return if (total != null && total > 0) "$date · WEEK $week OF $total" else "$date · WEEK $week"
+    }
+    return date
+}
+
+private fun dashboardSummary(appData: AppData): String {
+    val classes = classesTodayCount(appData)
+    val tasks = tasksDueThisWeekCount(appData)
+    val cls = "$classes ${if (classes == 1) "class" else "classes"}"
+    val tsk = "$tasks ${if (tasks == 1) "task" else "tasks"}"
+    return "$cls today, $tsk this week."
+}
+
+private fun classesTodayCount(appData: AppData): Int {
+    val timetable = appData.timetable ?: return 0
+    val today = LocalDate.now()
+    val termStart = appData.termStart?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
+    val weekNum = if (termStart != null && !today.isBefore(termStart)) {
+        ChronoUnit.WEEKS.between(termStart, today).toInt() + 1
+    } else 1
+    val activeWeekType = if (weekNum % 2 == 0) "even" else "odd"
+    val dayName = today.dayOfWeek.name.take(3).uppercase()
+    return timetable.modules.sumOf { module ->
+        module.slots.count { slot ->
+            slot.day.uppercase() == dayName &&
+                (slot.week.lowercase() == "all" || slot.week.lowercase() == activeWeekType)
+        }
+    }
+}
+
+private fun tasksDueThisWeekCount(appData: AppData): Int =
+    appData.tasks.count { task ->
+        if (task.done || task.due.isBlank()) return@count false
+        val due = runCatching { LocalDate.parse(task.due) }.getOrNull() ?: return@count false
+        ChronoUnit.DAYS.between(LocalDate.now(), due) in 0..7
+    }
 
 @Composable
 fun SyncIcon(state: SyncState, modifier: Modifier = Modifier) {
@@ -207,7 +352,9 @@ fun ProfileBar(
     viewModel: AppViewModel,
     onSettingsClick: () -> Unit
 ) {
+    val appData by viewModel.appData.collectAsState()
     val syncState by viewModel.syncState.collectAsState()
+    val userPhotoUrl by viewModel.userPhotoUrl.collectAsState()
 
     Row(
         modifier = Modifier
@@ -215,17 +362,24 @@ fun ProfileBar(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Greeting
-        Column {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = dashboardEyebrow(appData),
+                style = MaterialTheme.typography.labelMedium,
+                letterSpacing = 1.sp,
+                color = ModuloTheme.colors.subText
+            )
+            Spacer(modifier = Modifier.height(2.dp))
             Text(
                 text = getGreeting(),
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(
-                text = "User", // You can replace this with viewModel.userName if you save it!
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = dashboardSummary(appData),
+                style = MaterialTheme.typography.bodyMedium,
+                color = ModuloTheme.colors.subText
             )
         }
 
@@ -239,12 +393,25 @@ fun ProfileBar(
             IconButton(
                 onClick = onSettingsClick
             ) {
-                Icon(
-                    painter = painterResource(R.drawable.circle_user_round),
-                    contentDescription = "Profile and Settings",
-                    modifier = Modifier.size(40.dp),
-                    tint = MaterialTheme.colorScheme.primary
-                )
+                if (userPhotoUrl != null) {
+                    AsyncImage(
+                        model = userPhotoUrl,
+                        contentDescription = "Profile and Settings",
+                        contentScale = ContentScale.Crop,
+                        placeholder = painterResource(R.drawable.circle_user_round),
+                        error = painterResource(R.drawable.circle_user_round),
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                    )
+                } else {
+                    Icon(
+                        painter = painterResource(R.drawable.circle_user_round),
+                        contentDescription = "Profile and Settings",
+                        modifier = Modifier.size(40.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
             }
         }
     }
@@ -259,8 +426,24 @@ fun TodaySchedule(
     val timetable = appData.timetable
     val today = LocalDate.now()
 
+    SectionTitle(text = "Today's schedule", subtext = "View Timetable", onSubtext = onTimetableClick)
+
     if (timetable == null) {
-        Text("No timetable added yet!")
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 24.dp, top = 24.dp),
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Text("No timetable added yet!")
+            }
+        }
         return
     }
 
@@ -317,7 +500,7 @@ fun TodaySchedule(
         }
     }
 
-    SectionTitle(text = "Today's schedule", subtext = "View Timetable", onSubtext = onTimetableClick)
+
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -501,9 +684,10 @@ fun Deadlines(
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(max = 240.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 4.dp),
+        verticalArrangement = Arrangement.spacedBy(2.dp)
     ) {
-        items(dueTasks) { task ->
+        itemsIndexed(dueTasks) { index, task ->
             TaskCard(
                 task = task,
                 showDelete = deletedTask == task,
@@ -516,7 +700,8 @@ fun Deadlines(
                     viewModel.deleteTask(task)
                     onSelectDeletedTask(null)
                 },
-                dueText = formatRelativeDate(task.due)
+                dueText = formatRelativeDate(task.due),
+                shape = groupedCardShape(index, dueTasks.size),
             )
         }
     }
@@ -545,14 +730,14 @@ fun Modules(
     val hidden = appData.hiddenModules.toSet()
     val visibleModules = modulesList.filter { it.code.ifBlank { it.name } !in hidden }
 
-    SectionTitle("Modules", subtext = "Manage", onSubtext = { manageOpen = true })
+    SectionTitle("Modules", subtext = "Manage Modules", onSubtext = { manageOpen = true })
 
     if (visibleModules.isEmpty()) {
         Box(modifier = Modifier
             .fillMaxWidth()
             .height(100.dp), contentAlignment = Alignment.Center) {
             Text(
-                "All modules hidden - tap Manage to show some.",
+                "All modules hidden. Tap Manage to show some.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = ModuloTheme.colors.subText
             )
@@ -712,7 +897,7 @@ fun ModuleCard(
         onClick = onClick,
         modifier = modifier
             .fillMaxWidth()
-            .height(100.dp),
+            .height(90.dp),
         shape = RoundedCornerShape(20.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
@@ -790,6 +975,7 @@ fun ViewModuleCard(
     var uploadOpen by remember { mutableStateOf(false) }
     var renameTarget by remember { mutableStateOf<Note?>(null) }
     var deleteTarget by remember { mutableStateOf<Note?>(null) }
+    var pendingDeleteNote by remember { mutableStateOf<Note?>(null) }
     var deletedTask by remember { mutableStateOf<Task?>(null) }
 
     LaunchedEffect(gated) { if (!gated) viewModel.loadNotes() }
@@ -824,7 +1010,13 @@ fun ViewModuleCard(
             modifier = Modifier
                 .fillMaxWidth(0.9f)
                 .padding(16.dp)
-                .heightIn(max = screenHeight * 0.8f),
+                .heightIn(max = screenHeight * 0.8f)
+                .pointerInput(Unit) {
+                    detectTapGestures(onTap = {
+                        pendingDeleteNote = null
+                        deletedTask = null
+                    })
+                },
             shape = RoundedCornerShape(36.dp),
             elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background),
@@ -850,38 +1042,6 @@ fun ViewModuleCard(
                         .fillMaxWidth()
                         .padding(24.dp)
                 ) {
-                    Text("My notes", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    when {
-                        gated -> ModuleNotesHint()
-
-                        cache == null -> Text(
-                            text = if (notesData.loading) "Loading notes…" else "Couldn't load notes - open the Notes view.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = ModuloTheme.colors.subText
-                        )
-
-                        moduleNotes.isEmpty() -> Text(
-                            text = "No notes for this module yet.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = ModuloTheme.colors.subText
-                        )
-
-                        else -> Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            moduleNotes.take(5).forEach { note ->
-                                NoteRowCard(
-                                    note = note,
-                                    onOpen = { openNote(note) },
-                                    onRename = { renameTarget = note },
-                                    onDelete = { deleteTarget = note }
-                                )
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Button(
                             onClick = { onAddTask(label) },
@@ -909,6 +1069,46 @@ fun ViewModuleCard(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
+                    Text("My notes", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    when {
+                        gated -> ModuleNotesHint()
+
+                        cache == null -> Text(
+                            text = if (notesData.loading) "Loading notes…" else "Couldn't load notes - open the Notes view.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = ModuloTheme.colors.subText
+                        )
+
+                        moduleNotes.isEmpty() -> Text(
+                            text = "No notes for this module yet.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = ModuloTheme.colors.subText
+                        )
+
+                        else -> Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            val visibleNotes = moduleNotes.take(5)
+                            visibleNotes.forEachIndexed { index, note ->
+                                NoteRowCard(
+                                    note = note,
+                                    showDelete = pendingDeleteNote == note,
+                                    onOpen = { openNote(note) },
+                                    onLongPress = { pendingDeleteNote = note },
+                                    onNormalPress = { pendingDeleteNote = null },
+                                    onRename = { renameTarget = note },
+                                    onDelete = {
+                                        deleteTarget = note
+                                        pendingDeleteNote = null
+                                    },
+                                    shape = groupedCardShape(index, visibleNotes.size)
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
                     Text("Tasks", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(8.dp))
 
@@ -923,9 +1123,10 @@ fun ViewModuleCard(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .heightIn(max = screenHeight * 0.3f),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                            contentPadding = PaddingValues(horizontal = 4.dp, vertical = 4.dp),
+                            verticalArrangement = Arrangement.spacedBy(2.dp)
                         ) {
-                            items(moduleTasks) { task ->
+                            itemsIndexed(moduleTasks) { index, task ->
                                 TaskCard(
                                     task = task,
                                     showDelete = deletedTask == task,
@@ -936,7 +1137,8 @@ fun ViewModuleCard(
                                         viewModel.deleteTask(task)
                                         deletedTask = null
                                     },
-                                    showModule = false
+                                    showModule = false,
+                                    shape = groupedCardShape(index, moduleTasks.size),
                                 )
                             }
                         }

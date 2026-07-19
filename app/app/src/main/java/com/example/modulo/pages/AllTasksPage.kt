@@ -1,10 +1,10 @@
 package com.example.modulo.pages
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Badge
 import androidx.compose.material3.Card
@@ -37,10 +38,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.modulo.AppViewModel
@@ -242,13 +247,14 @@ fun TaskCard(
     onDelete: () -> Unit,
     modifier: Modifier = Modifier,
     dueText: String = formatDate(task.due),
-    showModule: Boolean = true
+    showModule: Boolean = true,
+    shape: Shape = RoundedCornerShape(20.dp),
 ) {
 
     val theme = getModuleColor(task.module.ifBlank { task.title })
 
     val cardColour = if (showDelete) {
-        MaterialTheme.colorScheme.error
+        MaterialTheme.colorScheme.errorContainer
     } else {
         MaterialTheme.colorScheme.surface
     }
@@ -261,16 +267,22 @@ fun TaskCard(
                 onLongClick = {onLongPress()}
             ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        shape = RoundedCornerShape(20.dp),
-        border = BorderStroke(2.dp, theme.container),
+        shape = shape,
         colors = CardDefaults.cardColors(containerColor = cardColour),
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(12.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .drawBehind {
+                    drawRect(color = theme.container, size = Size(20.dp.toPx(), size.height))
+                }
+                .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Row {
+            Row (
+                modifier = Modifier.padding(start = 8.dp)
+            ) {
                 if (showDelete) {
                     IconButton(onClick = onDelete) {
                         Icon(
@@ -291,26 +303,20 @@ fun TaskCard(
                     Text(
                         text = task.title,
                         textDecoration = if (task.done) TextDecoration.LineThrough else TextDecoration.None,
-                        fontWeight = FontWeight.SemiBold
+                        fontWeight = FontWeight.SemiBold,
+                        overflow = TextOverflow.Ellipsis,
+                        maxLines = 1
                     )
 
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Badge(containerColor = theme.container)
-                        Spacer(modifier.padding(4.dp))
-
-                        Text(
-                            text = "${if (showModule) "${task.module.ifBlank { task.title }} •" else ""} ${task.type.replaceFirstChar { it.uppercase() }}",
-                            fontSize = 12.sp,
-                            color = if (showDelete) MaterialTheme.colorScheme.onError.copy(alpha = 0.7f) else ModuloTheme.colors.subText
-                        )
-                    }
-
+                    Text(
+                        text = "${if (showModule) "${task.module.ifBlank { task.title }} • " else ""}${task.type.replaceFirstChar { it.uppercase() }}",
+                        fontSize = 12.sp,
+                        color = if (showDelete) MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.7f) else ModuloTheme.colors.subText
+                    )
                 }
             }
             if (dueText.isNotEmpty()) {
-                Badge(containerColor = if (showDelete) MaterialTheme.colorScheme.onError.copy(alpha = 0.2f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)) {
+                Badge(containerColor = if (showDelete) MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.2f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)) {
                     Text(
                         text = dueText,
                         fontSize = 12.sp,
@@ -344,10 +350,9 @@ fun TaskColumn(
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(top = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = modifier.fillMaxWidth(),
+        contentPadding = PaddingValues(top = 16.dp, start = 4.dp, end = 4.dp, bottom = 4.dp),
+        verticalArrangement = Arrangement.spacedBy(2.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         if (tasks.isEmpty()) {
@@ -358,7 +363,7 @@ fun TaskColumn(
                 )
             }
         } else {
-            items(tasks) { task ->
+            itemsIndexed(tasks) { index, task ->
                 TaskCard(
                     task = task,
                     showDelete = deletedTask == task,
@@ -370,9 +375,19 @@ fun TaskColumn(
                     onDelete = {
                         viewModel.deleteTask(task)
                         onSelectDeletedTask(null)
-                    }
+                    },
+                    shape = groupedCardShape(index, tasks.size),
                 )
             }
         }
     }
+}
+
+// corner radius for the grouped
+fun groupedCardShape(index: Int, size: Int): Shape {
+    val large = 20.dp
+    val small = 4.dp
+    val top = if (index == 0) large else small
+    val bottom = if (index == size - 1) large else small
+    return RoundedCornerShape(topStart = top, topEnd = top, bottomStart = bottom, bottomEnd = bottom)
 }

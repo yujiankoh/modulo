@@ -43,6 +43,7 @@ import com.example.modulo.pages.SettingsPage
 import com.example.modulo.pages.SignInPage
 import com.example.modulo.pages.StudyHistoryPage
 import com.example.modulo.pages.StudySessionPage
+import com.example.modulo.pages.SyncConflictDialog
 import com.example.modulo.pages.TimetablePage
 import com.example.modulo.pages.TimetableStateOverlay
 import com.example.modulo.pages.TutorialPage
@@ -81,6 +82,7 @@ fun RootNavigation(
     val navController = rememberNavController()
     val startupState by viewModel.startupState.collectAsState()
     val timetableState by viewModel.timetableState.collectAsState()
+    val syncConflict by viewModel.syncConflict.collectAsState()
 
     val context = requireNotNull(LocalActivity.current)
     val scope = rememberCoroutineScope()
@@ -110,7 +112,8 @@ fun RootNavigation(
                 viewModel.setUserEmail(userEmail)
                 driveAuthorizationLauncher.launch(intentRequest)
             },
-            onSuccess = navigateToHomeAfterSync
+            onSuccess = navigateToHomeAfterSync,
+            onProfile = { url -> viewModel.setUserPhotoUrl(url) }
         )
     }
 
@@ -167,7 +170,8 @@ fun RootNavigation(
                 onNavigateToSettings = { navController.navigate(Settings) },
                 onNavigateToTimetableUpload = { navController.navigate(TimetableUpload) },
                 onNavigateToStudyHistory = { navController.navigate(StudyHistory) },
-                onNavigateToTimetable = { navController.navigate(Timetable) }
+                onNavigateToTimetable = { navController.navigate(Timetable) },
+                onNavigateToNotes = { navController.navigate(Notes) }
             )
         }
 
@@ -179,6 +183,16 @@ fun RootNavigation(
                 .statusBarsPadding()
                 .zIndex(100f)
         )
+
+        // One-time "keep local or Drive?" choice when opting into sync with data on both sides.
+        syncConflict?.let { conflict ->
+            SyncConflictDialog(
+                conflict = conflict,
+                onKeepLocal = { viewModel.keepLocalData() },
+                onKeepDrive = { viewModel.keepDriveData() },
+                onCancel = { viewModel.cancelSyncConflict() }
+            )
+        }
     }
 }
 
@@ -329,7 +343,8 @@ fun NavGraphBuilder.appNavigation(
     onNavigateToSettings: () -> Unit,
     onNavigateToTimetableUpload: () -> Unit,
     onNavigateToStudyHistory: () -> Unit,
-    onNavigateToTimetable: () -> Unit
+    onNavigateToTimetable: () -> Unit,
+    onNavigateToNotes: () -> Unit
 ) {
     composable<AppGraph> {
         val navController = rememberNavController()
@@ -349,7 +364,8 @@ fun NavGraphBuilder.appNavigation(
                         onUploadTimetable = onNavigateToTimetableUpload,
                         onSettingsClick = onNavigateToSettings,
                         onTimetableClick = onNavigateToTimetable,
-                        onAddTaskForModule = { moduleCode -> navController.navigate(AddTask(moduleCode)) }
+                        onAddTaskForModule = { navController.navigate(AddTask(it)) },
+                        onNotesClick = onNavigateToNotes
                     )
                 }
 

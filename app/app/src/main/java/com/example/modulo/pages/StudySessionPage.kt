@@ -1,7 +1,6 @@
 package com.example.modulo.pages
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -36,6 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -49,10 +49,8 @@ import com.example.modulo.components.StudyCityView
 import com.example.modulo.components.cityScheme
 import com.example.modulo.components.nextCityScheme
 import com.example.modulo.emojis
-import java.time.Instant
-import java.time.ZoneId
-import java.time.temporal.ChronoUnit
-import java.util.Locale
+import com.example.modulo.helpers.StudyStatsHelper
+import com.example.modulo.ui.theme.ModuloTheme
 
 @Composable
 fun StudySessionPage(
@@ -63,35 +61,15 @@ fun StudySessionPage(
 
     var showConfirmDialog by remember { mutableStateOf(false) }
 
-    val (todayMins, weekMins, totalMins) = remember(appData.studySessions) {
-        val sessions = appData.studySessions
-        val now = Instant.now().atZone(ZoneId.systemDefault())
-        val startOfDay = now.truncatedTo(ChronoUnit.DAYS).toInstant()
-        val startOfWeek = now.with(java.time.DayOfWeek.MONDAY).truncatedTo(ChronoUnit.DAYS).toInstant()
+    val sessions = appData.studySessions
+    val todayMins = remember(sessions) { StudyStatsHelper.minutesToday(sessions) }
+    val weekMins = remember(sessions) { StudyStatsHelper.minutesThisWeek(sessions) }
+    val totalMins = remember(sessions) { StudyStatsHelper.totalMinutes(sessions) }
 
-        var tMins = 0
-        var wMins = 0
-        var allMins = 0
-
-        sessions.forEach { session ->
-            allMins += session.durationMins
-            try {
-                val sessionStart = Instant.parse(session.start)
-                if (!sessionStart.isBefore(startOfDay)) tMins += session.durationMins
-                if (!sessionStart.isBefore(startOfWeek)) wMins += session.durationMins
-            } catch (e: Exception) { /* Ignore invalid dates */ }
-        }
-        Triple(tMins, wMins, allMins)
-    }
-
-    val elapsedSeconds = viewModel.elapsedSeconds
-    val hours = elapsedSeconds / 3600
-    val minutes = (elapsedSeconds % 3600) / 60
-    val seconds = elapsedSeconds % 60
-    val timerString = String.format(Locale.getDefault(), "%02d:%02d:%02d", hours, minutes, seconds)
+    val timerString = StudyStatsHelper.formatTimer(viewModel.elapsedSeconds)
 
     val context = LocalContext.current
-    val dark = isSystemInDarkTheme()
+    val dark = ModuloTheme.isDark
     var schemeKey by remember { mutableStateOf(CitySchemeStore.get(context)) }
     val scheme = cityScheme(schemeKey)
     val seaColor = if (dark) scheme.night.sea else scheme.day.sea
@@ -120,11 +98,11 @@ fun StudySessionPage(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(2.dp)
             ) {
-                StatCard(title = "Today", mins = todayMins, modifier = Modifier.weight(1f))
-                StatCard(title = "This Week", mins = weekMins, modifier = Modifier.weight(1f))
-                StatCard(title = "Overall", mins = totalMins, modifier = Modifier.weight(1f))
+                StatCard(title = "Today", value = "$todayMins min", shape = groupedRowShape(0, 3), modifier = Modifier.weight(1f))
+                StatCard(title = "This Week", value = "$weekMins min", shape = groupedRowShape(1, 3), modifier = Modifier.weight(1f))
+                StatCard(title = "Overall", value = "$totalMins min", shape = groupedRowShape(2, 3), modifier = Modifier.weight(1f))
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -275,20 +253,38 @@ fun StudySessionPage(
     }
 }
 
+fun groupedRowShape(index: Int, size: Int): Shape {
+    val large = 20.dp
+    val small = 4.dp
+    val start = if (index == 0) large else small
+    val end = if (index == size - 1) large else small
+    return RoundedCornerShape(topStart = start, bottomStart = start, topEnd = end, bottomEnd = end)
+}
+
 @Composable
-fun StatCard(title: String, mins: Int, modifier: Modifier = Modifier) {
+fun StatCard(
+    title: String,
+    value: String,
+    modifier: Modifier = Modifier,
+    shape: Shape = RoundedCornerShape(20.dp),
+    accent: Boolean = false
+) {
+    val container = if (accent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface
+    val labelColor = if (accent) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f) else Color.Unspecified
+    val valueColor = if (accent) MaterialTheme.colorScheme.onPrimary else Color.Unspecified
+
     Card(
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = container),
+        shape = shape,
         modifier = modifier
     ) {
         Column(
             modifier = Modifier.fillMaxWidth().padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(title, style = MaterialTheme.typography.labelMedium)
-            Text("$mins min", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            Text(title, style = MaterialTheme.typography.labelMedium, color = labelColor)
+            Text(value, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = valueColor)
         }
     }
 }

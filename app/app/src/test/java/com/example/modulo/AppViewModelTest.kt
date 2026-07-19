@@ -33,7 +33,7 @@ class AppViewModelTest : AppViewModelTestBase() {
         mockkObject(SyncingHelper.Companion)
         every { SyncingHelper.getSyncService(any(), any()) } returns syncingHelper
         coEvery { syncingHelper.downloadAppData() } returns null
-        coEvery { AuthenticationHelper.silentSignIn(any(), any(), any(), captureLambda()) } answers {
+        coEvery { AuthenticationHelper.silentSignIn(any(), any(), any(), captureLambda(), any()) } answers {
             lambda<() -> Unit>().captured.invoke()
         }
     }
@@ -77,7 +77,7 @@ class AppViewModelTest : AppViewModelTestBase() {
     @Test
     fun `when silentSignIn fails, startup routes to AUTHENTICATE`() = runTest {
         coEvery {
-            AuthenticationHelper.silentSignIn(any(), any(), any(), captureLambda())
+            AuthenticationHelper.silentSignIn(any(), any(), any(), captureLambda(), any())
         } answers {
             lambda<() -> Unit>().captured.invoke() // onFailure
         }
@@ -91,7 +91,7 @@ class AppViewModelTest : AppViewModelTestBase() {
     @Test
     fun `when silentSignIn succeeds with no handbook, startup routes to HANDBOOK`() = runTest {
         coEvery {
-            AuthenticationHelper.silentSignIn(any(), any(), captureLambda(), any())
+            AuthenticationHelper.silentSignIn(any(), any(), captureLambda(), any(), any())
         } answers {
             lambda<(String) -> Unit>().captured.invoke("test@email.com") // onSuccess
         }

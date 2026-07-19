@@ -179,7 +179,7 @@ val syncJsonParser = Json {
 sealed interface TimetableState {
     object Idle : TimetableState
     object Processing : TimetableState
-    data class ReviewData(val timetable: Timetable) : TimetableState
+    data class ReviewData(val timetable: Timetable, val append: Boolean = false) : TimetableState
     data class Error(val message: String) : TimetableState
 }
 
@@ -187,6 +187,23 @@ data class NotesData(
     val notes: List<NotesHelper.Note>? = null,
     val loading: Boolean = false,
     val error: String? = null
+)
+
+/**
+ * This data class encapsulates all the summary of app data when deconflicting
+ */
+data class SyncSummary(
+    val handbooks: Int,
+    val studyMinutes: Int,
+    val currentHandbook: String,
+    val tasks: Int,
+    val modules: Int,
+    val lastSaved: String? = null
+)
+
+data class SyncConflict(
+    val local: SyncSummary,
+    val cloud: SyncSummary
 )
 
 data class ModuleColor(val container: Color, val onContainer: Color)

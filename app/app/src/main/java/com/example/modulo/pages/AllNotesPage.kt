@@ -3,9 +3,13 @@ package com.example.modulo.pages
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.provider.OpenableColumns
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -50,6 +54,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -97,6 +106,8 @@ fun AllNotesPage(
     var uploadOpen by remember { mutableStateOf(false) }
     var renameTarget by remember { mutableStateOf<Note?>(null) }
     var deleteTarget by remember { mutableStateOf<Note?>(null) }
+    
+    var pendingDelete by remember { mutableStateOf<Note?>(null) }
 
     LaunchedEffect(gated) { if (!gated) viewModel.loadNotes() }
 
@@ -120,6 +131,9 @@ fun AllNotesPage(
     }
 
     Scaffold(
+        modifier = Modifier.pointerInput(Unit) {
+            detectTapGestures(onTap = { pendingDelete = null })
+        },
         floatingActionButton = {
             if (!gated) {
                 FloatingActionButton(
@@ -274,14 +288,21 @@ fun AllNotesPage(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
-                    for (note in shown) {
+                    shown.forEachIndexed { index, note ->
                         NoteRowCard(
                             note = note,
+                            showDelete = pendingDelete == note,
                             onOpen = { openNote(note) },
+                            onLongPress = { pendingDelete = note },
+                            onNormalPress = { pendingDelete = null },
                             onRename = { renameTarget = note },
-                            onDelete = { deleteTarget = note }
+                            onDelete = {
+                                deleteTarget = note
+                                pendingDelete = null
+                            },
+                            shape = groupedCardShape(index, shown.size)
                         )
                     }
                 }
@@ -343,38 +364,55 @@ private fun NoteFilterChip(
 fun NoteRowCard(
     note: Note,
     onOpen: () -> Unit,
-    onRename: () -> Unit,
-    onDelete: () -> Unit
+    showDelete: Boolean = false,
+    onLongPress: () -> Unit = {},
+    onNormalPress: () -> Unit = {},
+    onRename: () -> Unit = {},
+    onDelete: () -> Unit = {},
+    shape: Shape = RoundedCornerShape(20.dp),
+    editable: Boolean = true
 ) {
+    val barColor = if (note.module.isNotBlank()) getModuleColor(note.module).container
+    else MaterialTheme.colorScheme.outlineVariant
+
+    val cardColour = if (showDelete) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.surface
+    val titleColour = if (showDelete) MaterialTheme.colorScheme.onErrorContainer else Color.Unspecified
+    val metaColour = if (showDelete) MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.7f) else ModuloTheme.colors.subText
+
     Card(
-        onClick = onOpen,
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        modifier = Modifier
+            .fillMaxWidth()
+            .combinedClickable(
+                onClick = { if (showDelete) onNormalPress() else onOpen() },
+                onLongClick = if (editable) onLongPress else null
+            ),
+        colors = CardDefaults.cardColors(containerColor = cardColour),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        shape = RoundedCornerShape(16.dp)
+        shape = shape
     ) {
         Row(
-            modifier = Modifier.padding(12.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .drawBehind {
+                    drawRect(color = barColor, size = Size(20.dp.toPx(), size.height))
+                }
+                .padding(start = 24.dp, top = 12.dp, end = 12.dp, bottom = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(
+            Column(
                 modifier = Modifier
-                    .size(10.dp)
-                    .clip(CircleShape)
-                    .background(
-                        if (note.module.isNotBlank()) getModuleColor(note.module).container
-                        else MaterialTheme.colorScheme.outlineVariant
-                    )
-            )
-            Spacer(modifier = Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f)) {
+                    .weight(1f)
+                    .padding(start = 8.dp)
+            ) {
                 Text(
                     text = note.name,
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.SemiBold,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
+                    color = titleColour
                 )
+                Spacer(modifier = Modifier.padding(4.dp))
                 Text(
                     text = listOfNotNull(
                         note.module.ifBlank { null },
@@ -382,21 +420,26 @@ fun NoteRowCard(
                         formatNoteDate(note.modifiedTime).ifBlank { null }
                     ).joinToString(" · "),
                     style = MaterialTheme.typography.bodySmall,
-                    color = ModuloTheme.colors.subText
+                    color = metaColour
                 )
             }
-            IconButton(onClick = onRename, modifier = Modifier.size(36.dp)) {
-                Icon(
-                    painter = painterResource(R.drawable.pencil),
-                    contentDescription = "Rename ${note.name}"
-                )
-            }
-            IconButton(onClick = onDelete, modifier = Modifier.size(36.dp)) {
-                Icon(
-                    painter = painterResource(R.drawable.trash_2),
-                    contentDescription = "Delete ${note.name}",
-                    tint = MaterialTheme.colorScheme.error
-                )
+            if (editable) {
+                if (showDelete) {
+                    IconButton(onClick = onDelete, modifier = Modifier.size(36.dp)) {
+                        Icon(
+                            painter = painterResource(R.drawable.trash_2),
+                            contentDescription = "Delete",
+                            tint = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                    }
+                } else {
+                    IconButton(onClick = onRename, modifier = Modifier.size(36.dp)) {
+                        Icon(
+                            painter = painterResource(R.drawable.pencil),
+                            contentDescription = "Rename"
+                        )
+                    }
+                }
             }
         }
     }
@@ -409,6 +452,7 @@ fun UploadNoteDialog(
     onUpload: (Uri, String, (String?) -> Unit) -> Unit,
     lockedModule: String? = null
 ) {
+    val context = LocalContext.current
     var uri by remember { mutableStateOf<Uri?>(null) }
     var fileName by remember { mutableStateOf("") }
     var moduleChoice by remember { mutableStateOf(lockedModule ?: "") }
@@ -423,7 +467,7 @@ fun UploadNoteDialog(
         contract = ActivityResultContracts.OpenDocument()
     ) { picked ->
         uri = picked
-        fileName = picked?.lastPathSegment ?: ""
+        fileName = picked?.let { queryDisplayName(context, it) } ?: ""
     }
 
     AlertDialog(
@@ -432,16 +476,32 @@ fun UploadNoteDialog(
         title = { Text("Upload note", fontWeight = FontWeight.Bold) },
         text = {
             Column {
-                Button(
-                    onClick = { picker.launch(NotesHelper.NOTE_MIME_TYPES) },
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                    ),
-                    modifier = Modifier.fillMaxWidth()
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(140.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .clickable { picker.launch(NotesHelper.NOTE_MIME_TYPES) }
+                        .background(MaterialTheme.colorScheme.surface),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Text(if (uri == null) "Choose a PDF or image" else fileName, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    ) {
+                        Icon(
+                            painter = painterResource(if (uri == null) R.drawable.plus else R.drawable.file_text),
+                            contentDescription = "Select a PDF or image",
+                            modifier = Modifier.size(40.dp)
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = if (uri == null) "Tap to select a PDF or image" else fileName,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.Center
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))
@@ -493,8 +553,7 @@ fun UploadNoteDialog(
         confirmButton = {
             Button(
                 onClick = {
-                    val chosen = uri
-                    if (chosen == null) { error = "Choose a file first."; return@Button }
+                    val chosen = uri ?: return@Button
                     val module = if (moduleChoice == OTHER) otherModule.trim() else moduleChoice
                     uploading = true
                     error = null
@@ -503,7 +562,7 @@ fun UploadNoteDialog(
                         if (result == null) onDismiss() else error = result
                     }
                 },
-                enabled = !uploading,
+                enabled = uri != null && !uploading,
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Text(if (uploading) "Uploading…" else "Upload")
@@ -638,6 +697,17 @@ private fun formatNoteDate(iso: String): String = try {
     Instant.parse(iso).atZone(ZoneId.systemDefault()).format(dateFormat)
 } catch (e: Exception) {
     ""
+}
+
+private fun queryDisplayName(context: Context, uri: Uri): String {
+    var name = ""
+    context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+        if (cursor.moveToFirst()) {
+            val idx = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+            if (idx >= 0) name = cursor.getString(idx) ?: ""
+        }
+    }
+    return name
 }
 
 // Write the bytes to a cache file and hand a viewer app a content

@@ -15,6 +15,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.SavedStateHandle
@@ -22,11 +23,13 @@ import androidx.lifecycle.viewModelScope
 import com.example.modulo.helpers.AuthenticationHelper
 import com.example.modulo.helpers.CityLogicHelper
 import com.example.modulo.helpers.LocalSaveHelper
+import com.example.modulo.helpers.MergeModulesHelper
 import com.example.modulo.helpers.NetworkHelper
 import com.example.modulo.helpers.NetworkResult
 import com.example.modulo.helpers.NotesHelper
 import com.example.modulo.helpers.ParsingHelper
 import com.example.modulo.helpers.SyncingHelper
+import com.example.modulo.pages.handbookTitle
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -43,6 +46,8 @@ private const val TAG = "ViewModel"
 val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 val HAS_SEEN_TUTORIAL = booleanPreferencesKey("has_seen_tutorial")
 val IS_DRIVE_SYNC_ENABLED = booleanPreferencesKey("is_drive_sync_enabled")
+val USER_PHOTO_URL = stringPreferencesKey("user_photo_url")
+val IS_DARK_MODE = booleanPreferencesKey("is_dark_mode")
 
 class AppViewModel @JvmOverloads constructor(
     application: Application,
@@ -72,6 +77,17 @@ class AppViewModel @JvmOverloads constructor(
     
     private val _notesData = MutableStateFlow(NotesData())
     val notesData = _notesData.asStateFlow()
+
+    private val _userPhotoUrl = MutableStateFlow<String?>(null)
+    val userPhotoUrl = _userPhotoUrl.asStateFlow()
+    
+    private val _isDarkMode = MutableStateFlow<Boolean?>(null)
+    val isDarkMode = _isDarkMode.asStateFlow()
+
+    // Set only when the user opts into Drive sync and BOTH local + Drive hold data
+    private val _syncConflict = MutableStateFlow<SyncConflict?>(null)
+    val syncConflict = _syncConflict.asStateFlow()
+    private var pendingCloudData: AppData? = null
 
     private val _hasInternet = MutableStateFlow(false)
 
@@ -105,6 +121,24 @@ class AppViewModel @JvmOverloads constructor(
         }
     }
 
+    fun setUserPhotoUrl(url: String?) {
+        _userPhotoUrl.value = url
+        viewModelScope.launch {
+            getApplication<Application>().dataStore.edit { settings ->
+                if (url == null) settings.remove(USER_PHOTO_URL) else settings[USER_PHOTO_URL] = url
+            }
+        }
+    }
+
+    fun setDarkMode(enabled: Boolean) {
+        _isDarkMode.value = enabled
+        viewModelScope.launch {
+            getApplication<Application>().dataStore.edit { settings ->
+                settings[IS_DARK_MODE] = enabled
+            }
+        }
+    }
+
     // Stores user email for authentication
     fun setUserEmail(email: String) {
         savedStateHandle["email"] = email
@@ -128,9 +162,83 @@ class AppViewModel @JvmOverloads constructor(
 
         viewModelScope.launch {
             _syncState.value = SyncState.SYNCING
-            resolveConflict(syncingHelper!!)
+            val cloudData = syncingHelper!!.downloadAppData()
+            val localData = _appData.value
+
+            // Opting into sync from local mode while Drive ALSO holds data, ask the user which to keep. 
+            // Any other case (one side empty), normal last-write-wins reconcile.
+            if (cloudData != null && hasMeaningfulData(localData) && hasMeaningfulData(cloudData)) {
+                pendingCloudData = cloudData
+                _syncConflict.value = SyncConflict(
+                    local = summarize(localData),
+                    cloud = summarize(cloudData)
+                )
+            } else {
+                resolveConflict(cloudData)
+                checkHandbookState()
+            }
+        }
+    }
+
+    // Has the user actually done anything worth preserving (vs a fresh/empty profile)?
+    private fun hasMeaningfulData(data: AppData): Boolean =
+        data.timetable != null ||
+            data.tasks.isNotEmpty() || data.grades.isNotEmpty() ||
+            data.studySessions.isNotEmpty() || data.otherHandbooks.isNotEmpty()
+
+    private fun summarize(data: AppData): SyncSummary {
+        val activeHandbook = if (data.educationLevel != null) 1 else 0
+        val label = if (data.educationLevel == null) {
+            "No handbook"
+        } else {
+            "${EducationLevel.getDisplay(data.educationLevel)}\n${handbookTitle(data)}"
+        }
+        return SyncSummary(
+            handbooks = activeHandbook + data.otherHandbooks.size,
+            studyMinutes = data.studySessions.sumOf { it.durationMins },
+            currentHandbook = label,
+            tasks = data.tasks.size,
+            modules = data.timetable?.modules?.size ?: 0,
+            lastSaved = data.updatedAt
+        )
+    }
+
+    // User chose to keep the Drive copy: adopt it locally and finish signing in.
+    fun keepDriveData() {
+        val cloud = pendingCloudData ?: return
+        _appData.value = cloud
+        localSaveHelper.saveData(cloud)
+        clearSyncConflict()
+        _syncState.value = SyncState.SYNCED
+        reconcileCity()
+        checkHandbookState()
+    }
+
+    // User chose to keep this device's copy: overwrite Drive with it and finish signing in.
+    fun keepLocalData() {
+        val helper = syncingHelper ?: return
+        viewModelScope.launch {
+            helper.uploadAppData(_appData.value)
+            clearSyncConflict()
+            _syncState.value = SyncState.SYNCED
             checkHandbookState()
         }
+    }
+
+    // User cancelled: abort the opt-in and stay on local-only, forgetting the Google account.
+    fun cancelSyncConflict() {
+        clearSyncConflict()
+        syncingHelper = null
+        setUserEmail("")
+        saveSyncPreference(false) // flips to local-only and re-checks the handbook state
+        viewModelScope.launch {
+            AuthenticationHelper.signOut(getApplication())
+        }
+    }
+
+    private fun clearSyncConflict() {
+        _syncConflict.value = null
+        pendingCloudData = null
     }
 
     private suspend fun attemptSilentSignIn(onComplete: () -> Unit = {}) {
@@ -150,12 +258,16 @@ class AppViewModel @JvmOverloads constructor(
             },
             onFailure = {
                 _startupState.value = StartupState.AUTHENTICATE
-            }
+            },
+            onProfile = { url -> _userPhotoUrl.value = url }
         )
     }
 
     private suspend fun resolveConflict(helper: SyncingHelper) {
-        val cloudData = helper.downloadAppData()
+        resolveConflict(helper.downloadAppData())
+    }
+    
+    private suspend fun resolveConflict(cloudData: AppData?) {
         val localData = _appData.value
 
         if (cloudData != null) {
@@ -188,6 +300,9 @@ class AppViewModel @JvmOverloads constructor(
             val prefs = getApplication<Application>().dataStore.data.first()
             val hasSeenTutorial = prefs[HAS_SEEN_TUTORIAL] ?: false
             val isSyncEnabled = prefs[IS_DRIVE_SYNC_ENABLED]
+            
+            _userPhotoUrl.value = prefs[USER_PHOTO_URL]
+            _isDarkMode.value = prefs[IS_DARK_MODE]
 
             // Check for first time users
             if (!hasSeenTutorial) {
@@ -282,6 +397,7 @@ class AppViewModel @JvmOverloads constructor(
             setUserEmail("")
             saveSyncPreference(false)
             syncingHelper = null
+            setUserPhotoUrl(null)
         }
     }
 
@@ -388,7 +504,12 @@ class AppViewModel @JvmOverloads constructor(
         _timetableState.value = TimetableState.Idle
     }
 
-    fun uploadTimetable(imageBytes: ByteArray, mimeType: String, educationLevel: String) {
+    fun uploadTimetable(
+        imageBytes: ByteArray,
+        mimeType: String,
+        educationLevel: String,
+        append: Boolean = false
+    ) {
         _timetableState.value = TimetableState.Processing
         viewModelScope.launch {
             try {
@@ -402,7 +523,7 @@ class AppViewModel @JvmOverloads constructor(
 
                 when (val result = parsingHelper.parseTimetable(parsingData)) {
                     is NetworkResult.Success -> {
-                        _timetableState.value = TimetableState.ReviewData(result.data)
+                        _timetableState.value = TimetableState.ReviewData(result.data, append)
                     }
                     is NetworkResult.Failure -> {
                         val message = when (result.statusCode) {
@@ -421,9 +542,18 @@ class AppViewModel @JvmOverloads constructor(
         }
     }
 
-    fun saveTimetable(timetable: Timetable) {
+    fun saveTimetable(timetable: Timetable, append: Boolean = false) {
         updateData { currentData ->
-            currentData.copy(educationLevel = timetable.educationLevel, timetable = timetable)
+            val existing = currentData.timetable
+            // "Add another week": merge the parsed modules into the current timetable
+            // (match by code+name, combine odd/even slots, drop duplicates).
+            val modules = if (append && existing != null) {
+                MergeModulesHelper.mergeModules(existing.modules, timetable.modules)
+            } else {
+                timetable.modules
+            }
+            val merged = timetable.copy(modules = modules)
+            currentData.copy(educationLevel = merged.educationLevel, timetable = merged)
         }
         _timetableState.value = TimetableState.Idle
     }
@@ -593,13 +723,11 @@ class AppViewModel @JvmOverloads constructor(
         _notesData.value = _notesData.value.copy(loading = false, error = message)
     }
 
-    fun clearNotesError() = setNotesError(null)
-
     fun loadNotes() {
         val current = _notesData.value
         if (current.notes != null || current.loading || notesGated()) return
         val helper = syncingHelper ?: run {
-            setNotesError("Google sign-in expired — please reconnect and try again.")
+            setNotesError("Google sign-in expired. Please reconnect and try again.")
             return
         }
         _notesData.value = current.copy(loading = true, error = null)
@@ -619,7 +747,7 @@ class AppViewModel @JvmOverloads constructor(
 
     fun uploadNote(uri: Uri, module: String, onResult: (String?) -> Unit = {}) {
         val helper = syncingHelper ?: run {
-            onResult("Google sign-in expired — please reconnect and try again.")
+            onResult("Google sign-in expired. Please reconnect and try again.")
             return
         }
         val resolver = getApplication<Application>().contentResolver
@@ -649,7 +777,7 @@ class AppViewModel @JvmOverloads constructor(
 
     fun renameNote(id: String, newName: String, onResult: (String?) -> Unit = {}) {
         val helper = syncingHelper ?: run {
-            onResult("Google sign-in expired — please reconnect and try again.")
+            onResult("Google sign-in expired. Please reconnect and try again.")
             return
         }
         viewModelScope.launch {
@@ -667,7 +795,7 @@ class AppViewModel @JvmOverloads constructor(
 
     fun deleteNote(id: String) {
         val helper = syncingHelper ?: run {
-            setNotesError("Google sign-in expired — please reconnect and try again.")
+            setNotesError("Google sign-in expired. Please reconnect and try again.")
             return
         }
         viewModelScope.launch {
