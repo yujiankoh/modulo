@@ -70,7 +70,7 @@ class SyncConflictIntegrationTest : AppViewModelTestBase() {
         val conflict = viewModel.syncConflict.value
         assertNotNull("both sides have data, so the user must choose", conflict)
         assertEquals(1, conflict!!.local.handbooks)
-        assertEquals("university", conflict.local.currentHandbook.substringBefore(" ·").lowercase())
+        assertEquals("university", conflict.local.currentHandbook.substringBefore("\n").lowercase())
         assertEquals(1, conflict.cloud.handbooks)
         assertEquals(1, conflict.cloud.tasks)
         assertEquals(60, conflict.cloud.studyMinutes)
