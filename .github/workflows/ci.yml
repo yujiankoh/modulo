@@ -1,0 +1,62 @@
+# Continuous Integration: runs the automated test suites on every push and pull request.
+# Two independent jobs so a failure on one side is easy to spot:
+#   - web-proxy-tests: the Node.js test runner over web/ logic + the proxy route
+#   - app-tests:       the Android app's JUnit unit tests
+# Instrumented UI tests (app/src/androidTest) are NOT run here — they need an emulator.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch: {}   # allow manual runs from the Actions tab
+
+jobs:
+  web-proxy-tests:
+    name: Web + proxy tests (Node.js)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # The proxy tests import server/index.js, which requires express etc.
+      - name: Install proxy dependencies
+        working-directory: server
+        run: npm install
+
+      # node --test discovers tests/*.test.js (web pure logic + the proxy route).
+      - name: Run tests
+        run: npm test
+        env:
+          # Placeholder only: the Gemini client is constructed at import time but no
+          # real API call is made, so a non-empty dummy value is enough for CI.
+          GEMINI_API_KEY: ci-placeholder-not-used
+
+  app-tests:
+    name: App unit tests (JUnit)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Gradle 9 / the Android Gradle Plugin require JDK 17 to run.
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      # Runs the local JVM unit tests only (testDebugUnitTest), not instrumented tests.
+      - name: Run unit tests
+        working-directory: app
+        run: |
+          chmod +x ./gradlew
+          ./gradlew testDebugUnitTest --stacktrace
