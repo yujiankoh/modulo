@@ -699,6 +699,76 @@ input[type="checkbox"]:checked::before {
 /* Replace = the Drive-destructive choice: danger-tinted, and NOT the primary. */
 #conflictReplaceBtn { color: var(--danger); }
 
+/* Feature tour (Phase 22): a centered step card on a dimmed screen, Next/Back +
+   dots. z-index 160 = above the landing (150), below the conflict dialog (180) and
+   switch overlay (200). All tokens → dark mode free. FIXED height so stepping
+   through features doesn't make the card jump around as descriptions vary. */
+#tourModal { z-index: 160; }
+.tour-card {
+  width: min(400px, calc(100vw - 40px));
+  text-align: center;
+  padding-top: 30px;
+}
+/* Skip: a quiet link top-right (first-run only — tour.js hides it in review mode). */
+.tour-skip {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 13px;
+  padding: 4px;
+}
+.tour-skip:hover { color: var(--text); background: transparent; }
+/* Icon chip: the feature's Lucide glyph in a soft rounded square. */
+.tour-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  margin: 6px auto 16px;
+  border-radius: 16px;
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+.tour-icon svg { width: 28px; height: 28px; }
+/* Optional per-step screenshot (deferred content — hidden until a step supplies one).
+   Framed on --surface with a border so a light-mode capture doesn't clash on dark. */
+.tour-image {
+  display: block;
+  width: 100%;
+  margin: 0 auto 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.tour-card h3 { margin: 0 0 10px; font-size: 20px; color: var(--text); }
+.tour-desc {
+  margin: 0 auto 20px;
+  min-height: 3em;              /* reserve ~2 lines so short/long copy don't resize the card */
+  max-width: 300px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--text-muted);
+}
+.tour-dots { display: flex; gap: 6px; justify-content: center; margin-bottom: 20px; }
+.tour-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--border); }
+.tour-dot.is-active { background: var(--primary); }
+.tour-nav { display: flex; gap: 10px; justify-content: center; }
+.tour-nav button { min-width: 92px; justify-content: center; }
+/* Back is hidden (not removed) on step 0 — visibility keeps the layout steady. */
+.tour-nav button.is-hidden { visibility: hidden; }
+/* Sidebar glow: tour.js adds .tour-glow to the nav link for the current step, so a
+   soft ring shows "this feature lives HERE" while the card describes it. The sidebar
+   sits under the dimmed overlay; a bright ring + raised z-index lift it into view. */
+.nav-link.tour-glow {
+  position: relative;
+  z-index: 161;                /* above the tour overlay's dim backdrop (160) */
+  box-shadow: 0 0 0 2px var(--primary), 0 0 16px 2px var(--primary-soft);
+  border-radius: 8px;
+}
+
 /* Switching-handbook overlay (13.5): dim backdrop + small card with a CSS spinner.
    z-index above the modals (100) so it covers everything during the swap. */
 .switch-overlay {

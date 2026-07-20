@@ -364,6 +364,13 @@
           </div>
         </div>
 
+        <!-- Help (Phase 22): reopen the first-run feature tour anytime (tour.js
+             wires #showTourBtn → openTour in review mode). -->
+        <h3 class="settings-heading">Help</h3>
+        <div class="card settings-card">
+          <button id="showTourBtn" type="button"><i data-lucide="help-circle"></i>Show feature tour</button>
+        </div>
+
         <!-- Handbook (Phase 13): a read-only SUMMARY of the per-semester setup. handbook.js
              fills #handbookSummary from appState; Edit opens the handbook modal. The raw
              inputs live inside that modal. -->
@@ -745,6 +752,27 @@
       <div class="task-modal-actions conflict-actions">
         <button id="conflictReplaceBtn" type="button">Replace Drive with this device's data</button>
         <button id="conflictKeepBtn" class="btn-primary" type="button">Keep Google Drive data</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Feature tour (Phase 22): a NEW user steps Next/Back through a short guide to
+       each feature BEFORE handbook setup, then is handed off to it (tour.js). Returning
+       users never see it; reopenable from Settings → Help. tour.js fills the icon,
+       title, description, dots and Next label per step, and glows the matching sidebar
+       nav item. #tourImage stays hidden until a step supplies a screenshot (the frame
+       is screenshot-ready by design — see the roadmap). -->
+  <div id="tourModal" class="tcal-popup" style="display: none;">
+    <div class="tcal-popup-card tour-card">
+      <button id="tourSkip" class="tour-skip" type="button">Skip</button>
+      <div id="tourIcon" class="tour-icon"></div>
+      <img id="tourImage" class="tour-image" alt="" style="display: none;" />
+      <h3 id="tourTitle"></h3>
+      <p id="tourDesc" class="tour-desc"></p>
+      <div id="tourDots" class="tour-dots"></div>
+      <div class="tour-nav">
+        <button id="tourBack" type="button">Back</button>
+        <button id="tourNext" class="btn-primary" type="button">Next</button>
       </div>
     </div>
   </div>
