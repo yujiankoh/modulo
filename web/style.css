@@ -759,15 +759,14 @@ input[type="checkbox"]:checked::before {
 .tour-nav button { min-width: 92px; justify-content: center; }
 /* Back is hidden (not removed) on step 0 — visibility keeps the layout steady. */
 .tour-nav button.is-hidden { visibility: hidden; }
-/* Sidebar glow: tour.js adds .tour-glow to the nav link for the current step, so a
-   soft ring shows "this feature lives HERE" while the card describes it. The sidebar
-   sits under the dimmed overlay; a bright ring + raised z-index lift it into view. */
-.nav-link.tour-glow {
-  position: relative;
-  z-index: 161;                /* above the tour overlay's dim backdrop (160) */
-  box-shadow: 0 0 0 2px var(--primary), 0 0 16px 2px var(--primary-soft);
-  border-radius: 8px;
-}
+/* Sidebar glow: tour.js adds .tour-glow to the current step's nav link, and puts
+   .tour-active on <body> while the tour is open. Because #sidebar is position:sticky
+   (its OWN stacking context), a per-link z-index can't escape it above the dim
+   backdrop — so we lift the WHOLE sidebar above the tour overlay (160) instead. Nice
+   side effect: the sidebar stays fully lit (the tour is pointing AT it) while only the
+   main area dims. The ring follows .nav-link's existing 10px radius. */
+body.tour-active #sidebar { z-index: 170; }
+.nav-link.tour-glow { box-shadow: 0 0 0 2px var(--primary), 0 0 16px 2px var(--primary-soft); }
 
 /* Switching-handbook overlay (13.5): dim backdrop + small card with a CSS spinner.
    z-index above the modals (100) so it covers everything during the swap. */
@@ -1072,6 +1071,9 @@ body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
   display: -webkit-box; -webkit-box-orient: vertical;
   -webkit-line-clamp: 2; line-clamp: 2;     /* cap at 2 lines (prefixed + standard) */
   overflow: hidden;
+  height: 2.6em;                            /* ALWAYS reserve 2 lines (2 × 1.3) so a one-line
+                                               name leaves the band the SAME height as a two-line
+                                               one — min-height alone let 2-line names grow taller */
 }
 .module-card-foot { display: flex; justify-content: space-between; padding: 10px 16px; font-size: 12px; color: var(--text-muted); }
 
