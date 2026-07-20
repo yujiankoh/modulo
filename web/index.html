@@ -671,6 +671,49 @@
     </div>
   </div>
 
+  <!-- Landing overlay (Phase 21): the full-screen mode chooser, covering the app
+       shell until a storage mode is active. main.js swaps the two variants:
+       first visit (no saved mode) = the local/Drive choice; remembered drive
+       mode = one-click "Welcome back" (GIS tokens don't survive reloads and
+       can't renew without a user gesture — silent sign-in is impossible, so one
+       click is the minimum). Non-dismissable on purpose: with no mode chosen,
+       persist() would save nowhere. Saved local mode boots straight in — this
+       overlay never shows. -->
+  <div id="landing" class="landing-overlay" style="display: none;">
+    <!-- Hero layout (YJ's design, 2026-07-20): top bar + big centred headline;
+         the local option is the QUIET LINK in both variants (supersedes the
+         earlier two-equal-buttons plan — Drive is the recommended path). -->
+    <header class="landing-topbar">
+      <div class="landing-brand">MODULO</div>
+      <div class="landing-topbar-note">For students · All levels</div>
+    </header>
+    <div class="landing-hero">
+
+      <!-- Variant 1: first visit — no mode remembered yet. -->
+      <div id="landingChoice" class="landing-inner">
+        <h1 class="landing-headline">Track everything.<br>Forget nothing.</h1>
+        <p class="landing-sub">Modulo turns your timetable, deadlines, and study time into one system that just works.</p>
+        <button id="landingDriveBtn" class="btn-primary landing-cta" type="button">
+          <i data-lucide="cloud"></i>Continue with Google Drive
+        </button>
+        <button id="landingLocalBtn" class="landing-escape" type="button">Use this device instead</button>
+      </div>
+
+      <!-- Variant 2: remembered drive mode — sign back in with one click. The
+           quiet escape below it is deliberate (decision 2026-07-20): without
+           it, a user whose Google account isn't handy is stuck here. -->
+      <div id="landingReturn" class="landing-inner" style="display: none;">
+        <h1 class="landing-headline">Welcome back.</h1>
+        <p class="landing-sub">Sign in to load your data from Google Drive.</p>
+        <button id="landingReturnBtn" class="btn-primary landing-cta" type="button">
+          <i data-lucide="cloud"></i>Continue with Google Drive
+        </button>
+        <button id="landingLocalLink" class="landing-escape" type="button">Use this device instead</button>
+      </div>
+
+    </div>
+  </div>
+
   <!-- Switching-handbook overlay (13.5): shown by handbook.js while a switch persists,
        so the whole-app swap reads as one deliberate transition (min ~400ms). -->
   <div id="switchOverlay" class="switch-overlay" style="display: none;">

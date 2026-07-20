@@ -31,6 +31,41 @@ async function connectDrive() {
   }
 }
 
+// Landing overlay (Phase 21): the full-screen mode chooser. Shown while NO mode
+// is active AND none will boot on its own (saved local mode boots straight in).
+// Variant: a remembered drive device gets "Welcome back" instead of the choice.
+// Re-checked on modulo:datachanged — loadInitialData fires it at the end of
+// every successful boot, which is what hides the overlay; if the Google popup
+// is closed or blocked, no event fires and the landing simply stays.
+const landing = document.getElementById("landing");
+function renderLanding() {
+  if (getStorageMode() || getSavedMode() === "local") {
+    // Leaving the landing (it was actually SHOWING — not just a redundant
+    // re-check mid-session): a sign-in/first choice always lands on the
+    // Dashboard, instead of whatever tab the URL hash still remembered.
+    if (landing.style.display === "flex") location.hash = "#dashboard";
+    landing.style.display = "none";
+    return;
+  }
+  const returning = getSavedMode() === "drive";
+  document.getElementById("landingChoice").style.display = returning ? "none" : "";
+  document.getElementById("landingReturn").style.display = returning ? "" : "none";
+  landing.style.display = "flex";
+}
+window.addEventListener("modulo:datachanged", renderLanding);
+renderLanding();
+
+// Local mode start — shared by the landing (both variants' local actions) and
+// the Settings sync card, so the behaviour can't drift between them.
+function startLocalMode() {
+  setStorageMode("local");
+  loadInitialData();
+}
+document.getElementById("landingDriveBtn").addEventListener("click", connectDrive);
+document.getElementById("landingReturnBtn").addEventListener("click", connectDrive);
+document.getElementById("landingLocalBtn").addEventListener("click", startLocalMode);
+document.getElementById("landingLocalLink").addEventListener("click", startLocalMode);
+
 // The topbar Connect button shows ONLY while no storage mode is active (fresh visit,
 // or drive mode saved but the token not yet renewed). Re-checked on every
 // modulo:datachanged — connecting or picking local mode hides it.
@@ -91,7 +126,4 @@ document.getElementById("connectBtn").addEventListener("click", connectDrive);
 topbarConnect.addEventListener("click", connectDrive);
 // (The account chip is a pure indicator since 2026-07-15 — no click wiring.)
 
-document.getElementById("localBtn").addEventListener("click", () => {
-  setStorageMode("local");
-  loadInitialData();
-});
+document.getElementById("localBtn").addEventListener("click", startLocalMode);
