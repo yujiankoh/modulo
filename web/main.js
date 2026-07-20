@@ -3,7 +3,7 @@
 // mode) and the sign-in buttons, which are the one spot that needs both auth and data.
 
 import { initTokenClient, getToken } from "./auth.js";
-import { loadInitialData, setStorageMode, getSavedMode, getStorageMode, clearStorageMode, readLocalData } from "./data.js";
+import { loadInitialData, setStorageMode, getSavedMode, getStorageMode, clearStorageMode, readLocalData, mirrorToLocal } from "./data.js";
 import { loadData, saveData } from "./drive.js";
 import { migrationPlan, dataSummary, driveIsNewer } from "./logic/migration.js";
 import { withOverlay } from "./handbook.js";
@@ -176,7 +176,12 @@ renderLanding();
 
 // Local mode start — shared by the landing (both variants' local actions) and
 // the Settings sync card, so the behaviour can't drift between them.
+// Phase 21: switching FROM an active Drive session mirrors the current data into
+// the local store first, so local mode continues from what's on screen (not a
+// stale copy). Guarded on "drive": from the landing the mode is null and nothing
+// is loaded, so mirroring there would clobber real local data with defaults.
 function startLocalMode() {
+  if (getStorageMode() === "drive") mirrorToLocal();
   setStorageMode("local");
   loadInitialData();
 }

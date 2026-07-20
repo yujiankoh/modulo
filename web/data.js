@@ -72,6 +72,15 @@ export function readLocalData() {
   }
 }
 
+// Phase 21: copy the CURRENT in-memory state into the local store. Used when
+// switching Drive→local so local mode continues from exactly what the user was
+// just seeing, instead of a stale (or empty) older local copy — the "zombie
+// data" hole. Keeps appState's existing updatedAt: this is a faithful mirror of
+// an already-saved state, NOT a new edit, so it shouldn't restamp the time.
+export function mirrorToLocal() {
+  localStorage.setItem(LOCAL_KEY, JSON.stringify(appState));
+}
+
 // Save the WHOLE current state (stamping the time first).
 export async function persist() {
   appState.updatedAt = new Date().toISOString();
