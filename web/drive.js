@@ -7,12 +7,16 @@ import { authHeaders } from "./auth.js";
 const FILE_NAME = "modulo-data.json";
 
 // Look inside the app folder for our data file. Returns its id, or null if it
-// doesn't exist yet. Private to this module.
+// doesn't exist yet — and THROWS on a failed request (Phase 21 hardening: the
+// migration check must never mistake "request failed" for "no file yet", or it
+// would upload over a Drive file it merely failed to see). driveError is
+// declared below — function declarations hoist, so the order is fine.
 async function findFileId() {
   const res = await fetch(
     "https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&fields=files(id,name)",
     { headers: authHeaders() }
   );
+  if (!res.ok) throw await driveError(res);
   const data = await res.json();
   const file = data.files.find((f) => f.name === FILE_NAME);
   return file ? file.id : null;
@@ -33,12 +37,13 @@ export async function saveData(obj) {
         parents: ["appDataFolder"], // putting data in the hidden app folder
       }),
     });
+    if (!createRes.ok) throw await driveError(createRes); // else created.id is undefined and the PATCH below goes nowhere
     const created = await createRes.json();
     fileId = created.id;
   }
 
   // Write the actual content into the file (how updates work).
-  await fetch(
+  const res = await fetch(
     "https://www.googleapis.com/upload/drive/v3/files/" + fileId + "?uploadType=media",
     {
       method: "PATCH",
@@ -46,6 +51,9 @@ export async function saveData(obj) {
       body: JSON.stringify(obj),
     }
   );
+  // A silent save failure here would let "your data was copied to Drive"
+  // (Phase 21 upload-local) lie to the user — surface it instead.
+  if (!res.ok) throw await driveError(res);
 }
 
 // Read the JSON back out of the app folder.
@@ -56,6 +64,10 @@ export async function loadData() {
     "https://www.googleapis.com/drive/v3/files/" + fileId + "?alt=media",
     { headers: authHeaders() }
   );
+  // Without this check, an HTTP error here would res.json() Google's error
+  // body ({ "error": {...} }) and return it AS IF it were the user's data —
+  // which the migration check would then judge "empty" and overwrite.
+  if (!res.ok) throw await driveError(res);
   return await res.json();
 }
 
@@ -65,8 +77,9 @@ export async function loadData() {
 // label + the handbookId it was uploaded under. Contract documented in
 // docs/modulo-data-schema.md ("Note files") — coordinate changes with Ling Song.
 //
-// Unlike saveData/loadData above, these throw on failure — with a message
-// that's already user-readable, so notesView.js just catches and shows it.
+// These throw on failure — with a message that's already user-readable, so
+// notesView.js just catches and shows it. (Since Phase 21, saveData/loadData
+// above throw the same way — driveError is the whole file's translator now.)
 // Callers are responsible for ensureToken() first (same rule as persist()).
 
 // The fields we ask Drive to return for a note (files.list and upload both) —
