@@ -714,6 +714,41 @@
     </div>
   </div>
 
+  <!-- Connect-time conflict dialog (Phase 21): opened by main.js when BOTH this
+       device and Google Drive hold meaningful data at connect time. The ✕
+       cancels the connect (no mode set, nothing loads → the device stays as it
+       was: still local mode, or back to the landing underneath); the two
+       buttons resolve it. Backdrop-click does NOT close — too easy to fat-finger
+       on a decision this consequential. Evidence spans are filled from
+       dataSummary(). This covers the CONNECT MOMENT only; ongoing two-device
+       sync stays last-write-wins. -->
+  <div id="conflictModal" class="tcal-popup" style="display: none;">
+    <div class="tcal-popup-card">
+      <button id="conflictClose" class="tcal-popup-close" type="button"><i data-lucide="x"></i></button>
+      <h3>Choose which data to keep</h3>
+      <p class="conflict-intro">Both this device and your Google Drive already have
+        MODULO data. They can't be merged — choose which version to keep.</p>
+      <div class="conflict-sides">
+        <div class="conflict-side">
+          <h4>Google Drive</h4>
+          <p class="conflict-line">Saved <span id="confDriveSaved"></span></p>
+          <p class="conflict-line"><span id="confDriveTasks"></span> tasks</p>
+          <p class="conflict-line" id="confDriveHbLine"><span id="confDriveHb"></span></p>
+        </div>
+        <div class="conflict-side">
+          <h4>This device</h4>
+          <p class="conflict-line">Saved <span id="confLocalSaved"></span></p>
+          <p class="conflict-line"><span id="confLocalTasks"></span> tasks</p>
+          <p class="conflict-line" id="confLocalHbLine"><span id="confLocalHb"></span></p>
+        </div>
+      </div>
+      <div class="task-modal-actions conflict-actions">
+        <button id="conflictReplaceBtn" type="button">Replace Drive with this device's data</button>
+        <button id="conflictKeepBtn" class="btn-primary" type="button">Keep Google Drive data</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Switching-handbook overlay (13.5): shown by handbook.js while a switch persists,
        so the whole-app swap reads as one deliberate transition (min ~400ms). -->
   <div id="switchOverlay" class="switch-overlay" style="display: none;">

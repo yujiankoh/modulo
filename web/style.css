@@ -687,6 +687,18 @@ input[type="checkbox"]:checked::before {
 }
 .landing-escape:hover { color: var(--text); background: transparent; }
 
+/* Connect-time conflict dialog (Phase 21). z-index 180: the connect can start
+   FROM the landing overlay (150), so the dialog must stack above it — while the
+   loading overlay (200) still covers everything during the actual copy. */
+#conflictModal { z-index: 180; }
+.conflict-intro { margin: 0 0 14px; font-size: 13.5px; line-height: 1.5; color: var(--text-muted); }
+.conflict-sides { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+.conflict-side { border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; }
+.conflict-side h4 { margin: 0 0 8px; font-size: 13px; color: var(--text); }
+.conflict-line { margin: 2px 0; font-size: 12.5px; color: var(--text-muted); }
+/* Replace = the Drive-destructive choice: danger-tinted, and NOT the primary. */
+#conflictReplaceBtn { color: var(--danger); }
+
 /* Switching-handbook overlay (13.5): dim backdrop + small card with a CSS spinner.
    z-index above the modals (100) so it covers everything during the swap. */
 .switch-overlay {

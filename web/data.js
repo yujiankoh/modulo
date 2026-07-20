@@ -58,6 +58,20 @@ export function getStorageMode() {
   return storageMode;
 }
 
+// Phase 21: the RAW local copy, for the connect-time migration check. Reads the
+// stored JSON directly — NOT appState — because the check can run before any
+// boot (connecting straight from the landing), when appState is still the
+// untouched defaults. Absent or unparseable → null: nothing worth migrating.
+// Lives here because LOCAL_KEY is private to this module.
+export function readLocalData() {
+  try {
+    const raw = localStorage.getItem(LOCAL_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
 // Save the WHOLE current state (stamping the time first).
 export async function persist() {
   appState.updatedAt = new Date().toISOString();

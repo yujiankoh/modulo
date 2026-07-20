@@ -183,8 +183,10 @@ const MIN_OVERLAY_MS = 400;
 
 // Run an async action behind the loading overlay, showing `message` beside the
 // spinner. Waits for BOTH the action and the minimum display time (whichever is
-// longer); the finally guarantees the overlay never gets stuck up, even on an error.
-async function withOverlay(message, action) {
+// longer); the finally guarantees the overlay never gets stuck up, even on an
+// error (the error itself still propagates to the caller). Exported since
+// Phase 21 — main.js's migration check shows it while reading/copying Drive.
+export async function withOverlay(message, action) {
   const overlay = document.getElementById("switchOverlay");
   document.getElementById("switchOverlayText").textContent = message;
   overlay.style.display = "flex";
