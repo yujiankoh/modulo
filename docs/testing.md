@@ -35,7 +35,7 @@ on an ephemeral port and makes a real HTTP request; it asserts the **input-valid
 path, which returns `400` *before* any Gemini call — so the suite **spends no Gemini
 quota** and needs no API key.
 
-Current result: **67 tests, 67 passing.**
+Current result: **79 tests, 79 passing.**
 
 ## Unit tests
 
@@ -53,6 +53,7 @@ they can be tested in isolation.
 | `SCHEMES`, `schemeForLevel`, `computeGPA`, `cumulativeGPA` | `web/logic/gpa.js` | `tests/gpa.test.js` | Grade calculator (Phase 16): level→scheme mapping (`university`→5.0, `poly`→4.0, jc/secondary/primary stubbed with a reason); hand-computed weighted averages for both schemes; credit weighting (bigger modules pull harder); S/U/CS/CU and poly `P` excluded from numerator AND denominator; `gpa: null` (not 0) when nothing counts; junk rows (unknown grade, ≤0/string/NaN credits, null row) skipped + counted, never thrown; grade normalisation (`"a+"` counts); cumulative GPA pools only same-scheme handbooks (JC contributes nothing to uni; poly never mixes with uni), tolerates pre-16 handbooks without `grades`; **S/U election** (Phase 17): `su: true` keeps the letter but excludes the row (excluded, not skipped), junk-proof both ways (only the literal boolean `true` elects; an elected junk row is still excluded), `suElection` scheme flags (nus5 yes, poly4 no); inputs never mutated |
 
 | `validateNoteFile`, `formatSize`, `visibleNotes`, `noteModules` | `web/logic/notes.js` | `tests/notes.test.js` | Notes rules (Phase 20): upload validation (PDF/`image/*` only, 5 MB cap **exact at the boundary**, empty/unreadable files rejected, user-facing reasons); size formatting (B/KB/MB worked examples, Drive's STRING sizes accepted, junk → `""`); list filtering by handbook and/or module (null = all; notes with missing appProperties still reachable under "all"); sorting (A–Z default with numeric-aware compare — "lec 2" before "Lec 10" — and newest-first on request); distinct module tags sorted with empties skipped; inputs never mutated |
+| `hasMeaningfulData`, `migrationPlan`, `formatUpdatedAt`, `dataSummary`, `driveIsNewer` | `web/logic/migration.js` | `tests/migration.test.js` | Connect-time migration rules (Phase 21): "meaningful" data = `handbookSetup \|\| tasks \|\| timetable` — untouched defaults and junk are not meaningful, pre-Phase-13 files judged by `educationLevel` (mirrors `loadInitialData`); the four-cell decision matrix (none/none→`fresh`, none/exists→`use-drive`, exists/none→`upload-local`, exists/exists→`ask`), with a defaults-only side correctly counted as "none"; `updatedAt` formatting (worked example in local time, junk → `"Unknown"` and **never the 1970 epoch**); `dataSummary` evidence (updatedAt + task count + header label) never throws on junk; `driveIsNewer` true only when both timestamps parse and Drive's is strictly newer (any missing/junk → false) |
 
 Each test feeds known inputs and asserts the exact output with `node:assert/strict` — e.g.
 `assert.equal(formatAcademicYear(2025, "university"), "25/26")`.
@@ -115,6 +116,18 @@ the actual behaviour.
 | S37 | Notes — filters, sort, semester scope (20) | Change module filter + sort; switch handbook; use "All semesters" | A–Z default, "Newest" re-orders; module filter only lists modules that have notes in scope; after a handbook switch "This semester" hides the other semester's notes, "All semesters" shows everything | To verify |
 | S38 | Notes — module modal section (20) | Dashboard → module card → "My notes"; upload from there | That module's notes (active handbook) listed with sizes, open on click; Upload note pre-selects the module; the new note appears in the modal section immediately | To verify |
 | S39 | Notes — local-mode gate (20) | Switch to "Use this device only" → #notes + a module modal | Both show "Notes need Google Drive" (no upload buttons, no list, no errors); connecting Drive while on #notes loads the list without a reload | To verify |
+| S40 | Landing — first visit (21) | Clear storage (`localStorage.clear()`) → reload | Full-screen "Track everything. Forget nothing." hero shows (no app shell behind it); "Continue with Google Drive" + quiet "Use this device instead"; theme-aware | Pass (observed) |
+| S41 | Landing — welcome-back (21) | In remembered Drive mode, reload | "Welcome back." variant: one Drive button + quiet "use this device instead" escape (no silent sign-in — GIS tokens can't renew without a gesture) | Pass (observed) |
+| S42 | Landing — remembered local boots straight in (21) | In local mode, reload | No landing at all — boots directly into the app on the last-viewed tab | To verify |
+| S43 | Migration — use-drive (21) | Clear storage → landing → Connect Drive (Drive has data, device has none) | "Checking your Google Drive…" → NO dialog → Drive data loads, lands on Dashboard | Pass (observed) |
+| S44 | Migration — upload-local (21, needs an EMPTY Drive) | Local mode with data → Settings → Connect to a Drive with no MODULO file | "Copying your data to Google Drive…" → status "Your data was copied to Google Drive" → same data continues in Drive mode | To verify (throwaway account) |
+| S45 | Conflict — keep Drive (21) | Both sides have data → Settings → Connect | "Choose which data to keep" dialog: two evidence cards (saved time, task count, handbook); "Keep Google Drive data" loads Drive, local copy untouched | Pass (observed) |
+| S46 | Conflict — replace Drive + newer-warning (21) | In the dialog, "Replace Drive with this device's data" | `confirm()` spells out the overwrite; EXTRA "saved MORE RECENTLY" line only when Drive's `updatedAt` is newer than the device's; Cancel returns to the dialog; OK copies local up | Pass (observed) |
+| S47 | Conflict — cancel via ✕ (21) | Open the dialog → click the ✕ | Dialog closes, connect aborted, NO mode change (stays in whatever mode it was: local, or landing still showing); backdrop click does NOT close | Pass (observed) |
+| S48 | Drive→local mirror (21) | In Drive mode with data → Settings → "Use this device only" | Local mode continues showing the SAME current data (not stale/empty); reload stays in local mode with that data | To verify |
+| S49 | Migration — fresh (21, needs an EMPTY Drive) | Clear storage → landing → Connect to a Drive with no MODULO file, device empty | No dialog, no copy toast; proceeds empty → first-run handbook modal opens | To verify (throwaway account) |
+| S50 | Connect abandoned (21) | From the landing, Continue with Google Drive → close Google's popup | Landing stays put, no error, no mode set; can retry | Pass (observed) |
+| S51 | Disconnect → landing (21) | Drive mode → Settings → Disconnect → confirm | Page reloads to the landing (mode forgotten); Drive data untouched; reconnecting picks it back up | To verify |
 
 > Replace "To verify" with **Pass/Fail** during a manual pass and drop screenshots into a
 > `docs/test-evidence/` folder (or the report), referenced by scenario number.
