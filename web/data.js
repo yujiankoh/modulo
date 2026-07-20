@@ -58,6 +58,29 @@ export function getStorageMode() {
   return storageMode;
 }
 
+// Phase 21: the RAW local copy, for the connect-time migration check. Reads the
+// stored JSON directly — NOT appState — because the check can run before any
+// boot (connecting straight from the landing), when appState is still the
+// untouched defaults. Absent or unparseable → null: nothing worth migrating.
+// Lives here because LOCAL_KEY is private to this module.
+export function readLocalData() {
+  try {
+    const raw = localStorage.getItem(LOCAL_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+// Phase 21: copy the CURRENT in-memory state into the local store. Used when
+// switching Drive→local so local mode continues from exactly what the user was
+// just seeing, instead of a stale (or empty) older local copy — the "zombie
+// data" hole. Keeps appState's existing updatedAt: this is a faithful mirror of
+// an already-saved state, NOT a new edit, so it shouldn't restamp the time.
+export function mirrorToLocal() {
+  localStorage.setItem(LOCAL_KEY, JSON.stringify(appState));
+}
+
 // Save the WHOLE current state (stamping the time first).
 export async function persist() {
   appState.updatedAt = new Date().toISOString();

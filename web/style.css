@@ -621,6 +621,84 @@ input[type="checkbox"]:checked::before {
 .hb-del-btn:hover { color: var(--danger); border-color: transparent; }
 .hb-del-btn svg { width: 14px; height: 14px; }
 
+/* Landing overlay (Phase 21): full-page hero (YJ's design 2026-07-20) — top bar
+   + big centred headline + one CTA; the local option is a quiet link.
+   OPAQUE background, unlike the dim switch-overlay: the app shell behind it has
+   no data loaded yet, and empty widgets showing through a dim backdrop would
+   read as a broken app. z-index 150 = above the modals (100), below the
+   switch overlay (200). All colours are tokens → dark mode for free. */
+.landing-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 150;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+}
+.landing-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+  padding: 0 28px;
+  flex: none;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+.landing-brand { font-size: 18px; font-weight: 800; letter-spacing: 0.22em; color: var(--text); }
+.landing-topbar-note { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); }
+/* The hero fills the rest of the page and centres its content block. */
+.landing-hero {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.landing-inner { display: flex; flex-direction: column; align-items: center; text-align: center; }
+/* clamp() scales the headline with the viewport between a phone-safe floor
+   and the big desktop size, with no media queries needed. */
+.landing-headline {
+  margin: 0 0 22px;
+  font-size: clamp(40px, 7vw, 68px);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+  color: var(--text);
+}
+.landing-sub {
+  margin: 0 0 36px;
+  max-width: 440px;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+.landing-cta { font-size: 15px; padding: 12px 24px; }
+/* The quiet escape: styled as a link, not a button — present for the user whose
+   Google account isn't handy, quiet enough not to compete with the main action. */
+.landing-escape {
+  margin-top: 16px;
+  border: none;
+  background: transparent;
+  padding: 6px;
+  font-size: 13px;
+  color: var(--text-muted);
+  text-decoration: underline;
+}
+.landing-escape:hover { color: var(--text); background: transparent; }
+
+/* Connect-time conflict dialog (Phase 21). z-index 180: the connect can start
+   FROM the landing overlay (150), so the dialog must stack above it — while the
+   loading overlay (200) still covers everything during the actual copy. */
+#conflictModal { z-index: 180; }
+.conflict-intro { margin: 0 0 14px; font-size: 13.5px; line-height: 1.5; color: var(--text-muted); }
+.conflict-sides { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+.conflict-side { border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; }
+.conflict-side h4 { margin: 0 0 8px; font-size: 13px; color: var(--text); }
+.conflict-line { margin: 2px 0; font-size: 12.5px; color: var(--text-muted); }
+/* Replace = the Drive-destructive choice: danger-tinted, and NOT the primary. */
+#conflictReplaceBtn { color: var(--danger); }
+
 /* Switching-handbook overlay (13.5): dim backdrop + small card with a CSS spinner.
    z-index above the modals (100) so it covers everything during the swap. */
 .switch-overlay {
