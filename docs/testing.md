@@ -128,6 +128,10 @@ the actual behaviour.
 | S49 | Migration — fresh (21, needs an EMPTY Drive) | Clear storage → landing → Connect to a Drive with no MODULO file, device empty | No dialog, no copy toast; proceeds empty → first-run handbook modal opens | To verify (throwaway account) |
 | S50 | Connect abandoned (21) | From the landing, Continue with Google Drive → close Google's popup | Landing stays put, no error, no mode set; can retry | Pass (observed) |
 | S51 | Disconnect → landing (21) | Drive mode → Settings → Disconnect → confirm | Page reloads to the landing (mode forgotten); Drive data untouched; reconnecting picks it back up | To verify |
+| S52 | Feature tour — first-run (22) | Fresh device (`localStorage.clear()`) → landing → pick a mode | The tour opens BEFORE handbook setup: Welcome → Dashboard → the feature screenshots → Productivity rating → "Set up your handbook"; Next/Back + dots work; the whole screen (sidebar included) dims behind the card; no horizontal scrollbar | To verify |
+| S53 | Feature tour — hands off to handbook (22) | On the last tour step, click "Set up my handbook" (or Skip earlier) | Tour closes and the first-run handbook modal opens; finishing setup lands on the Dashboard | To verify |
+| S54 | Feature tour — returning user skips it (22) | After finishing the tour once, reload | No tour and no re-prompt; an EXISTING (already-set-up) user on this device also never sees it | To verify |
+| S55 | Feature tour — reopen from Settings (22) | Settings → Help → "Show feature tour" | Tour opens in review mode: NO Skip, last step reads "Done" (not "Set up my handbook"), Done just closes (no handbook); backdrop click also closes here | To verify |
 
 > Replace "To verify" with **Pass/Fail** during a manual pass and drop screenshots into a
 > `docs/test-evidence/` folder (or the report), referenced by scenario number.
