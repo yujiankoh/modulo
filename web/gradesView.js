@@ -359,8 +359,18 @@ function render() {
   const semester = computeGPA(appState.grades, scheme); // once — card AND hint use it
   semGpaEl.textContent = formatGPA(semester.gpa);
   cumGpaEl.textContent = formatGPA(cumulativeGPA(appState).gpa);
-  renderEditor(scheme, semester.skippedCount);
+  // Don't rebuild the rows while the user is mid-edit inside them: a datachanged from an
+  // unrelated (or slow Drive) persist would wipe the row and CLOSE AN OPEN DROPDOWN. The
+  // cards above still update live; the editor reconciles on focusout (below).
+  if (!editorEl.contains(document.activeElement)) renderEditor(scheme, semester.skippedCount);
 }
+
+// Reconcile a rebuild that was skipped above: once focus leaves the editor entirely
+// (relatedTarget = where focus is going; inside the editor = just moving between rows),
+// re-render so phantom→stored cosmetics settle.
+editorEl.addEventListener("focusout", (e) => {
+  if (!editorEl.contains(e.relatedTarget)) render();
+});
 
 // "+ Add module": a module not in the timetable (dropped module, school subject, …).
 // It appears as a phantom row; it's only STORED once a grade is picked.
