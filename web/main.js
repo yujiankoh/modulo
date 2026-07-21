@@ -17,6 +17,7 @@ import "./studyTimer.js"; // side-effect import: study-timer engine + controls (
 import "./dashboard.js"; // side-effect import: Dashboard landing view (Phase 12.3)
 import "./sidebar.js"; // side-effect import: sidebar modules list + account chip (Phase 12.4d)
 import "./handbook.js"; // side-effect import: handbook onboarding modal (Phase 13)
+import "./tour.js"; // side-effect import: first-run feature tour (Phase 22)
 import "./cityView.js"; // side-effect import: Study City view (Phases 14+15)
 import "./gradesView.js"; // side-effect import: Grades view — GPA cards + editor (Phase 17)
 import "./notesView.js"; // side-effect import: Notes view — Drive note files (Phase 20)

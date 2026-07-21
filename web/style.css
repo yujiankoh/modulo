@@ -705,7 +705,12 @@ input[type="checkbox"]:checked::before {
    through features doesn't make the card jump around as descriptions vary. */
 #tourModal { z-index: 160; }
 .tour-card {
-  width: min(400px, calc(100vw - 40px));
+  box-sizing: border-box;                    /* width INCLUDES the card padding, so the next
+                                                line can cap total width to the viewport */
+  width: min(860px, calc(100vw - 32px));     /* big enough to show a 1000×600 shot clearly */
+  max-height: calc(100vh - 32px);            /* never taller than the screen … */
+  overflow-y: auto;                          /* … scroll INSIDE the card instead (no page scroll) */
+  overflow-x: hidden;                        /* and never a horizontal scrollbar */
   text-align: center;
   padding-top: 30px;
 }
@@ -739,6 +744,8 @@ input[type="checkbox"]:checked::before {
 .tour-image {
   display: block;
   width: 100%;
+  aspect-ratio: 5 / 3;             /* matches the 1000×600 shots — reserves space, no load jump */
+  object-fit: cover;
   margin: 0 auto 16px;
   border: 1px solid var(--border);
   border-radius: 10px;
@@ -747,7 +754,7 @@ input[type="checkbox"]:checked::before {
 .tour-desc {
   margin: 0 auto 20px;
   min-height: 3em;              /* reserve ~2 lines so short/long copy don't resize the card */
-  max-width: 300px;
+  max-width: 460px;
   font-size: 14px;
   line-height: 1.55;
   color: var(--text-muted);
@@ -759,14 +766,6 @@ input[type="checkbox"]:checked::before {
 .tour-nav button { min-width: 92px; justify-content: center; }
 /* Back is hidden (not removed) on step 0 — visibility keeps the layout steady. */
 .tour-nav button.is-hidden { visibility: hidden; }
-/* Sidebar glow: tour.js adds .tour-glow to the current step's nav link, and puts
-   .tour-active on <body> while the tour is open. Because #sidebar is position:sticky
-   (its OWN stacking context), a per-link z-index can't escape it above the dim
-   backdrop — so we lift the WHOLE sidebar above the tour overlay (160) instead. Nice
-   side effect: the sidebar stays fully lit (the tour is pointing AT it) while only the
-   main area dims. The ring follows .nav-link's existing 10px radius. */
-body.tour-active #sidebar { z-index: 170; }
-.nav-link.tour-glow { box-shadow: 0 0 0 2px var(--primary), 0 0 16px 2px var(--primary-soft); }
 
 /* Switching-handbook overlay (13.5): dim backdrop + small card with a CSS spinner.
    z-index above the modals (100) so it covers everything during the swap. */
@@ -1282,6 +1281,16 @@ body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
   background: var(--surface);
   color: var(--text);
   font: inherit;
+}
+/* The grade dropdown needs the app's chevron back: the shared rule's `background`/
+   `padding` shorthands above erased the one the global `select` rule drew (the
+   "shorthand resets all longhands" trap). Re-add the chevron + right padding so it
+   visibly reads as a dropdown. */
+.grade-grade {
+  padding: 6px 30px 6px 10px;
+  background: var(--surface)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%238890a4' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
+    no-repeat right 12px center;
 }
 .grade-remove {
   border: none;
