@@ -1178,6 +1178,9 @@ body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
 .tt-empty p { margin: 0; font-size: 14px; color: var(--text-muted); }
 .tt-empty-actions { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
 .tt-upload-actions { display: flex; gap: 8px; margin: 10px 0; flex-wrap: wrap; }
+/* Styled file picker row (replaces the native "Choose File" widget). */
+.tt-file-row { display: flex; align-items: center; gap: 10px; margin: 12px 0; flex-wrap: wrap; }
+.tt-file-name { font-size: 13px; color: var(--text-muted); }
 
 /* ---- Study city (Phases 14+15 — lives inside the Study Session view) ---- */
 /* Header row: eyebrow+title left, the Upgrade button bottom-aligned on the right.

@@ -86,6 +86,9 @@ function downscaleToDataURL(file, maxSide = 2000, quality = 0.9) {
 // When the user picks an image: downscale, preview it, and prep it for parsing.
 const imageInput = document.getElementById("timetableImage");
 const previewEl = document.getElementById("timetablePreview");
+// Styled picker (the native input is hidden): the button opens it, the label shows the pick.
+const fileNameEl = document.getElementById("timetableFileName");
+document.getElementById("timetablePick").addEventListener("click", () => imageInput.click());
 
 // Set by "Add another week" so the next image pick parses + appends, instead of
 // just previewing and waiting for a Parse click.
@@ -115,6 +118,7 @@ document.addEventListener("keydown", (e) => {
 
 imageInput.addEventListener("change", async () => {
   const file = imageInput.files[0];
+  fileNameEl.textContent = file ? file.name : "No file chosen";
   if (!file) { appendOnNextPick = false; return; }
 
   const dataUrl = await downscaleToDataURL(file);   // shrink before preview + parse

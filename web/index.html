@@ -481,7 +481,13 @@
       <button id="uploadCloseX" class="tcal-popup-close" type="button"><i data-lucide="x"></i></button>
       <h3>Upload timetable</h3>
       <p id="uploadLevelHint" class="module-modal-placeholder"></p>
-      <input id="timetableImage" type="file" accept="image/*" />
+      <!-- Styled file picker (matches the app; the native input is hidden). timetable.js
+           opens the input from the button and shows the chosen filename beside it. -->
+      <div class="tt-file-row">
+        <button id="timetablePick" type="button"><i data-lucide="image"></i>Choose image</button>
+        <span id="timetableFileName" class="tt-file-name">No file chosen</span>
+      </div>
+      <input id="timetableImage" type="file" accept="image/*" style="display: none;" />
       <img id="timetablePreview" alt="preview" style="max-width: 100%; display: none; margin-top: 10px; border-radius: 8px;" />
       <div class="tt-upload-actions">
         <button id="parseBtn" class="btn-primary" type="button"><i data-lucide="sparkles"></i>Parse timetable</button>
