@@ -77,10 +77,15 @@ function buildRows() {
   return rows;
 }
 
-// Read one row's inputs back into appState (the harvest). Storage rule:
-//   grade chosen + row unstored  → CREATE an entry
-//   grade chosen + row stored    → UPDATE it
-//   grade cleared + row stored   → DELETE it (phantom reappears via the merge)
+// Read one row's inputs back into appState (the harvest). Keyed by MODULE — the stable
+// "one entry per module" identity — NOT by row.stored/row.id captured at render time.
+// Those go stale if a second edit fires before the first persist re-renders (persist is
+// async, and slow in Drive mode): two quick grade picks on a phantom used to create TWO
+// rows, and a clear-then-pick on a stored row could crash on a since-deleted id. Looking
+// up the CURRENT state by module each time is idempotent. Storage rule:
+//   grade chosen, no entry yet   → CREATE an entry
+//   grade chosen, entry exists   → UPDATE it
+//   grade cleared, entry exists  → DELETE it (phantom reappears via the merge)
 // Credits are sanitised to a positive number or 0 — NaN must never be stored because
 // JSON.stringify(NaN) is null, which Android's non-nullable Double would choke on.
 function harvestRow(rowEl, row) {
@@ -91,11 +96,12 @@ function harvestRow(rowEl, row) {
   const suBox = rowEl.querySelector(".grade-su");
   const su = suBox ? suBox.checked : false;
 
+  const entry = appState.grades.find((g) => g.module === row.module);
+
   if (grade === "") {
-    if (!row.stored) return; // phantom with no grade: nothing to store yet (su rides along later)
-    appState.grades = appState.grades.filter((g) => g.id !== row.id);
-  } else if (row.stored) {
-    const entry = appState.grades.find((g) => g.id === row.id);
+    if (!entry) return; // nothing stored for this module yet (phantom su rides along later)
+    appState.grades = appState.grades.filter((g) => g.module !== row.module); // also clears any stray dupes
+  } else if (entry) {
     entry.credits = credits;
     entry.grade = grade;
     // Lean JSON: store the key only when true — absent means false (schema default),
@@ -103,9 +109,9 @@ function harvestRow(rowEl, row) {
     if (su) entry.su = true;
     else delete entry.su;
   } else {
-    const entry = { id: crypto.randomUUID(), module: row.module, credits, grade };
-    if (su) entry.su = true;
-    appState.grades.push(entry);
+    const created = { id: crypto.randomUUID(), module: row.module, credits, grade };
+    if (su) created.su = true;
+    appState.grades.push(created);
     extraModules.delete(row.module); // stored now — session memory no longer needed
   }
   persist(); // fires modulo:datachanged → cards + rows re-render from the new state
@@ -353,8 +359,18 @@ function render() {
   const semester = computeGPA(appState.grades, scheme); // once — card AND hint use it
   semGpaEl.textContent = formatGPA(semester.gpa);
   cumGpaEl.textContent = formatGPA(cumulativeGPA(appState).gpa);
-  renderEditor(scheme, semester.skippedCount);
+  // Don't rebuild the rows while the user is mid-edit inside them: a datachanged from an
+  // unrelated (or slow Drive) persist would wipe the row and CLOSE AN OPEN DROPDOWN. The
+  // cards above still update live; the editor reconciles on focusout (below).
+  if (!editorEl.contains(document.activeElement)) renderEditor(scheme, semester.skippedCount);
 }
+
+// Reconcile a rebuild that was skipped above: once focus leaves the editor entirely
+// (relatedTarget = where focus is going; inside the editor = just moving between rows),
+// re-render so phantom→stored cosmetics settle.
+editorEl.addEventListener("focusout", (e) => {
+  if (!editorEl.contains(e.relatedTarget)) render();
+});
 
 // "+ Add module": a module not in the timetable (dropped module, school subject, …).
 // It appears as a phantom row; it's only STORED once a grade is picked.

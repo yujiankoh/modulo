@@ -3,6 +3,7 @@
 // chip (current storage mode). Reads appState; redraws on modulo:datachanged.
 
 import { appState, getStorageMode } from "./data.js";
+import { isTokenValid } from "./auth.js"; // Phase 22: chip tells the TRUTH about the session
 import { handbookHeaderLabel } from "./handbook.js";
 import { openModuleByLabel } from "./dashboard.js"; // open the module detail modal on click
 
@@ -78,7 +79,9 @@ function renderAccount() {
   const subEl = document.getElementById("accountSub");
   if (mode === "drive") {
     modeEl.textContent = "Google Drive";
-    subEl.textContent = "Synced";
+    // "Synced" only when the token is actually valid; once it lapses the chip says
+    // "Reconnect" instead of falsely claiming everything's in sync (Phase 22).
+    subEl.textContent = isTokenValid() ? "Synced" : "Reconnect";
   } else if (mode === "local") {
     modeEl.textContent = "Local mode";
     subEl.textContent = "This device only";
@@ -109,4 +112,5 @@ function render() {
 }
 
 window.addEventListener("modulo:datachanged", render);
+window.addEventListener("modulo:authchanged", render); // token granted/refreshed/lapsed
 render();

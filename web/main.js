@@ -2,7 +2,7 @@
 // pulls in everything else. It owns app boot (token client + restoring the saved
 // mode) and the sign-in buttons, which are the one spot that needs both auth and data.
 
-import { initTokenClient, getToken } from "./auth.js";
+import { initTokenClient, getToken, isTokenValid } from "./auth.js";
 import { loadInitialData, setStorageMode, getSavedMode, getStorageMode, clearStorageMode, readLocalData, mirrorToLocal } from "./data.js";
 import { loadData, saveData } from "./drive.js";
 import { migrationPlan, dataSummary, driveIsNewer } from "./logic/migration.js";
@@ -17,6 +17,7 @@ import "./studyTimer.js"; // side-effect import: study-timer engine + controls (
 import "./dashboard.js"; // side-effect import: Dashboard landing view (Phase 12.3)
 import "./sidebar.js"; // side-effect import: sidebar modules list + account chip (Phase 12.4d)
 import "./handbook.js"; // side-effect import: handbook onboarding modal (Phase 13)
+import "./tour.js"; // side-effect import: first-run feature tour (Phase 22)
 import "./cityView.js"; // side-effect import: Study City view (Phases 14+15)
 import "./gradesView.js"; // side-effect import: Grades view — GPA cards + editor (Phase 17)
 import "./notesView.js"; // side-effect import: Notes view — Drive note files (Phase 20)
@@ -195,9 +196,14 @@ document.getElementById("landingLocalLink").addEventListener("click", startLocal
 // modulo:datachanged — connecting or picking local mode hides it.
 const topbarConnect = document.getElementById("topbarConnect");
 function updateTopbarConnect() {
-  topbarConnect.style.display = getStorageMode() ? "none" : "";
+  const mode = getStorageMode();
+  // Show while there's no mode yet, OR the Drive session has lapsed (a one-click
+  // reconnect when the background silent refresh couldn't renew it). Phase 22.
+  const needsConnect = !mode || (mode === "drive" && !isTokenValid());
+  topbarConnect.style.display = needsConnect ? "" : "none";
 }
 window.addEventListener("modulo:datachanged", updateTopbarConnect);
+window.addEventListener("modulo:authchanged", updateTopbarConnect); // session lapsed/renewed
 updateTopbarConnect();
 
 // Settings sync card (2026-07-16): show only the controls that apply to the
@@ -205,16 +211,20 @@ updateTopbarConnect();
 // in every state ("Reload from Drive" in local mode just errored).
 function renderSyncCard() {
   const mode = getStorageMode();
+  const driveExpired = mode === "drive" && !isTokenValid(); // Phase 22: honest sync state
   document.getElementById("syncStatus").textContent =
-    mode === "drive" ? "Connected to Google Drive — your data syncs across devices."
+    driveExpired ? "Google Drive session expired — reconnect to keep syncing."
+    : mode === "drive" ? "Connected to Google Drive — your data syncs across devices."
     : mode === "local" ? "Local mode — your data stays on this device only."
     : "Not connected — choose where MODULO keeps your data.";
-  document.getElementById("connectBtn").style.display = mode === "drive" ? "none" : "";
+  // Offer Connect when not in Drive mode OR the Drive session lapsed (reconnect).
+  document.getElementById("connectBtn").style.display = (mode !== "drive" || driveExpired) ? "" : "none";
   document.getElementById("localBtn").style.display = mode === "local" ? "none" : "";
   document.getElementById("reloadBtn").style.display = mode === "drive" ? "" : "none";
   document.getElementById("disconnectBtn").style.display = mode === "drive" ? "" : "none";
 }
 window.addEventListener("modulo:datachanged", renderSyncCard);
+window.addEventListener("modulo:authchanged", renderSyncCard); // session lapsed/renewed
 renderSyncCard();
 
 // Disconnect = forget the mode on THIS device, then a clean reboot. Data is NOT

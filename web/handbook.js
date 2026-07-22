@@ -8,6 +8,7 @@ import { appState, persist, getStorageMode } from "./data.js";
 import { isTertiary, formatAcademicYear, parseStartYear, formatHeaderLabel } from "./logic/academicYear.js";
 import { snapshotHandbook, blankHandbook, switchHandbook } from "./logic/handbooks.js"; // 13.5: pure swap helpers
 import { drawIcons } from "./icons.js"; // redraw the trash icons the handbook list injects
+import { tourWillShow } from "./tour.js"; // Phase 22: defer first-run onboarding while the tour is up
 
 // --- DOM handles (all inside #handbookModal) ---
 const modal = document.getElementById("handbookModal");
@@ -320,6 +321,9 @@ window.addEventListener("modulo:datachanged", () => {
   // aren't loads anyway (the theme toggle fires this event too — the bug that added this
   // guard, 2026-07-15). Wait for the mode pick; loadInitialData re-fires the event then.
   if (!getStorageMode()) return;
+  // Phase 22: hold onboarding back while the feature tour is (about to be) showing;
+  // the tour re-fires this event when it finishes, and tourWillShow() is false by then.
+  if (tourWillShow()) return;
   if (!appState.handbookSetup && !dismissed && modal.style.display === "none") {
     firstRun = true;
     openHandbook();
